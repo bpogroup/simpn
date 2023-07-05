@@ -4,12 +4,20 @@ import copy
 
 
 class SimVar:
+    """
+    A simulation variable SimVar has an identifier and a marking.
+    A simulation variable can have multiple values. These values are available at particular times.
+    For example, a variable van have the value 1 at time 0 (denoted as 1@0) and also 2@0.
+    These values are also called tokens. Multiple tokens are called a marking of the variable.
+    The marking is represented as a dictionary of tokens -> the number of each token.
+    For example, {1@0: 1, 2@0: 1} represents the situation above, in which there is one token
+    with value 1 at time 0 and one with value 2 at time 0.
+
+    :param _id: the identifier of the SimVar.
+    :param marking: the marking of the SimVar.
+    """
+
     def __init__(self, _id, marking=None):
-        """
-        A place has an identifier _id and a marking.
-        The marking is represented as a dictionary token -> number of tokens (with that color and time).
-        :param _id: the identifier of the place.
-        """
         self._id = _id
         if marking is None:
             self.marking = dict()
@@ -17,16 +25,33 @@ class SimVar:
             self.marking = copy.deepcopy(marking)
 
     def put(self, value, time=0):
+        """
+        Put a token value in the SimVar at a particular time.
+
+        :param value: the value to put in the SimVar.
+        :param time: the time to make this value available at.
+        """
         token = SimToken(value, time)
         self.add_token(token)
 
     def add_token(self, token, count=1):
+        """
+        Adds a token value in the SimVar.
+
+        :param token: the token value to put in the SimVar.
+        :param count: the number of times to put the token value in the SimVar (defaults to 1 time).
+        """
         if token not in self.marking:
             self.marking[token] = count
         else:
             self.marking[token] += count
 
     def remove_token(self, token):
+        """
+        Removes a token value (once) from the SimVar.
+
+        :param token: the token value to remove from the SimVar.
+        """
         if token in self.marking:
             self.marking[token] -= 1
         else:
@@ -42,6 +67,24 @@ class SimVar:
 
 
 class SimTransition:
+    """
+    A simulation transition SimTransition that can happen when tokens are available on all of its
+    incoming SimVar and its guard evaluates to True. When it happens, it consumes a token from each
+    of its incoming SimVar and produces a token on each of its outgoing places according to `behavior`.
+    If the transition also has a `delay`, it will produce the tokens on the outgoing places according to that delay.
+    For example, consider the transition with `incoming` `SimVar` [a, b] that have 2@1 and 2@1.
+    The transition has `outgoing` `SimVar` [c, d], behavior lambda a, b: [a + b, a - b], and
+    delay [1, 2]. This transition can happen for a = 2@1 and b = 2@1. Thus, it will happen at time 1, generating
+    [3, 1] according to its behavior with delays [1, 2]. Therefore, after the transition has happened, c and d
+    will have the tokens 3@2 and 1@3.
+
+    :param _id: the identifier of the tansition.
+    :param incoming: a list of incoming SimVar of the transition.
+    :param outgoing: a list of outgoing SimVar of the transition
+    :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.
+    :param behavior: a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. When the transition happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar.
+    :param delay: A list with as many numeric elements as there are outgoing SimVar, or a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many numeric values as there are outgoing SimVar. The values that are created by the behavior of the transition are put on the outgoing SimVar with the corresponding delay.
+    """
 
     def __init__(self, _id, guard=None, behavior=None, delay=None, incoming=None, outgoing=None):
         self._id = _id

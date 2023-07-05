@@ -52,6 +52,12 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimProblem</span></code></a>()</p></td>
 <td><p>A Petri net in which: - arcs are ordered - functions are part of the transition - delays are part of the transition</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimTransition" title="simpn.simulator.SimTransition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTransition</span></code></a>(_id[, guard, behavior, delay, ...])</p></td>
+<td><p>A simulation transition SimTransition that can happen when tokens are available on all of its incoming SimVar and its guard evaluates to True.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVar" title="simpn.simulator.SimVar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVar</span></code></a>(_id[, marking])</p></td>
+<td><p>A simulation variable SimVar has an identifier and a marking.</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py class">
@@ -103,6 +109,105 @@ each list of pairs represents a single enabling binding.
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.simulator.SimTransition">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimTransition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimTransition" title="Permalink to this definition">¶</a></dt>
+<dd><p>A simulation transition SimTransition that can happen when tokens are available on all of its
+incoming SimVar and its guard evaluates to True. When it happens, it consumes a token from each
+of its incoming SimVar and produces a token on each of its outgoing places according to <cite>behavior</cite>.
+If the transition also has a <cite>delay</cite>, it will produce the tokens on the outgoing places according to that delay.
+For example, consider the transition with <cite>incoming</cite> <cite>SimVar</cite> [a, b] that have 2&#64;1 and 2&#64;1.
+The transition has <cite>outgoing</cite> <cite>SimVar</cite> [c, d], behavior lambda a, b: [a + b, a - b], and
+delay [1, 2]. This transition can happen for a = 2&#64;1 and b = 2&#64;1. Thus, it will happen at time 1, generating
+[3, 1] according to its behavior with delays [1, 2]. Therefore, after the transition has happened, c and d
+will have the tokens 3&#64;2 and 1&#64;3.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_id</strong> – the identifier of the tansition.</p></li>
+<li><p><strong>incoming</strong> – a list of incoming SimVar of the transition.</p></li>
+<li><p><strong>outgoing</strong> – a list of outgoing SimVar of the transition</p></li>
+<li><p><strong>guard</strong> – a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.</p></li>
+<li><p><strong>behavior</strong> – a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. When the transition happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar.</p></li>
+<li><p><strong>delay</strong> – A list with as many numeric elements as there are outgoing SimVar, or a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many numeric values as there are outgoing SimVar. The values that are created by the behavior of the transition are put on the outgoing SimVar with the corresponding delay.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.simulator.SimVar">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar" title="Permalink to this definition">¶</a></dt>
+<dd><p>A simulation variable SimVar has an identifier and a marking.
+A simulation variable can have multiple values. These values are available at particular times.
+For example, a variable van have the value 1 at time 0 (denoted as 1&#64;0) and also 2&#64;0.
+These values are also called tokens. Multiple tokens are called a marking of the variable.
+The marking is represented as a dictionary of tokens -&gt; the number of each token.
+For example, {1&#64;0: 1, 2&#64;0: 1} represents the situation above, in which there is one token
+with value 1 at time 0 and one with value 2 at time 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_id</strong> – the identifier of the SimVar.</p></li>
+<li><p><strong>marking</strong> – the marking of the SimVar.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVar.add_token" title="simpn.simulator.SimVar.add_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_token</span></code></a>(token[, count])</p></td>
+<td><p>Adds a token value in the SimVar.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVar.put" title="simpn.simulator.SimVar.put"><code class="xref py py-obj docutils literal notranslate"><span class="pre">put</span></code></a>(value[, time])</p></td>
+<td><p>Put a token value in the SimVar at a particular time.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVar.remove_token" title="simpn.simulator.SimVar.remove_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_token</span></code></a>(token)</p></td>
+<td><p>Removes a token value (once) from the SimVar.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimVar.add_token">
+<span class="sig-name descname"><span class="pre">add_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.add_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a token value in the SimVar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>token</strong> – the token value to put in the SimVar.</p></li>
+<li><p><strong>count</strong> – the number of times to put the token value in the SimVar (defaults to 1 time).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimVar.put">
+<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Put a token value in the SimVar at a particular time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> – the value to put in the SimVar.</p></li>
+<li><p><strong>time</strong> – the time to make this value available at.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimVar.remove_token">
+<span class="sig-name descname"><span class="pre">remove_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.remove_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes a token value (once) from the SimVar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>token</strong> – the token value to remove from the SimVar.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -114,7 +219,7 @@ each list of pairs represents a single enabling binding.
         <div class="sphinxsidebarwrapper">
 <h3><a href="index.html">Table of Contents</a></h3>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="howto.html">How to use the framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html">How to use</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="api.html">API Documentation</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Simulator</a></li>
 </ul>
