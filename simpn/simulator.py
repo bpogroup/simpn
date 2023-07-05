@@ -78,7 +78,7 @@ class SimTransition:
     [3, 1] according to its behavior with delays [1, 2]. Therefore, after the transition has happened, c and d
     will have the tokens 3@2 and 1@3.
 
-    :param _id: the identifier of the tansition.
+    :param _id: the identifier of the transition.
     :param incoming: a list of incoming SimVar of the transition.
     :param outgoing: a list of outgoing SimVar of the transition
     :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.
@@ -120,7 +120,7 @@ class SimTransition:
         """
         Set the outgoing SimVar.
 
-        :param incoming: a list of SimVar.
+        :param outgoing: a list of SimVar.
         """
         self.outgoing = outgoing
 
@@ -264,7 +264,7 @@ class SimProblem:
         Creates a new SimTransition with the specified parameters (also see SimTransition). Adds the SimTransition to the problem and returns it.
         If a prototype is passed (also see package prototypes), multiple transitions and simulation variables may be added to the model, according to the prototype.
 
-        :param name: the identifier of the tansition.
+        :param name: the identifier of the transition.
         :param inflow: a list of incoming SimVar of the transition.
         :param outflow: a list of outgoing SimVar of the transition/
         :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.
