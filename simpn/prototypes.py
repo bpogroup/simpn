@@ -46,7 +46,7 @@ def task(model, inflow, outflow, behavior, name, constraint, delay):
     start_transition_name = name + "_start"
     complete_transition_name = name + "_complete"
     busyvar = model.add_svar(busyvar_name)
-    model.add_stransition(inflow, [busyvar], lambda c, r: [(c, r)], name=start_transition_name, delay=delay, constraint=constraint)
+    model.add_stransition(inflow, [busyvar], lambda c, r: [(c, r)], name=start_transition_name, delay=delay, guard=constraint)
     complete_transition = model.add_stransition([busyvar], outflow, lambda b: [b[0], b[1]], name=complete_transition_name)
 
     return complete_transition

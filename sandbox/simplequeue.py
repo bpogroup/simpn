@@ -26,7 +26,7 @@ def start(a, r):
     return [(a, r)]
 
 
-my_problem.add_stransition([arrived, resource], [busy], start, constraint=lambda a, r: a == r, delay=[0.75])
+my_problem.add_stransition([arrived, resource], [busy], start, guard=lambda a, r: a == r, delay=[0.75])
 
 
 def complete(b):

@@ -41,8 +41,8 @@ class TestBasics(unittest.TestCase):
         a = test_problem.add_svar("a")
         b = test_problem.add_svar("b")
         c = test_problem.add_svar("c")
-        ta = test_problem.add_stransition([a, b], [c], test_behavior, constraint=test_constraint, delay=[0])
-        tb = test_problem.add_stransition([a, b], [c], lambda d, e: 1, name="tb", constraint=test_constraint, delay=test_delay)
+        ta = test_problem.add_stransition([a, b], [c], test_behavior, guard=test_constraint, delay=[0])
+        tb = test_problem.add_stransition([a, b], [c], lambda d, e: 1, name="tb", guard=test_constraint, delay=test_delay)
 
         self.assertEqual(len(test_problem.transitions), 2, "added 2 transitions")
         self.assertIn(ta, test_problem.transitions, "test_behavior is in transitions")
@@ -104,7 +104,7 @@ class TestBasics(unittest.TestCase):
         b = test_problem.add_svar("b")
         b.put("a1")
         b.put("a2")
-        ta = test_problem.add_stransition([a, b], [], lambda c, d: 1, name="ta", constraint=lambda c, d: c == d)
+        ta = test_problem.add_stransition([a, b], [], lambda c, d: 1, name="ta", guard=lambda c, d: c == d)
         self.assertEqual(test_problem.bindings(), [([(a, SimToken("a1", 0)), (b, SimToken("a1", 0))], 0, ta),  ([(a, SimToken("a2", 0)), (b, SimToken("a2", 0))], 0, ta)], "correct token combinations")
 
     def test_bindings_timing(self):

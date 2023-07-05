@@ -49,32 +49,54 @@
 <p><strong>Classes:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimProblem</span></code></a>()</p></td>
-<td><p>A Petri net in which: - arcs are ordered - functions are part of the transition - delays are part of the transition</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimProblem</span></code></a>([debugging])</p></td>
+<td><p>A simulation problem SimProblem, which consists of a collection of simulation variables SimVar and a collection of simulation transitions SimTransition.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimTransition" title="simpn.simulator.SimTransition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTransition</span></code></a>(_id[, guard, behavior, delay, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimToken" title="simpn.simulator.SimToken"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimToken</span></code></a>(value[, time])</p></td>
+<td><p>A token SimToken, which is a possible value of a SimVar.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTransition" title="simpn.simulator.SimTransition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTransition</span></code></a>(_id[, guard, behavior, delay, ...])</p></td>
 <td><p>A simulation transition SimTransition that can happen when tokens are available on all of its incoming SimVar and its guard evaluates to True.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVar" title="simpn.simulator.SimVar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVar</span></code></a>(_id[, marking])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVar" title="simpn.simulator.SimVar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVar</span></code></a>(_id[, marking])</p></td>
 <td><p>A simulation variable SimVar has an identifier and a marking.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimProblem</span></span><a class="headerlink" href="#simpn.simulator.SimProblem" title="Permalink to this definition">¶</a></dt>
-<dd><p>A Petri net in which:
-- arcs are ordered
-- functions are part of the transition
-- delays are part of the transition</p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debugging</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem" title="Permalink to this definition">¶</a></dt>
+<dd><p>A simulation problem SimProblem, which consists of a collection of simulation variables SimVar and a collection of simulation transitions SimTransition.
+The simulation has a time and a marking of SimVar. A marking is an assignment of values to SimVar variables (also see SimVar).
+The difference between a normal Python variable and a SimVar is that: (1) a SimVar can have multiple values; and (2) these values have a simulation time
+at which they become available. A SimTransition is a function that takes SimVar values as input and produces SimVar values (also see SimTransition). The difference with normal
+Python functions is that transitions can happen whenever its incoming SimVar parameters have a value. If a SimVar parameter has multiple values,
+it can happen on any of these values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>debugging</strong> – if set to True, produces more information for debugging purposes (defaults to True).</p>
+</dd>
+</dl>
 <p><strong>Methods:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.bindings" title="simpn.simulator.SimProblem.bindings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bindings</span></code></a>()</p></td>
-<td><p>Calculates the set of timed bindings that is enabled in the net.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_stransition" title="simpn.simulator.SimProblem.add_stransition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_stransition</span></code></a>(inflow, outflow, behavior[, ...])</p></td>
+<td><p>Creates a new SimTransition with the specified parameters (also see SimTransition).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.fire" title="simpn.simulator.SimProblem.fire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fire</span></code></a>(timed_binding[, callback])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_svar" title="simpn.simulator.SimProblem.add_svar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_svar</span></code></a>(name)</p></td>
+<td><p>Creates a new SimVar with the specified name as identifier.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.bindings" title="simpn.simulator.SimProblem.bindings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bindings</span></code></a>()</p></td>
+<td><p>Calculates the set of timed bindings that is enabled over all transitions in the problem.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.fire" title="simpn.simulator.SimProblem.fire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fire</span></code></a>(timed_binding)</p></td>
 <td><p>Fires the specified timed binding.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.simulate" title="simpn.simulator.SimProblem.simulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulate</span></code></a>(duration[, callback])</p></td>
+<td><p>Executes a simulation run for the problem for the specified duration.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.tokens_combinations" title="simpn.simulator.SimProblem.tokens_combinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tokens_combinations</span></code></a>(transition)</p></td>
+<td><p>Creates a list of token combinations that are available to the specified transition.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.transition_bindings" title="simpn.simulator.SimProblem.transition_bindings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transition_bindings</span></code></a>(transition)</p></td>
 <td><p>Calculates the set of bindings that enables the given transition.</p></td>
@@ -82,31 +104,132 @@
 </tbody>
 </table>
 <dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_stransition">
+<span class="sig-name descname"><span class="pre">add_stransition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prototype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_stransition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new SimTransition with the specified parameters (also see SimTransition). Adds the SimTransition to the problem and returns it.
+If a prototype is passed (also see package prototypes), multiple transitions and simulation variables may be added to the model, according to the prototype.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – the identifier of the tansition.</p></li>
+<li><p><strong>inflow</strong> – a list of incoming SimVar of the transition.</p></li>
+<li><p><strong>outflow</strong> – a list of outgoing SimVar of the transition/</p></li>
+<li><p><strong>guard</strong> – a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.</p></li>
+<li><p><strong>behavior</strong> – a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. When the transition happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar.</p></li>
+<li><p><strong>delay</strong> – A list with as many numeric elements as there are outgoing SimVar, or a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many numeric values as there are outgoing SimVar. The values that are created by the behavior of the transition are put on the outgoing SimVar with the corresponding delay.</p></li>
+<li><p><strong>prototype</strong> – a function that generates a composition of transitions and simulation variables rather than a single transition, the generated composition uses the same inflow and outflow SimVar and may use any of the other parameters as specified by the prototype.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a SimTransition with the specified parameters.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_svar">
+<span class="sig-name descname"><span class="pre">add_svar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_svar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new SimVar with the specified name as identifier. Adds the SimVar to the problem and returns it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – a name for the SimVar.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a SimVar with the specified name as identifier.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.bindings">
 <span class="sig-name descname"><span class="pre">bindings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.bindings" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the set of timed bindings that is enabled in the net.
-Each binding is a tuple ([(place, token), (place, token), …], time) that represents a single enabling binding.
+<dd><p>Calculates the set of timed bindings that is enabled over all transitions in the problem.
+Each binding is a tuple ([(place, token), (place, token), …], time, transition) that represents a single enabling binding.
 If no timed binding is enabled at the current clock time, updates the current clock time to the earliest time at which there is.
 :return: list of tuples ([(place, token), (place, token), …], time, transition)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.fire">
-<span class="sig-name descname"><span class="pre">fire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.fire" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">fire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.fire" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fires the specified timed binding.
 Binding is a tuple ([(place, token), (place, token), …], time, transition)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.simulate">
+<span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.simulate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes a simulation run for the problem for the specified duration.
+A simulation run executes transitions until this is no longer possible, or until the specified duration.
+If at any moment multiple transitions can happen, one is selected at random.
+At the end of the simulation run, the problem is in the state that is the result of the run.
+If the callback function is set, this callback function is called with parameters (binding, time, transition)
+each time a transition happens (for a binding at a moment in simulation time).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>duration</strong> – the duration of the simulation.</p></li>
+<li><p><strong>callback</strong> – a function that is called each time a transition happens.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a list of (binding, time, transition) tuples that have happened in the run.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.tokens_combinations">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tokens_combinations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transition</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.tokens_combinations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a list of token combinations that are available to the specified transition.
+These are combinations of tokens that are on the incoming SimVar of the transition.
+For example, if a transition has incoming SimVar a and b with tokens 1&#64;0 on a and 2&#64;0, 3&#64;0 on b,
+the possible combinations are [(a, 1&#64;0), (b, 2&#64;0)] and [(a, 1&#64;0), (b, 3&#64;0)]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>transition</strong> – the transition to return the token combinations for.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a list of lists, each of which is a token combination.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.transition_bindings">
 <span class="sig-name descname"><span class="pre">transition_bindings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transition</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.transition_bindings" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the set of bindings that enables the given transition.
-Each binding is a list of lists of (place, token value) pairs, in which
-each list of pairs represents a single enabling binding.
-:param transition: the transition for which to calculate the enabling bindings.
-:return: a list of lists of (place, token value) pairs</p>
+Each binding is a tuple ([(place, token), (place, token), …], time) that represents a single enabling binding.
+A binding is
+a possible token combination (see token_combinations), for which the transition’s
+guard function evaluates to True. In case there is no guard function, any combination is also a binding.
+The time is the time at which the latest token is available.
+For example, if a transition has incoming SimVar a and b with tokens 1&#64;2 on a and 2&#64;3, 3&#64;1 on b,
+the possible bindings are ([(a, 1&#64;2), (b, 2&#64;3)], 3) and ([(a, 1&#64;2), (b, 3&#64;1)], 2)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>transition</strong> – the transition for which to calculate the enabling bindings.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of tuples ([(place, token), (place, token), …], time)</p>
+</dd>
+</dl>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.simulator.SimToken">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimToken</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimToken" title="Permalink to this definition">¶</a></dt>
+<dd><p>A token SimToken, which is a possible value of a SimVar. A token has a value and the time at which this value is available in a SimVar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> – the value of the token.</p></li>
+<li><p><strong>time</strong> – the time at which the value is available.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
@@ -133,6 +256,67 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 </ul>
 </dd>
 </dl>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTransition.set_delay" title="simpn.simulator.SimTransition.set_delay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_delay</span></code></a>(delay)</p></td>
+<td><p>Set the delay.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimTransition.set_guard" title="simpn.simulator.SimTransition.set_guard"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_guard</span></code></a>(func)</p></td>
+<td><p>Set the guard function.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTransition.set_inflow" title="simpn.simulator.SimTransition.set_inflow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_inflow</span></code></a>(incoming)</p></td>
+<td><p>Set the incoming SimVar.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimTransition.set_outflow" title="simpn.simulator.SimTransition.set_outflow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_outflow</span></code></a>(outgoing)</p></td>
+<td><p>Set the outgoing SimVar.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimTransition.set_delay">
+<span class="sig-name descname"><span class="pre">set_delay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delay</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimTransition.set_delay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the delay.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>delay</strong> – either a list with as many numeric elements as there are outgoing SimVar, or a function with as many input parameters as there are incoming SimVar, which generates a list with as many numeric elements as there are outgoing SimVar.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimTransition.set_guard">
+<span class="sig-name descname"><span class="pre">set_guard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimTransition.set_guard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the guard function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> – a function with as many input parameters as there are incoming SimVar, which generates a list with as many elements as there are outgoing SimVar.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimTransition.set_inflow">
+<span class="sig-name descname"><span class="pre">set_inflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimTransition.set_inflow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the incoming SimVar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>incoming</strong> – a list of SimVar.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimTransition.set_outflow">
+<span class="sig-name descname"><span class="pre">set_outflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimTransition.set_outflow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the outgoing SimVar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>incoming</strong> – a list of SimVar.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">

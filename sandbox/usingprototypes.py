@@ -18,7 +18,7 @@ resource = my_problem.add_svar("resource")
 completed = my_problem.add_svar("completed")
 
 my_problem.add_stransition([], [arrived], arrive, delay=arrive_delay, prototype=prototype.arrival)
-my_problem.add_stransition([arrived, resource], [completed, resource], None, name="task", constraint=lambda a, r: a == r, delay=[0.75], prototype=prototype.task)
+my_problem.add_stransition([arrived, resource], [completed, resource], None, name="task", guard=lambda a, r: a == r, delay=[0.75], prototype=prototype.task)
 
 resource.put(1)
 resource.put(2)
