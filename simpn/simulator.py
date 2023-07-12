@@ -132,6 +132,9 @@ class SimTransition:
         """
         self.delay = delay
 
+    def get_id(self):
+        return self._id
+
     def __str__(self):
         return self._id
 
@@ -483,29 +486,25 @@ class SimProblem:
             token = SimToken(result[i], time=self.clock + delay[i])
             transition.outgoing[i].add_token(token)
 
-    def simulate(self, duration, callback=None):
+    def simulate(self, duration, reporter=None):
         """
         Executes a simulation run for the problem for the specified duration.
         A simulation run executes transitions until this is no longer possible, or until the specified duration.
         If at any moment multiple transitions can happen, one is selected at random.
         At the end of the simulation run, the problem is in the state that is the result of the run.
-        If the callback function is set, this callback function is called with parameters (binding, time, transition)
+        If the reporter is set, its callback function is called with parameters (binding, time, transition)
         each time a transition happens (for a binding at a moment in simulation time).
 
         :param duration: the duration of the simulation.
-        :param callback: a function that is called each time a transition happens.
-        :return: a list of (binding, time, transition) tuples that have happened in the run.
+        :param reporter: a class that implements a callback function, which is called each time a transition happens.
         """
-        run = []
         active_model = True
         while self.clock <= duration and active_model:
             bindings = self.bindings()
             if len(bindings) > 0:
                 timed_binding = random.choice(bindings)
-                run.append(timed_binding)
                 self.fire(timed_binding)
-                if callback is not None:
-                    callback(timed_binding)
+                if reporter is not None:
+                    reporter.callback(timed_binding)
             else:
                 active_model = False
-        return run

@@ -1,6 +1,6 @@
 import random
 from simpn.simulator import SimProblem
-
+from simpn.reporters import SimpleReporter
 
 my_problem = SimProblem()
 
@@ -41,5 +41,4 @@ resource.put(2)
 arrival.put(None)
 
 print(my_problem)
-sim_run = my_problem.simulate(40)
-print("\n".join([str(e) for e in sim_run]))
+my_problem.simulate(40, SimpleReporter())
