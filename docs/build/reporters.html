@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Reporters &#8212; SimPN  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/readable.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head><body>
+  
+  
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">SimPN  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Reporters</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-simpn.reporters">
+<span id="reporters"></span><h1>Reporters<a class="headerlink" href="#module-simpn.reporters" title="Permalink to this heading">¶</a></h1>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter" title="simpn.reporters.ProcessReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProcessReporter</span></code></a>()</p></td>
+<td><p>A reporter that heavily depends on the process prototypes (task, start_event, intermediate_event, end_event) to report on what happens.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.Reporter" title="simpn.reporters.Reporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reporter</span></code></a>()</p></td>
+<td><p>A reporter can be passed to the simpn.simulator.SimProblem.simulate function to report on what happens during the simulator.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.SimpleReporter" title="simpn.reporters.SimpleReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimpleReporter</span></code></a>()</p></td>
+<td><p>A simple reporter that just prints the occurring transitions to the standard output.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.reporters.ProcessReporter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">ProcessReporter</span></span><a class="headerlink" href="#simpn.reporters.ProcessReporter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A reporter that heavily depends on the process prototypes (task, start_event, intermediate_event, end_event) to report on what happens.
+It assumes tasks are executed for cases that arrive via start_events and complete at end_events. It measures:
+- the number of started cases
+- the number of completed cases
+- the cycle time of completed cases (the time between their start and end event)
+- the processing time of completed cases (the time between a case’s start and end during which a task was being performed)
+- the waiting time of completed cases (the time between a case’s start and end during which no task was being performed)</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter.callback" title="simpn.reporters.ProcessReporter.callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">callback</span></code></a>(timed_binding)</p></td>
+<td><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.ProcessReporter.callback">
+<span class="sig-name descname"><span class="pre">callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.ProcessReporter.callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.
+It receives a timed_binding, which is a triple (binding, time, transition):
+- binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), …] of the variable values that caused the transition.
+- time is the simulation time at which the transition happened.
+- transition: SimTransition is the transition that happened.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timed_binding</strong> – the triple (binding, time, transition) that described the transition that happened with its variable values and the time at which it happened.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.reporters.Reporter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">Reporter</span></span><a class="headerlink" href="#simpn.reporters.Reporter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A reporter can be passed to the simpn.simulator.SimProblem.simulate function to report on what happens during the simulator.
+To this end, a reported must implement the callback function.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.Reporter.callback" title="simpn.reporters.Reporter.callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">callback</span></code></a>(timed_binding)</p></td>
+<td><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.Reporter.callback">
+<span class="sig-name descname"><span class="pre">callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.Reporter.callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.
+It receives a timed_binding, which is a triple (binding, time, transition):
+- binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), …] of the variable values that caused the transition.
+- time is the simulation time at which the transition happened.
+- transition: SimTransition is the transition that happened.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timed_binding</strong> – the triple (binding, time, transition) that described the transition that happened with its variable values and the time at which it happened.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.reporters.SimpleReporter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">SimpleReporter</span></span><a class="headerlink" href="#simpn.reporters.SimpleReporter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A simple reporter that just prints the occurring transitions to the standard output.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.SimpleReporter.callback" title="simpn.reporters.SimpleReporter.callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">callback</span></code></a>(timed_binding)</p></td>
+<td><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.SimpleReporter.callback">
+<span class="sig-name descname"><span class="pre">callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.SimpleReporter.callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.
+It receives a timed_binding, which is a triple (binding, time, transition):
+- binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), …] of the variable values that caused the transition.
+- time is the simulation time at which the transition happened.
+- transition: SimTransition is the transition that happened.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timed_binding</strong> – the triple (binding, time, transition) that described the transition that happened with its variable values and the time at which it happened.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="howto.html">How to use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    &copy; Copyright 2023, Remco Dijkman.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1.
+  </div>
+  
+  </body>
+</html>

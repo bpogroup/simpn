@@ -92,7 +92,7 @@ it can happen on any of these values.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.fire" title="simpn.simulator.SimProblem.fire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fire</span></code></a>(timed_binding)</p></td>
 <td><p>Fires the specified timed binding.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.simulate" title="simpn.simulator.SimProblem.simulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulate</span></code></a>(duration[, callback])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.simulate" title="simpn.simulator.SimProblem.simulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulate</span></code></a>(duration[, reporter])</p></td>
 <td><p>Executes a simulation run for the problem for the specified duration.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.tokens_combinations" title="simpn.simulator.SimProblem.tokens_combinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tokens_combinations</span></code></a>(transition)</p></td>
@@ -111,7 +111,7 @@ If a prototype is passed (also see package prototypes), multiple transitions and
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> – the identifier of the tansition.</p></li>
+<li><p><strong>name</strong> – the identifier of the transition.</p></li>
 <li><p><strong>inflow</strong> – a list of incoming SimVar of the transition.</p></li>
 <li><p><strong>outflow</strong> – a list of outgoing SimVar of the transition/</p></li>
 <li><p><strong>guard</strong> – a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.</p></li>
@@ -158,22 +158,19 @@ Binding is a tuple ([(place, token), (place, token), …], time, transition)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.simulate">
-<span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.simulate" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reporter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.simulate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Executes a simulation run for the problem for the specified duration.
 A simulation run executes transitions until this is no longer possible, or until the specified duration.
 If at any moment multiple transitions can happen, one is selected at random.
 At the end of the simulation run, the problem is in the state that is the result of the run.
-If the callback function is set, this callback function is called with parameters (binding, time, transition)
+If the reporter is set, its callback function is called with parameters (binding, time, transition)
 each time a transition happens (for a binding at a moment in simulation time).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>duration</strong> – the duration of the simulation.</p></li>
-<li><p><strong>callback</strong> – a function that is called each time a transition happens.</p></li>
+<li><p><strong>reporter</strong> – a class that implements a callback function, which is called each time a transition happens.</p></li>
 </ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a list of (binding, time, transition) tuples that have happened in the run.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -247,7 +244,7 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>_id</strong> – the identifier of the tansition.</p></li>
+<li><p><strong>_id</strong> – the identifier of the transition.</p></li>
 <li><p><strong>incoming</strong> – a list of incoming SimVar of the transition.</p></li>
 <li><p><strong>outgoing</strong> – a list of outgoing SimVar of the transition</p></li>
 <li><p><strong>guard</strong> – a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.</p></li>
@@ -312,7 +309,7 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 <dd><p>Set the outgoing SimVar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>incoming</strong> – a list of SimVar.</p>
+<dd class="field-odd"><p><strong>outgoing</strong> – a list of SimVar.</p>
 </dd>
 </dl>
 </dd></dl>
