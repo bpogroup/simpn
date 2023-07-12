@@ -2,9 +2,9 @@ def start_event(model, inflow, outflow, behavior, name, constraint, delay):
     # Process name
     a_name = name
     if a_name is not None:
-        if behavior.__name__ != "<lambda>" and behavior.__name__ != name:
+        if behavior is not None and behavior.__name__ != "<lambda>" and behavior.__name__ != name:
             raise TypeError("Start event transition " + a_name + ": behavior function name and procedure name must be the same.")
-    elif behavior.__name__ != "<lambda>":
+    elif behavior is not None and behavior.__name__ != "<lambda>":
         a_name = behavior.__name__
     else:
         raise TypeError("Start event transition name must be set or behavior function must be named.")
@@ -17,7 +17,10 @@ def start_event(model, inflow, outflow, behavior, name, constraint, delay):
 
     invar_name = a_name + "_timer"
     invar = model.add_svar(invar_name)
-    result = model.add_stransition([invar], [invar, outflow[0]], lambda a: [(a[0]+1,), (a[0], behavior()[0])], name=a_name+"<start_event>", delay=lambda a: [delay()[0], 0])
+    if behavior is None:
+        result = model.add_stransition([invar], [invar, outflow[0]], lambda a: [(a[0] + 1,), (a[0],)], name=a_name + "<start_event>", delay=lambda a: [delay()[0], 0])
+    else:
+        result = model.add_stransition([invar], [invar, outflow[0]], lambda a: [(a[0]+1,), (a[0], behavior()[0])], name=a_name+"<start_event>", delay=lambda a: [delay()[0], 0])
     invar.put((0,))
 
     return result

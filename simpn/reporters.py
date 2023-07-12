@@ -77,6 +77,6 @@ class ProcessReporter(Reporter):
     def print_result(self):
         print("Nr. cases started:            ", self.nr_started)
         print("Nr. cases completed:          ", self.nr_completed)
-        print("Avg. waiting time per case:   ", round(self.total_wait_time/self.nr_completed, 2))
-        print("Avg. processing time per case:", round(self.total_proc_time/self.nr_completed, 2))
-        print("Avg. cycle time per case:     ", round(self.total_cycle_time/self.nr_completed, 2))
+        print("Avg. waiting time per case:   ", round(self.total_wait_time/self.nr_completed, 3))
+        print("Avg. processing time per case:", round(self.total_proc_time/self.nr_completed, 3))
+        print("Avg. cycle time per case:     ", round(self.total_cycle_time/self.nr_completed, 3))
