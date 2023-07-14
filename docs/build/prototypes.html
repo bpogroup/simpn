@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Prototypes &#8212; SimPN  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/readable.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Reporters" href="reporters.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head><body>
+  
+  
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reporters.html" title="Reporters"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">SimPN  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api.html" accesskey="U">API Documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Prototypes</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-simpn.prototypes">
+<span id="prototypes"></span><h1>Prototypes<a class="headerlink" href="#module-simpn.prototypes" title="Permalink to this heading">¶</a></h1>
+<p><strong>Functions:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.end_event" title="simpn.prototypes.end_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_event</span></code></a>(model, inflow, outflow, name)</p></td>
+<td><p>Generates a composition of SimVar and SimTransition that represents a BPMN end event.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.intermediate_event" title="simpn.prototypes.intermediate_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intermediate_event</span></code></a>(model, inflow, outflow, ...)</p></td>
+<td><p>Generates a composition of SimVar and SimTransition that represents a BPMN intermediate event.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.start_event" title="simpn.prototypes.start_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_event</span></code></a>(model, inflow, outflow, name, ...)</p></td>
+<td><p>Generates a composition of SimVar and SimTransition that represents a BPMN start event.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.task" title="simpn.prototypes.task"><code class="xref py py-obj docutils literal notranslate"><span class="pre">task</span></code></a>(model, inflow, outflow, name, behavior)</p></td>
+<td><p>Generates a composition of SimVar and SimTransition that represents a BPMN task.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="simpn.prototypes.end_event">
+<span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">end_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.end_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a composition of SimVar and SimTransition that represents a BPMN end event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the event composition must be added.</p></li>
+<li><p><strong>inflow</strong> – a list with one SimVar: a case SimVar.</p></li>
+<li><p><strong>outflow</strong> – parameter is only here for consistency, must be [].</p></li>
+<li><p><strong>name</strong> – the name of the event.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the SimTransition that represents the event.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpn.prototypes.intermediate_event">
+<span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">intermediate_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.intermediate_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a composition of SimVar and SimTransition that represents a BPMN intermediate event.
+The intermediate event can make changes to the data of a case and can generate waiting time for the case.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the event composition must be added.</p></li>
+<li><p><strong>inflow</strong> – a list with one SimVar: a case SimVar.</p></li>
+<li><p><strong>outflow</strong> – a list with one SimVar: a case SimVar.</p></li>
+<li><p><strong>name</strong> – the name of the event.</p></li>
+<li><p><strong>behavior</strong> – specifies the changes that the intermediate event makes to the data and the delay that the intermediate event may lead to.</p></li>
+<li><p><strong>guard</strong> – an optional guard that specifies under which condition the intermediate event can happen.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the SimTransition that represents the event.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpn.prototypes.start_event">
+<span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">start_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interarrival_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.start_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a composition of SimVar and SimTransition that represents a BPMN start event.
+Adds it to the specified model. The start event generates new cases with the specified interarrival_time.
+Cases are places on the outflow SimVar. The cases will be a tuple (unique_number, case_data).
+Case_data will be generated according to the specified behavior, or unspecified if behavior==None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the start event composition must be added.</p></li>
+<li><p><strong>inflow</strong> – parameter is only here for consistency, must be [].</p></li>
+<li><p><strong>outflow</strong> – a list with a single SimVar in which the cases will be placed.</p></li>
+<li><p><strong>name</strong> – the name of the start event.</p></li>
+<li><p><strong>interarrival_time</strong> – the interarrival time with which events are generated. Can be a numeric value or a function that produces a numeric value, such as a sampling function from a random distribution.</p></li>
+<li><p><strong>behavior</strong> – an optional behavior describing how case_data is produced.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the SimTransition that generates the cases.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpn.prototypes.task">
+<span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a composition of SimVar and SimTransition that represents a BPMN task.
+Adds it to the specified model. The task must have two inflow and two outflow SimVar.
+The first SimVar represents the case that must be processed by the task and the second the resource.
+The behavior specifies how the task may change the case data.
+It also specifies the processing time of the task in the form of a SimToken delay.
+The behavior must take two input parameters according to the inflow and produces a single outflow, which is a tuple (case, resource)&#64;delay.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the task composition must be added.</p></li>
+<li><p><strong>inflow</strong> – a list with two SimVar: a case SimVar and a resource SimVar.</p></li>
+<li><p><strong>outflow</strong> – a list with two SimVar: a case SimVar and a resource SimVar.</p></li>
+<li><p><strong>name</strong> – the name of the task.</p></li>
+<li><p><strong>behavior</strong> – the behavior function, which takes two input parameters according to the inflow and produces a single outflow, which is a tuple (case, resource)&#64;delay.</p></li>
+<li><p><strong>guard</strong> – an optional guard that specifies which combination of case and resource is allowed. The guard must take two input parameters according to the inflow.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the SimTransition that completes the task.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="howto.html">How to use</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="simulator.html">Simulator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reporters.html">Reporters</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Prototypes</a></li>
+</ul>
+</li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    &copy; Copyright 2023, Remco Dijkman.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1.
+  </div>
+  
+  </body>
+</html>
