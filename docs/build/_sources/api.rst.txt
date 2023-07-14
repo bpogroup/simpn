@@ -5,5 +5,6 @@ API Documentation
 
    simulator
    reporters
+   prototypes
 
 :ref:`genindex`
