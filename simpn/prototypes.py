@@ -1,92 +1,120 @@
-def start_event(model, inflow, outflow, behavior, name, constraint, delay):
-    # Process name
-    a_name = name
-    if a_name is not None:
-        if behavior is not None and behavior.__name__ != "<lambda>" and behavior.__name__ != name:
-            raise TypeError("Start event transition " + a_name + ": behavior function name and procedure name must be the same.")
-    elif behavior is not None and behavior.__name__ != "<lambda>":
-        a_name = behavior.__name__
-    else:
-        raise TypeError("Start event transition name must be set or behavior function must be named.")
+import inspect
+from simpn.simulator import SimToken
 
+
+def start_event(model, inflow, outflow, name, interarrival_time, behavior=None):
+    """
+    Generates a composition of SimVar and SimTransition that represents a BPMN start event.
+    Adds it to the specified model. The start event generates new cases with the specified interarrival_time.
+    Cases are places on the outflow SimVar. The cases will be a tuple (unique_number, case_data).
+    Case_data will be generated according to the specified behavior, or unspecified if behavior==None.
+
+    :param model: the SimProblem to which the start event composition must be added.
+    :param inflow: parameter is only here for consistency, must be [].
+    :param outflow: a list with a single SimVar in which the cases will be placed.
+    :param name: the name of the start event.
+    :param interarrival_time: the interarrival time with which events are generated. Can be a numeric value or a function that produces a numeric value, such as a sampling function from a random distribution.
+    :param behavior: an optional behavior describing how case_data is produced.
+    :return: the SimTransition that generates the cases.
+    """
     # Process other variables
     if len(inflow) != 0:
-        raise TypeError("Start event transition " + a_name + ": cannot have any inflow.")
+        raise TypeError("Start event transition " + name + ": cannot have any inflow.")
     if len(outflow) != 1:
-        raise TypeError("Start event transition " + a_name + ": must have exactly one outflow.")
+        raise TypeError("Start event transition " + name + ": must have exactly one outflow.")
+    if not callable(interarrival_time) and not type(interarrival_time) is int and not type(interarrival_time) is float:
+        raise TypeError("Start event transition " + name + ": must either have a value or a function as interarrival_time.")
+    interarrival_time_f = interarrival_time
+    if type(interarrival_time) is int or type(interarrival_time) is float:
+        interarrival_time_f = lambda: interarrival_time
 
-    invar_name = a_name + "_timer"
+    invar_name = name + "_timer"
     invar = model.add_svar(invar_name)
     if behavior is None:
-        result = model.add_stransition([invar], [invar, outflow[0]], lambda a: [(a[0] + 1,), (a[0],)], name=a_name + "<start_event>", delay=lambda a: [delay()[0], 0])
+        result = model.add_stransition([invar], [invar, outflow[0]], lambda a: [SimToken(a+1, interarrival_time_f()), SimToken((a,))], name=name + "<start_event>")
     else:
-        result = model.add_stransition([invar], [invar, outflow[0]], lambda a: [(a[0]+1,), (a[0], behavior()[0])], name=a_name+"<start_event>", delay=lambda a: [delay()[0], 0])
-    invar.put((0,))
+        if not callable(behavior):
+            raise TypeError("Start event transition " + name + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
+        if len(inspect.signature(behavior).parameters) != 0:
+            raise TypeError("Start event transition " + name + ": the behavior function must not have many parameters.")
+        result = model.add_stransition([invar], [invar, outflow[0]], lambda a: [SimToken(a+1, interarrival_time_f()), SimToken((a, behavior()[0].value))], name=name + "<start_event>")
+    invar.put(0)
 
     return result
 
 
-def task(model, inflow, outflow, behavior, name, constraint, delay):
-    # Process name
-    if name is None:
-        raise TypeError("Task transition name must be set.")
+def task(model, inflow, outflow, name, behavior, guard=None):
+    """
+    Generates a composition of SimVar and SimTransition that represents a BPMN task.
+    Adds it to the specified model. The task must have two inflow and two outflow SimVar.
+    The first SimVar represents the case that must be processed by the task and the second the resource.
+    The behavior specifies how the task may change the case data.
+    It also specifies the processing time of the task in the form of a SimToken delay.
+    The behavior must take two input parameters according to the inflow and produces a single outflow, which is a tuple (case, resource)@delay.
 
-    # Process behavior
-    if behavior is not None:
-        raise TypeError("Task transition " + name + ": must not have a behavior.")
-
-    # Process delay
-    if delay is None:
-        raise TypeError("Task transition " + name + ": must have a delay.")
+    :param model: the SimProblem to which the task composition must be added.
+    :param inflow: a list with two SimVar: a case SimVar and a resource SimVar.
+    :param outflow: a list with two SimVar: a case SimVar and a resource SimVar.
+    :param name: the name of the task.
+    :param behavior: the behavior function, which takes two input parameters according to the inflow and produces a single outflow, which is a tuple (case, resource)@delay.
+    :param guard: an optional guard that specifies which combination of case and resource is allowed. The guard must take two input parameters according to the inflow.
+    :return: the SimTransition that completes the task.
+    """
 
     # Process other variables
     if len(inflow) != 2:
         raise TypeError("Task transition " + name + ": must have two input parameters; the first for cases and the second for resources.")
     if len(outflow) != 2:
         raise TypeError("Task transition " + name + ": must have two output parameters; the first for cases and the second for resources.")
+    if not callable(behavior):
+        raise TypeError("Task transition " + name + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
+    if len(inspect.signature(behavior).parameters) != 2:
+        raise TypeError("Task transition " + name + ": the behavior function must have two parameters.")
 
     busyvar_name = name + "_busy"
     start_transition_name = name + "<task:start>"
     complete_transition_name = name + "<task:complete>"
     busyvar = model.add_svar(busyvar_name)
-    model.add_stransition(inflow, [busyvar], lambda c, r: [(c, r)], name=start_transition_name, delay=delay, guard=constraint)
-    complete_transition = model.add_stransition([busyvar], outflow, lambda b: [b[0], b[1]], name=complete_transition_name)
+    model.add_stransition(inflow, [busyvar], behavior, name=start_transition_name, guard=guard)
+    complete_transition = model.add_stransition([busyvar], outflow, lambda b: [SimToken(b[0]), SimToken(b[1])], name=complete_transition_name)
 
     return complete_transition
 
 
-def event(model, inflow, outflow, behavior, name, constraint, delay):
-    # Process name
-    if name is None:
-        raise TypeError("Event transition name must be set.")
+def intermediate_event(model, inflow, outflow, name, behavior, guard=None):
+    """
+    Generates a composition of SimVar and SimTransition that represents a BPMN intermediate event.
+    The intermediate event can make changes to the data of a case and can generate waiting time for the case.
 
-    # Process behavior
-    if behavior is not None:
-        raise TypeError("Event transition " + name + ": must not have a behavior.")
-
-    # Process delay
-    if delay is None:
-        raise TypeError("Event transition " + name + ": must have a delay.")
-
-    # Process other variables
+    :param model: the SimProblem to which the event composition must be added.
+    :param inflow: a list with one SimVar: a case SimVar.
+    :param outflow: a list with one SimVar: a case SimVar.
+    :param name: the name of the event.
+    :param behavior: specifies the changes that the intermediate event makes to the data and the delay that the intermediate event may lead to.
+    :param guard: an optional guard that specifies under which condition the intermediate event can happen.
+    :return: the SimTransition that represents the event.
+    """
     if len(inflow) != 1:
         raise TypeError("Event transition " + name + ": must have one input parameter for cases.")
     if len(outflow) != 1:
         raise TypeError("Event transition " + name + ": must have one output parameter for cases.")
 
-    transition = model.add_stransition(inflow, outflow, lambda c: [c], name=name, delay=delay, guard=constraint)
-
-    return transition
+    return model.add_stransition(inflow, outflow, behavior, name=name + "<intermediate_event>", guard=guard)
 
 
-def intermediate_event(model, inflow, outflow, behavior, name, constraint, delay):
-    return event(model, inflow, outflow, behavior, name + "<intermediate_event>", constraint, delay)
+def end_event(model, inflow, outflow, name):
+    """
+    Generates a composition of SimVar and SimTransition that represents a BPMN end event.
 
+    :param model: the SimProblem to which the event composition must be added.
+    :param inflow: a list with one SimVar: a case SimVar.
+    :param outflow: parameter is only here for consistency, must be [].
+    :param name: the name of the event.
+    :return: the SimTransition that represents the event.
+    """
+    if len(inflow) != 1:
+        raise TypeError("Event transition " + name + ": must have one input parameter for cases.")
+    if len(outflow) != 0:
+        raise TypeError("Event transition " + name + ": must not have output parameters.")
 
-def end_event(model, inflow, outflow, behavior, name, constraint, delay):
-
-    # Process delay
-    if delay is not None:
-        raise TypeError("End event transition " + name + ": must not have a delay.")
-
-    return event(model, inflow, outflow, behavior, name + "<end_event>", constraint, [0])
+    return model.add_stransition(inflow, outflow, lambda c: [], name=name + "<end_event>")

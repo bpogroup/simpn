@@ -71,22 +71,22 @@ class SimTransition:
     A simulation transition SimTransition that can happen when tokens are available on all of its
     incoming SimVar and its guard evaluates to True. When it happens, it consumes a token from each
     of its incoming SimVar and produces a token on each of its outgoing places according to `behavior`.
-    If the transition also has a `delay`, it will produce the tokens on the outgoing places according to that delay.
+    The behavior takes just the values of the SimVar as input, but produces tokens as output: values with a delay.
+    The delay can also be 0, meaning the token is produced with 0 delay.
     For example, consider the transition with `incoming` `SimVar` [a, b] that have 2@1 and 2@1.
-    The transition has `outgoing` `SimVar` [c, d], behavior lambda a, b: [a + b, a - b], and
-    delay [1, 2]. This transition can happen for a = 2@1 and b = 2@1. Thus, it will happen at time 1, generating
-    [3, 1] according to its behavior with delays [1, 2]. Therefore, after the transition has happened, c and d
+    The transition has `outgoing` `SimVar` [c, d], behavior lambda a, b: [(a + b)@+1, (a - b)@+2].
+    This transition can happen for a = 2@1 and b = 2@1. Thus, it will happen at time 1, generating
+    [3@+1, 1@+2] according to its behavior. Therefore, after the transition has happened, c and d
     will have the tokens 3@2 and 1@3.
 
     :param _id: the identifier of the transition.
     :param incoming: a list of incoming SimVar of the transition.
     :param outgoing: a list of outgoing SimVar of the transition
     :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.
-    :param behavior: a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. When the transition happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar.
-    :param delay: A list with as many numeric elements as there are outgoing SimVar, or a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many numeric values as there are outgoing SimVar. The values that are created by the behavior of the transition are put on the outgoing SimVar with the corresponding delay.
+    :param behavior: a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. The elements must be tokens that carry the resulting values and the delay with which these values become available. When the transition happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar with the corresponding delays.
     """
 
-    def __init__(self, _id, guard=None, behavior=None, delay=None, incoming=None, outgoing=None):
+    def __init__(self, _id, guard=None, behavior=None, incoming=None, outgoing=None):
         self._id = _id
         self.guard = guard
         if incoming is None:
@@ -98,7 +98,6 @@ class SimTransition:
         else:
             self.outgoing = outgoing
         self.behavior = behavior
-        self.delay = delay
 
     def set_guard(self, func):
         """
@@ -124,14 +123,6 @@ class SimTransition:
         """
         self.outgoing = outgoing
 
-    def set_delay(self, delay):
-        """
-        Set the delay.
-
-        :param delay: either a list with as many numeric elements as there are outgoing SimVar, or a function with as many input parameters as there are incoming SimVar, which generates a list with as many numeric elements as there are outgoing SimVar.
-        """
-        self.delay = delay
-
     def get_id(self):
         return self._id
 
@@ -145,11 +136,13 @@ class SimTransition:
 class SimToken:
     """
     A token SimToken, which is a possible value of a SimVar. A token has a value and the time at which this value is available in a SimVar.
+    When the SimToken is used as the return value of a behavior, the time represents the delay with which the value with be available rather than the time.
+    The value will then be available at current_time + time.
 
     :param value: the value of the token.
-    :param time: the time at which the value is available.
+    :param time: the time at which the value is available. When used as the return of a transition behavior, the value represents the delay. The token will then be available as current_time + time.
     """
-    def __init__(self, value, time=None):
+    def __init__(self, value, time=0):
         self.value = value
         self.time = time
 
@@ -204,12 +197,6 @@ class SimProblem:
             if self.transitions[i].guard is not None:
                 result += "[" + self.transitions[i].guard.__name__ + "]"
             result += ":" + self.transitions[i].behavior.__name__
-            if self.transitions[i].delay is not None:
-                result += "@"
-                if isinstance(self.transitions[i].delay, list):
-                    result += str(self.transitions[i].delay)
-                else:
-                    result += self.transitions[i].delay.__name__
             if i < len(self.transitions) - 1:
                 result += ","
         result += "}\n"
@@ -262,22 +249,17 @@ class SimProblem:
 
         return result
 
-    def add_stransition(self, inflow, outflow, behavior, name=None, guard=None, delay=None, prototype=None):
+    def add_stransition(self, inflow, outflow, behavior, name=None, guard=None):
         """
         Creates a new SimTransition with the specified parameters (also see SimTransition). Adds the SimTransition to the problem and returns it.
-        If a prototype is passed (also see package prototypes), multiple transitions and simulation variables may be added to the model, according to the prototype.
 
-        :param name: the identifier of the transition.
         :param inflow: a list of incoming SimVar of the transition.
         :param outflow: a list of outgoing SimVar of the transition/
-        :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.
         :param behavior: a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. When the transition happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar.
-        :param delay: A list with as many numeric elements as there are outgoing SimVar, or a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many numeric values as there are outgoing SimVar. The values that are created by the behavior of the transition are put on the outgoing SimVar with the corresponding delay.
-        :param prototype: a function that generates a composition of transitions and simulation variables rather than a single transition, the generated composition uses the same inflow and outflow SimVar and may use any of the other parameters as specified by the prototype.
+        :param name: the identifier of the transition.
+        :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.
         :return: a SimTransition with the specified parameters.
         """
-        if prototype is not None:
-            return prototype(self, inflow, outflow, behavior, name, guard, delay)
 
         # Check name
         t_name = name
@@ -320,24 +302,8 @@ class SimProblem:
             if len(parameters) != len(inflow):
                 raise TypeError("Transition " + t_name + ": the constraint function must take as many parameters as there are input variables.")
 
-        # Check delay function
-        if type(delay) == list:
-            if len(delay) != len(outflow):
-                raise TypeError("Transition " + t_name + ": if delay is a list, it must be have as many elements as there are output variables.")
-            c = 0
-            for d in delay:
-                if not type(d) is int and not type(d) is float:
-                    raise TypeError("Transition " + t_name + ": if delay is a list, it must be a list of numbers.")
-                c += 1
-        elif callable(delay):
-            parameters = inspect.signature(delay).parameters
-            if len(parameters) != len(inflow):
-                raise TypeError("Transition " + t_name + ": if the delay is a function, it must take as many parameters as there are input variables.")
-        elif delay is not None:
-            raise TypeError("Procedure " + t_name + ": the delay must either be a list of numeric values or a function that evaluates to a list of numeric values.")
-
         # Generate and add SimTransition
-        result = SimTransition(t_name, guard=guard, behavior=behavior, delay=delay, incoming=inflow, outgoing=outflow)
+        result = SimTransition(t_name, guard=guard, behavior=behavior, incoming=inflow, outgoing=outflow)
         self.transitions.append(result)
         self.id2node[t_name] = result
 
@@ -459,31 +425,19 @@ class SimProblem:
             raise TypeError("Transition " + str(transition) + ": behavior function generates exception for values " + str(variable_assignment) + ".") from e
         if self._debugging:
             if type(result) != list:
-                raise TypeError("Transition " + str(transition) + ": behavior function generates does not generate a list for values " + str(variable_assignment) + ".")
+                raise TypeError("Transition " + str(transition) + ": behavior function does not generate a list for values " + str(variable_assignment) + ".")
             if len(result) != len(transition.outgoing):
                 raise TypeError("Transition " + str(transition) + ": behavior function does not generate as many values as there are output variables for values " + str(variable_assignment) + ".")
-        delay = [0] * len(transition.outgoing)
-        if transition.delay is not None:
-            if callable(transition.delay):
-                try:
-                    delay = transition.delay(*variable_assignment)
-                except Exception as e:
-                    raise TypeError("Transition " + str(transition) + ": delay function generates exception for values " + str(variable_assignment) + ".") from e
-                if self._debugging:
-                    if type(delay) != list:
-                        raise TypeError("Transition " + str(transition) + ": delay function generates does not generate a list for values " + str(variable_assignment) + ".")
-                    if len(delay) != len(transition.outgoing):
-                        raise TypeError("Transition " + str(transition) + ": delay function does not generate as many values as there are output variables for values " + str(variable_assignment) + ".")
-                    c = 0
-                    for d in delay:
-                        if not type(d) is int and not type(d) is float:
-                            raise TypeError("Transition " + str(transition) + ": delay function generates non-numeric output at output variable " + str(transition.outgoing[c]) + " for values " + str(variable_assignment) + ".")
-                        c += 1
-            else:
-                delay = transition.delay
+            i = 0
+            for r in result:
+                if not isinstance(r, SimToken):
+                    raise TypeError("Transition " + str(transition) + ": does not generate a token for variable " + str(transition.outgoing[i]) + " for values " + str(variable_assignment) + ".")
+                if not (type(r.time) is int or type(r.time) is float):
+                    raise TypeError("Transition " + str(transition) + ": does not generate a numeric value for the delay of variable " + str(transition.outgoing[i]) + " for values " + str(variable_assignment) + ".")
+                i += 1
 
         for i in range(len(result)):
-            token = SimToken(result[i], time=self.clock + delay[i])
+            token = SimToken(result[i].value, time=self.clock + result[i].time)
             transition.outgoing[i].add_token(token)
 
     def simulate(self, duration, reporter=None):

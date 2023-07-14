@@ -1,5 +1,5 @@
 import random
-from simpn.simulator import SimProblem
+from simpn.simulator import SimProblem, SimToken
 import simpn.prototypes as prototype
 from simpn.reporters import ProcessReporter
 import math
@@ -30,11 +30,10 @@ my_problem = SimProblem()
 arrived = my_problem.add_svar("arrived")
 resource = my_problem.add_svar("resource")
 completed = my_problem.add_svar("completed")
-done = my_problem.add_svar("done")
 
-my_problem.add_stransition([], [arrived], None, name="start", delay=lambda: [random.expovariate(LAMBDA)], prototype=prototype.start_event)
-my_problem.add_stransition([arrived, resource], [completed, resource], None, name="task", delay=lambda c, r: [random.expovariate(MU)], prototype=prototype.task)
-my_problem.add_stransition([completed], [done], None, name="done", prototype=prototype.end_event)
+prototype.start_event(my_problem, [], [arrived], "arrive", lambda: random.expovariate(LAMBDA))
+prototype.task(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), random.expovariate(MU))])
+prototype.end_event(my_problem, [completed], [], name="done")
 
 for i in range(C):
     resource.put(i)

@@ -46,7 +46,7 @@ class ProcessReporter(Reporter):
     def callback(self, timed_binding):
         (binding, time, transition) = timed_binding
         if transition.get_id().endswith("<start_event>"):
-            case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
+            case_id = binding[0][1].value  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             self.status[case_id] = (0, time, 0, 0, time)
             self.nr_started += 1
         elif transition.get_id().endswith("<task:start>"):

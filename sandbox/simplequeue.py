@@ -1,5 +1,5 @@
 import random
-from simpn.simulator import SimProblem
+from simpn.simulator import SimProblem, SimToken
 from simpn.reporters import SimpleReporter
 
 my_problem = SimProblem()
@@ -12,25 +12,21 @@ completed = my_problem.add_svar("completed")
 
 
 def arrive(a):
-    return [None, random.randint(1, 2)]
+    return [SimToken(a, random.expovariate(1)), SimToken(random.randint(1, 2))]
 
 
-def arrive_delay(a):
-    return [random.expovariate(1), 0]
-
-
-my_problem.add_stransition([arrival], [arrival, arrived], arrive, delay=arrive_delay)
+my_problem.add_stransition([arrival], [arrival, arrived], arrive)
 
 
 def start(a, r):
-    return [(a, r)]
+    return [SimToken((a, r), 0.75)]
 
 
-my_problem.add_stransition([arrived, resource], [busy], start, guard=lambda a, r: a == r, delay=[0.75])
+my_problem.add_stransition([arrived, resource], [busy], start, guard=lambda a, r: a == r)
 
 
 def complete(b):
-    return [b[0], b[1]]
+    return [SimToken(b[0], 0), SimToken(b[1], 0)]
 
 
 my_problem.add_stransition([busy], [completed, resource], complete)

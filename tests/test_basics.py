@@ -29,20 +29,17 @@ class TestBasics(unittest.TestCase):
 
     def test_add_stransition(self):
         def test_behavior(d, e):
-            return [1]
+            return [SimToken(1, 0)]
 
         def test_constraint(d, e):
             return True
-
-        def test_delay(d, e):
-            return [0]
 
         test_problem = SimProblem()
         a = test_problem.add_svar("a")
         b = test_problem.add_svar("b")
         c = test_problem.add_svar("c")
-        ta = test_problem.add_stransition([a, b], [c], test_behavior, guard=test_constraint, delay=[0])
-        tb = test_problem.add_stransition([a, b], [c], lambda d, e: 1, name="tb", guard=test_constraint, delay=test_delay)
+        ta = test_problem.add_stransition([a, b], [c], test_behavior, guard=test_constraint)
+        tb = test_problem.add_stransition([a, b], [c], lambda d, e: [SimToken(1, 0)], name="tb", guard=test_constraint)
 
         self.assertEqual(len(test_problem.transitions), 2, "added 2 transitions")
         self.assertIn(ta, test_problem.transitions, "test_behavior is in transitions")
@@ -55,8 +52,6 @@ class TestBasics(unittest.TestCase):
         self.assertEqual(ta.outgoing[0], c, "outgoing of ta is correct")
         self.assertEqual(ta.behavior, test_behavior, "behavior of ta is correct")
         self.assertEqual(ta.guard, test_constraint, "constraint of ta is correct")
-        self.assertEqual(ta.delay, [0], "delay of ta is correct")
-        self.assertEqual(tb.delay, test_delay, "delay of tb is correct")
 
     def test_tokens_combinations_zero_to_one(self):
         test_problem = SimProblem()
@@ -115,7 +110,7 @@ class TestBasics(unittest.TestCase):
         b = test_problem.add_svar("b")
         b.put("b1", 0)
         b.put("b2", 1)
-        ta = test_problem.add_stransition([a, b], [], lambda c, d: 1, name="ta")
+        ta = test_problem.add_stransition([a, b], [], lambda c, d: [], name="ta")
         self.assertEqual(test_problem.bindings(), [([(a, SimToken("a2", 1)), (b, SimToken("b1", 0))], 1, ta),  ([(a, SimToken("a2", 1)), (b, SimToken("b2", 1))], 1, ta)], "correct token combinations")
 
     def test_fire_result(self):
@@ -125,7 +120,7 @@ class TestBasics(unittest.TestCase):
         b = test_problem.add_svar("b")
         b.put(2, 1)
         e = test_problem.add_svar("e")
-        ta = test_problem.add_stransition([a, b], [e], lambda c, d: [c + d], name="ta")
+        ta = test_problem.add_stransition([a, b], [e], lambda c, d: [SimToken(c + d)], name="ta")
         self.assertEqual(test_problem.bindings(), [([(a, SimToken(1, 1)), (b, SimToken(2, 1))], 1, ta)], "correct token combinations")
         test_problem.fire(test_problem.bindings()[0])
         self.assertEqual(len(a.marking), 0, "fire consumes tokens")
@@ -139,7 +134,7 @@ class TestBasics(unittest.TestCase):
         b = test_problem.add_svar("b")
         b.put(2, 1)
         e = test_problem.add_svar("e")
-        ta = test_problem.add_stransition([a, b], [e], lambda c, d: [c + d], name="ta", delay=lambda c, d: [1])
+        ta = test_problem.add_stransition([a, b], [e], lambda c, d: [SimToken(c + d, 1)], name="ta")
         test_problem.fire(test_problem.bindings()[0])
         self.assertEqual(e.marking[SimToken(3, 2)], 1, "fire produces token with delay")
 
@@ -150,7 +145,7 @@ class TestBasics(unittest.TestCase):
         b = test_problem.add_svar("b")
         b.put(2, 1)
         e = test_problem.add_svar("e")
-        ta = test_problem.add_stransition([a, b], [e], lambda c, d: [c + d], name="ta", delay=lambda c, d: [2])
+        ta = test_problem.add_stransition([a, b], [e], lambda c, d: [SimToken(c + d, 2)], name="ta")
         test_problem.fire(test_problem.bindings()[0])
         self.assertEqual(e.marking[SimToken(3, 3)], 1, "fire produces token with delay")
 
