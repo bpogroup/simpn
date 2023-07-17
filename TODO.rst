@@ -2,13 +2,10 @@ TODO
 ====
 
 - Solve the queueing problem (currently customers are in a set).
-- Fix the simpleprocess.py example
 - Give function decorators as a way of modeling another go.
 - Document the basic theory.
 - Document how each of the basic patterns can be implemented (priority queue, ...).
-- Improve prototypes, esp. the formulation of the delay and behavior functions.
 - Improve error messages for prototypes.
-- Document prototypes.
 - Write more tests (prototypes, error handling).
 - Make a deployment action.
 - Make a visualization.

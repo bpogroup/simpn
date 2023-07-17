@@ -1,7 +1,7 @@
 import random
-from simpn.simulator import SimProblem
+from simpn.simulator import SimProblem, SimToken
 import simpn.prototypes as prototype
-from simpn.reporters import ProcessReporter, SimpleReporter
+from simpn.reporters import ProcessReporter
 
 repairs_workshop = SimProblem()
 
@@ -19,12 +19,12 @@ pos = repairs_workshop.add_svar("purchase officers")
 pos.put("PO 1")
 pos.put("PO 2")
 
-arrive = repairs_workshop.add_stransition([], [arrived], lambda: "Case", name="arrive", delay=lambda: [random.expovariate(2)], prototype=prototype.start_event)
-inspect = repairs_workshop.add_stransition([arrived, engineers], [inspected, engineers], None, name="inspect", delay=lambda c, r: [random.uniform(0.3, 0.7)], prototype=prototype.task)
-order = repairs_workshop.add_stransition([inspected, pos], [ordered, pos], None, name="order", delay=lambda c, r: [random.uniform(0.3, 0.7)], prototype=prototype.task)
-await_parts = repairs_workshop.add_stransition([ordered], [received], None, name="await parts", delay=lambda c: [random.uniform(0, 10)], prototype=prototype.intermediate_event)
-repair = repairs_workshop.add_stransition([received, engineers], [repaired, engineers], None, name="repair", delay=lambda c, r: [random.uniform(0.3, 0.7)], prototype=prototype.task)
-complete = repairs_workshop.add_stransition([repaired], [completed], None, name="complete", prototype=prototype.end_event)
+arrive = prototype.start_event(repairs_workshop, [], [arrived], "arrive", lambda: random.expovariate(2))
+inspect = prototype.task(repairs_workshop, [arrived, engineers], [inspected, engineers], "inspect", lambda c, r: [SimToken((c, r), random.uniform(0.3, 0.7))])
+order = prototype.task(repairs_workshop, [inspected, pos], [ordered, pos], "order", lambda c, r: [SimToken((c, r), random.uniform(0.3, 0.7))])
+await_parts = prototype.intermediate_event(repairs_workshop, [ordered], [received], "await parts", lambda c: [SimToken(c, random.uniform(0, 10))])
+repair = prototype.task(repairs_workshop, [received, engineers], [repaired, engineers], "repair", lambda c, r: [SimToken((c, r), random.uniform(0.3, 0.7))])
+complete = prototype.end_event(repairs_workshop, [repaired], [], "complete")
 
 reporter = ProcessReporter()
 sim_run = repairs_workshop.simulate(5000, reporter=reporter)
