@@ -1,7 +1,6 @@
 TODO
 ====
 
-- Solve the queueing problem (currently customers are in a set).
 - Give function decorators as a way of modeling another go.
 - Document the basic theory.
 - Document how each of the basic patterns can be implemented (priority queue, ...).

@@ -263,13 +263,11 @@ class SimProblem:
 
         # Check name
         t_name = name
-        if t_name is not None:
-            if behavior.__name__ != "<lambda>" and behavior.__name__ != t_name:
-                raise TypeError("Transition " + t_name + ": behavior function name and procedure name must be the same.")
-        elif behavior.__name__ != "<lambda>":
-            t_name = behavior.__name__
-        else:
-            raise TypeError("Transition name must be set or procedure behavior function must be named.")
+        if t_name is None:
+            if behavior.__name__ == "<lambda>":
+                raise TypeError("Transition name must be set or procedure behavior function must be named.")
+            else:
+                t_name = behavior.__name__
         if t_name in self.id2node:
             raise TypeError("Transition " + t_name + ": node with the same name already exists. Names must be unique.")
 
