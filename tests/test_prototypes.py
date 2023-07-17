@@ -5,6 +5,7 @@ class TestPrototypes(unittest.TestCase):
     def test_something(self):
         self.assertEqual(True, False)
 
+    # also see: try_task_fifo.py
 
 if __name__ == '__main__':
     unittest.main()

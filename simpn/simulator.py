@@ -249,6 +249,22 @@ class SimProblem:
 
         return result
 
+    def svar(self, name):
+        """
+        Returns the SimVar with the given name.
+        Raises an error if no such SimVar exists.
+
+        :param name: the name of the SimVar.
+        :return: the SimVar with the given name or an Error.
+        """
+        if name in self.id2node:
+            if isinstance(self.id2node[name], SimVar):
+                return self.id2node[name]
+            else:
+                raise TypeError(name + " is not a SimVar.")
+        else:
+            raise LookupError("SimVar " + name + ": does not exist.")
+
     def add_stransition(self, inflow, outflow, behavior, name=None, guard=None):
         """
         Creates a new SimTransition with the specified parameters (also see SimTransition). Adds the SimTransition to the problem and returns it.
@@ -460,3 +476,29 @@ class SimProblem:
                     reporter.callback(timed_binding)
             else:
                 active_model = False
+
+
+def transition(sim_problem: SimProblem, outflow: list, guard=None):
+    """
+    A decorator that can be used to turn a Python function into a SimTransition.
+    The transition will be added to the specified sim_problem.
+    If they do not yet exist, SimVar will be added for each parameter of the Python function and for each element in outflow.
+    The parameters of the function will be treated as inflow variables of the SimTransition (by name).
+    The elements of outflow must be names of SimVar and will be treated as outflow variables of the SimTransition (by name).
+    The name of the SimTransition will be the name of the Python function.
+
+    :param sim_problem: the SimProblem to which to add the SimTransition.
+    :param outflow: a list of names of outflow variables.
+    :param guard: an optional guard for the SimTransition.
+    :return: the Python function.
+    """
+    def decorator_transition(func):
+        parameters = inspect.signature(func).parameters
+        for parameter in list(parameters.keys()) + outflow:
+            if parameter not in sim_problem.id2node:
+                sim_problem.add_svar(parameter)
+        inflow_svars = [sim_problem.id2node[parameter] for parameter in parameters]
+        outflow_svars = [sim_problem.id2node[parameter] for parameter in outflow]
+        sim_problem.add_stransition(inflow_svars, outflow_svars, func, guard=guard)
+        return func
+    return decorator_transition

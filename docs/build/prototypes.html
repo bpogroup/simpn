@@ -61,6 +61,9 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.task" title="simpn.prototypes.task"><code class="xref py py-obj docutils literal notranslate"><span class="pre">task</span></code></a>(model, inflow, outflow, name, behavior)</p></td>
 <td><p>Generates a composition of SimVar and SimTransition that represents a BPMN task.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.task_fifo" title="simpn.prototypes.task_fifo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">task_fifo</span></code></a>(model, inflow, outflow, name, behavior)</p></td>
+<td><p>Generates a composition of SimVar and SimTransition that represents a BPMN task.</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py function">
@@ -132,6 +135,33 @@ Case_data will be generated according to the specified behavior, or unspecified 
 <dt class="sig sig-object py" id="simpn.prototypes.task">
 <span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a composition of SimVar and SimTransition that represents a BPMN task.
+Adds it to the specified model. The task must have two inflow and two outflow SimVar.
+The first SimVar represents the case that must be processed by the task and the second the resource.
+The behavior specifies how the task may change the case data.
+It also specifies the processing time of the task in the form of a SimToken delay.
+The behavior must take two input parameters according to the inflow and produces a single outflow, which is a tuple (case, resource)&#64;delay.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the task composition must be added.</p></li>
+<li><p><strong>inflow</strong> – a list with two SimVar: a case SimVar and a resource SimVar.</p></li>
+<li><p><strong>outflow</strong> – a list with two SimVar: a case SimVar and a resource SimVar.</p></li>
+<li><p><strong>name</strong> – the name of the task.</p></li>
+<li><p><strong>behavior</strong> – the behavior function, which takes two input parameters according to the inflow and produces a single outflow, which is a tuple (case, resource)&#64;delay.</p></li>
+<li><p><strong>guard</strong> – an optional guard that specifies which combination of case and resource is allowed. The guard must take two input parameters according to the inflow.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the SimTransition that completes the task.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpn.prototypes.task_fifo">
+<span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">task_fifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.task_fifo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a composition of SimVar and SimTransition that represents a BPMN task.
+The difference with the task composition is that this task enforces FIFO processing of cases.
 Adds it to the specified model. The task must have two inflow and two outflow SimVar.
 The first SimVar represents the case that must be processed by the task and the second the resource.
 The behavior specifies how the task may change the case data.
