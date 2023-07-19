@@ -10,9 +10,9 @@ def arrive():
 
 my_problem = SimProblem()
 
-arrived = my_problem.add_svar("arrived")
-resource = my_problem.add_svar("resource")
-completed = my_problem.add_svar("completed")
+arrived = my_problem.add_var("arrived")
+resource = my_problem.add_var("resource")
+completed = my_problem.add_var("completed")
 
 prototype.start_event(my_problem, [], [arrived], "arrive", lambda: random.expovariate(1), behavior=arrive)
 prototype.task(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), 0.75)], guard=lambda a, r: a[1] == r)

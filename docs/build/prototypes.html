@@ -50,26 +50,26 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.end_event" title="simpn.prototypes.end_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_event</span></code></a>(model, inflow, outflow, name)</p></td>
-<td><p>Generates a composition of SimVar and SimTransition that represents a BPMN end event.</p></td>
+<td><p>Generates a composition of SimVar and SimEvent that represents a BPMN end event.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.intermediate_event" title="simpn.prototypes.intermediate_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intermediate_event</span></code></a>(model, inflow, outflow, ...)</p></td>
-<td><p>Generates a composition of SimVar and SimTransition that represents a BPMN intermediate event.</p></td>
+<td><p>Generates a composition of SimVar and SimEvent that represents a BPMN intermediate event.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.start_event" title="simpn.prototypes.start_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_event</span></code></a>(model, inflow, outflow, name, ...)</p></td>
-<td><p>Generates a composition of SimVar and SimTransition that represents a BPMN start event.</p></td>
+<td><p>Generates a composition of SimVar and SimEvent that represents a BPMN start event.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.task" title="simpn.prototypes.task"><code class="xref py py-obj docutils literal notranslate"><span class="pre">task</span></code></a>(model, inflow, outflow, name, behavior)</p></td>
-<td><p>Generates a composition of SimVar and SimTransition that represents a BPMN task.</p></td>
+<td><p>Generates a composition of SimVar and SimEvent that represents a BPMN task.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.task_fifo" title="simpn.prototypes.task_fifo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">task_fifo</span></code></a>(model, inflow, outflow, name, behavior)</p></td>
-<td><p>Generates a composition of SimVar and SimTransition that represents a BPMN task.</p></td>
+<td><p>Generates a composition of SimVar and SimEvent that represents a BPMN task.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py function">
 <dt class="sig sig-object py" id="simpn.prototypes.end_event">
 <span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">end_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.end_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates a composition of SimVar and SimTransition that represents a BPMN end event.</p>
+<dd><p>Generates a composition of SimVar and SimEvent that represents a BPMN end event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -80,7 +80,7 @@
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the SimTransition that represents the event.</p>
+<dd class="field-even"><p>the SimEvent that represents the event.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -88,7 +88,7 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="simpn.prototypes.intermediate_event">
 <span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">intermediate_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.intermediate_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates a composition of SimVar and SimTransition that represents a BPMN intermediate event.
+<dd><p>Generates a composition of SimVar and SimEvent that represents a BPMN intermediate event.
 The intermediate event can make changes to the data of a case and can generate waiting time for the case.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -102,7 +102,7 @@ The intermediate event can make changes to the data of a case and can generate w
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the SimTransition that represents the event.</p>
+<dd class="field-even"><p>the SimEvent that represents the event.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -110,7 +110,7 @@ The intermediate event can make changes to the data of a case and can generate w
 <dl class="py function">
 <dt class="sig sig-object py" id="simpn.prototypes.start_event">
 <span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">start_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interarrival_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.start_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates a composition of SimVar and SimTransition that represents a BPMN start event.
+<dd><p>Generates a composition of SimVar and SimEvent that represents a BPMN start event.
 Adds it to the specified model. The start event generates new cases with the specified interarrival_time.
 Cases are places on the outflow SimVar. The cases will be a tuple (unique_number, case_data).
 Case_data will be generated according to the specified behavior, or unspecified if behavior==None.</p>
@@ -126,7 +126,7 @@ Case_data will be generated according to the specified behavior, or unspecified 
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the SimTransition that generates the cases.</p>
+<dd class="field-even"><p>the SimEvent that generates the cases.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -134,7 +134,7 @@ Case_data will be generated according to the specified behavior, or unspecified 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpn.prototypes.task">
 <span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.task" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates a composition of SimVar and SimTransition that represents a BPMN task.
+<dd><p>Generates a composition of SimVar and SimEvent that represents a BPMN task.
 Adds it to the specified model. The task must have two inflow and two outflow SimVar.
 The first SimVar represents the case that must be processed by the task and the second the resource.
 The behavior specifies how the task may change the case data.
@@ -152,7 +152,7 @@ The behavior must take two input parameters according to the inflow and produces
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the SimTransition that completes the task.</p>
+<dd class="field-even"><p>the SimEvent that completes the task.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -160,7 +160,7 @@ The behavior must take two input parameters according to the inflow and produces
 <dl class="py function">
 <dt class="sig sig-object py" id="simpn.prototypes.task_fifo">
 <span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">task_fifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.task_fifo" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates a composition of SimVar and SimTransition that represents a BPMN task.
+<dd><p>Generates a composition of SimVar and SimEvent that represents a BPMN task.
 The difference with the task composition is that this task enforces FIFO processing of cases.
 Adds it to the specified model. The task must have two inflow and two outflow SimVar.
 The first SimVar represents the case that must be processed by the task and the second the resource.
@@ -179,7 +179,7 @@ The behavior must take two input parameters according to the inflow and produces
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the SimTransition that completes the task.</p>
+<dd class="field-even"><p>the SimEvent that completes the task.</p>
 </dd>
 </dl>
 </dd></dl>

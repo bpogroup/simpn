@@ -5,17 +5,17 @@ from simpn.reporters import ProcessReporter
 
 repairs_workshop = SimProblem()
 
-arrived = repairs_workshop.add_svar("arrived")
-inspected = repairs_workshop.add_svar("inspected")
-ordered = repairs_workshop.add_svar("ordered")
-received = repairs_workshop.add_svar("received")
-repaired = repairs_workshop.add_svar("repaired")
-completed = repairs_workshop.add_svar("completed")
+arrived = repairs_workshop.add_var("arrived")
+inspected = repairs_workshop.add_var("inspected")
+ordered = repairs_workshop.add_var("ordered")
+received = repairs_workshop.add_var("received")
+repaired = repairs_workshop.add_var("repaired")
+completed = repairs_workshop.add_var("completed")
 
-engineers = repairs_workshop.add_svar("engineers")
+engineers = repairs_workshop.add_var("engineers")
 engineers.put("Engineer 1")
 engineers.put("Engineer 2")
-pos = repairs_workshop.add_svar("purchase officers")
+pos = repairs_workshop.add_var("purchase officers")
 pos.put("PO 1")
 pos.put("PO 2")
 

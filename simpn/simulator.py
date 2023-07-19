@@ -1,4 +1,3 @@
-import random
 import inspect
 from sortedcontainers import SortedList
 
@@ -70,24 +69,24 @@ class SimVar:
         return self.__str__()
 
 
-class SimTransition:
+class SimEvent:
     """
-    A simulation transition SimTransition that can happen when tokens are available on all of its
+    A simulation event SimEvent that can happen when tokens are available on all of its
     incoming SimVar and its guard evaluates to True. When it happens, it consumes a token from each
     of its incoming SimVar and produces a token on each of its outgoing places according to `behavior`.
     The behavior takes just the values of the SimVar as input, but produces tokens as output: values with a delay.
     The delay can also be 0, meaning the token is produced with 0 delay.
-    For example, consider the transition with `incoming` `SimVar` [a, b] that have 2@1 and 2@1.
-    The transition has `outgoing` `SimVar` [c, d], behavior lambda a, b: [(a + b)@+1, (a - b)@+2].
-    This transition can happen for a = 2@1 and b = 2@1. Thus, it will happen at time 1, generating
-    [3@+1, 1@+2] according to its behavior. Therefore, after the transition has happened, c and d
+    For example, consider the event with `incoming` `SimVar` [a, b] that have 2@1 and 2@1.
+    The event has `outgoing` `SimVar` [c, d], behavior lambda a, b: [(a + b)@+1, (a - b)@+2].
+    This event can happen for a = 2@1 and b = 2@1. Thus, it will happen at time 1, generating
+    [3@+1, 1@+2] according to its behavior. Therefore, after the event has happened, c and d
     will have the tokens 3@2 and 1@3.
 
-    :param _id: the identifier of the transition.
-    :param incoming: a list of incoming SimVar of the transition.
-    :param outgoing: a list of outgoing SimVar of the transition
-    :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.
-    :param behavior: a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. The elements must be tokens that carry the resulting values and the delay with which these values become available. When the transition happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar with the corresponding delays.
+    :param _id: the identifier of the event.
+    :param incoming: a list of incoming SimVar of the event.
+    :param outgoing: a list of outgoing SimVar of the event
+    :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.
+    :param behavior: a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. The elements must be tokens that carry the resulting values and the delay with which these values become available. When the event happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar with the corresponding delays.
     """
 
     def __init__(self, _id, guard=None, behavior=None, incoming=None, outgoing=None):
@@ -144,7 +143,7 @@ class SimToken:
     The value will then be available at current_time + time.
 
     :param value: the value of the token.
-    :param time: the time at which the value is available. When used as the return of a transition behavior, the value represents the delay. The token will then be available as current_time + time.
+    :param time: the time at which the value is available. When used as the return of a event behavior, the value represents the delay. The token will then be available as current_time + time.
     """
     def __init__(self, value, time=0):
         self.value = value
@@ -171,18 +170,18 @@ class SimToken:
 
 class SimProblem:
     """
-    A simulation problem SimProblem, which consists of a collection of simulation variables SimVar and a collection of simulation transitions SimTransition.
+    A simulation problem SimProblem, which consists of a collection of simulation variables SimVar and a collection of simulation events SimEvent.
     The simulation has a time and a marking of SimVar. A marking is an assignment of values to SimVar variables (also see SimVar).
     The difference between a normal Python variable and a SimVar is that: (1) a SimVar can have multiple values; and (2) these values have a simulation time
-    at which they become available. A SimTransition is a function that takes SimVar values as input and produces SimVar values (also see SimTransition). The difference with normal
-    Python functions is that transitions can happen whenever its incoming SimVar parameters have a value. If a SimVar parameter has multiple values,
+    at which they become available. A SimEvent is a function that takes SimVar values as input and produces SimVar values (also see SimEvent). The difference with normal
+    Python functions is that events can happen whenever its incoming SimVar parameters have a value. If a SimVar parameter has multiple values,
     it can happen on any of these values.
 
     :param debugging: if set to True, produces more information for debugging purposes (defaults to True).
     """
     def __init__(self, debugging=True):
         self.places = []
-        self.transitions = []
+        self.events = []
         self.id2node = dict()
         self.clock = 0
         self._debugging = debugging
@@ -196,16 +195,16 @@ class SimProblem:
                 result += ","
         result += "}\n"
         result += "T={"
-        for i in range(len(self.transitions)):
-            result += str(self.transitions[i])
-            if self.transitions[i].guard is not None:
-                result += "[" + self.transitions[i].guard.__name__ + "]"
-            result += ":" + self.transitions[i].behavior.__name__
-            if i < len(self.transitions) - 1:
+        for i in range(len(self.events)):
+            result += str(self.events[i])
+            if self.events[i].guard is not None:
+                result += "[" + self.events[i].guard.__name__ + "]"
+            result += ":" + self.events[i].behavior.__name__
+            if i < len(self.events) - 1:
                 result += ","
         result += "}\n"
         arcs = []
-        for t in self.transitions:
+        for t in self.events:
             for p in t.incoming:
                 arcs.append("(" + str(p) + "," + str(t) + ")")
             for p in t.incoming:
@@ -235,7 +234,7 @@ class SimProblem:
         result += "}"                
         return result
 
-    def add_svar(self, name):
+    def add_var(self, name):
         """
         Creates a new SimVar with the specified name as identifier. Adds the SimVar to the problem and returns it.
 
@@ -253,7 +252,7 @@ class SimProblem:
 
         return result
 
-    def svar(self, name):
+    def var(self, name):
         """
         Returns the SimVar with the given name.
         Raises an error if no such SimVar exists.
@@ -269,78 +268,78 @@ class SimProblem:
         else:
             raise LookupError("SimVar " + name + ": does not exist.")
 
-    def add_stransition(self, inflow, outflow, behavior, name=None, guard=None):
+    def add_event(self, inflow, outflow, behavior, name=None, guard=None):
         """
-        Creates a new SimTransition with the specified parameters (also see SimTransition). Adds the SimTransition to the problem and returns it.
+        Creates a new SimEvent with the specified parameters (also see SimEvent). Adds the SimEvent to the problem and returns it.
 
-        :param inflow: a list of incoming SimVar of the transition.
-        :param outflow: a list of outgoing SimVar of the transition/
-        :param behavior: a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. When the transition happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar.
-        :param name: the identifier of the transition.
-        :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The transition can only happen for values for which the guard function evaluates to True.
-        :return: a SimTransition with the specified parameters.
+        :param inflow: a list of incoming SimVar of the event.
+        :param outflow: a list of outgoing SimVar of the event/
+        :param behavior: a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. When the event happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar.
+        :param name: the identifier of the event.
+        :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.
+        :return: a SimEvent with the specified parameters.
         """
 
         # Check name
         t_name = name
         if t_name is None:
             if behavior.__name__ == "<lambda>":
-                raise TypeError("Transition name must be set or procedure behavior function must be named.")
+                raise TypeError("Event name must be set or procedure behavior function must be named.")
             else:
                 t_name = behavior.__name__
         if t_name in self.id2node:
-            raise TypeError("Transition " + t_name + ": node with the same name already exists. Names must be unique.")
+            raise TypeError("Event " + t_name + ": node with the same name already exists. Names must be unique.")
 
         # Check inflow
         c = 0
         for i in inflow:
             if not isinstance(i, SimVar):
-                raise TypeError("Transition " + t_name + ": inflow with index " + str(c) + " is not a SimVar.")
+                raise TypeError("Event " + t_name + ": inflow with index " + str(c) + " is not a SimVar.")
             c += 1
 
         # Check outflow
         c = 0
         for o in outflow:
             if not isinstance(o, SimVar):
-                raise TypeError("Transition " + t_name + ": outflow with index " + str(o) + " is not a SimVar.")
+                raise TypeError("Event " + t_name + ": outflow with index " + str(o) + " is not a SimVar.")
             c += 1
 
         # Check behavior function
         if not callable(behavior):
-            raise TypeError("Transition " + t_name + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
+            raise TypeError("Event " + t_name + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
         parameters = inspect.signature(behavior).parameters
         if len(parameters) != len(inflow):
-            raise TypeError("Transition " + t_name + ": the behavior function must take as many parameters as there are input variables.")
+            raise TypeError("Event " + t_name + ": the behavior function must take as many parameters as there are input variables.")
 
         # Check constraint
         if guard is not None:
             if not callable(guard):
-                raise TypeError("Transition " + t_name + ": the constraint must be a function. (Maybe you made it a function call, exclude the brackets.)")
+                raise TypeError("Event " + t_name + ": the constraint must be a function. (Maybe you made it a function call, exclude the brackets.)")
             parameters = inspect.signature(guard).parameters
             if len(parameters) != len(inflow):
-                raise TypeError("Transition " + t_name + ": the constraint function must take as many parameters as there are input variables.")
+                raise TypeError("Event " + t_name + ": the constraint function must take as many parameters as there are input variables.")
 
-        # Generate and add SimTransition
-        result = SimTransition(t_name, guard=guard, behavior=behavior, incoming=inflow, outgoing=outflow)
-        self.transitions.append(result)
+        # Generate and add SimEvent
+        result = SimEvent(t_name, guard=guard, behavior=behavior, incoming=inflow, outgoing=outflow)
+        self.events.append(result)
         self.id2node[t_name] = result
 
         return result
 
     @staticmethod
-    def tokens_combinations(transition):
+    def tokens_combinations(event):
         """
-        Creates a list of token combinations that are available to the specified transition.
-        These are combinations of tokens that are on the incoming SimVar of the transition.
-        For example, if a transition has incoming SimVar a and b with tokens 1@0 on a and 2@0, 3@0 on b,
+        Creates a list of token combinations that are available to the specified event.
+        These are combinations of tokens that are on the incoming SimVar of the event.
+        For example, if a event has incoming SimVar a and b with tokens 1@0 on a and 2@0, 3@0 on b,
         the possible combinations are [(a, 1@0), (b, 2@0)] and [(a, 1@0), (b, 3@0)]
 
-        :param transition: the transition to return the token combinations for.
+        :param event: the event to return the token combinations for.
         :return: a list of lists, each of which is a token combination.
         """
         # create all possible combinations of incoming token values
         bindings = [[]]
-        for place in transition.incoming:
+        for place in event.incoming:
             new_bindings = []
             for token in place.marking_order:  # get set of colors in incoming place
                 for binding in bindings:
@@ -350,34 +349,34 @@ class SimProblem:
             bindings = new_bindings
         return bindings
 
-    def transition_bindings(self, transition):
+    def event_bindings(self, event):
         """
-        Calculates the set of bindings that enables the given transition.
+        Calculates the set of bindings that enables the given event.
         Each binding is a tuple ([(place, token), (place, token), ...], time) that represents a single enabling binding.
         A binding is
-        a possible token combination (see token_combinations), for which the transition's
+        a possible token combination (see token_combinations), for which the event's
         guard function evaluates to True. In case there is no guard function, any combination is also a binding.
         The time is the time at which the latest token is available.
-        For example, if a transition has incoming SimVar a and b with tokens 1@2 on a and 2@3, 3@1 on b,
+        For example, if a event has incoming SimVar a and b with tokens 1@2 on a and 2@3, 3@1 on b,
         the possible bindings are ([(a, 1@2), (b, 2@3)], 3) and ([(a, 1@2), (b, 3@1)], 2)
 
-        :param transition: the transition for which to calculate the enabling bindings.
+        :param event: the event for which to calculate the enabling bindings.
         :return: list of tuples ([(place, token), (place, token), ...], time)
         """
-        if len(transition.incoming) == 0:
-            raise Exception("Though it is strictly speaking possible, we do not allow transitions like '" + str(self) + "' without incoming arcs.")
+        if len(event.incoming) == 0:
+            raise Exception("Though it is strictly speaking possible, we do not allow events like '" + str(self) + "' without incoming arcs.")
 
-        bindings = self.tokens_combinations(transition)
+        bindings = self.tokens_combinations(event)
 
         # a binding must have all incoming places
-        nr_incoming_places = len(transition.incoming)
+        nr_incoming_places = len(event.incoming)
         new_bindings = []
         for binding in bindings:
             if len(binding) == nr_incoming_places:
                 new_bindings.append(binding)
         bindings = new_bindings
 
-        # if a transition has a guard, only bindings are enabled for which the guard evaluates to True
+        # if a event has a guard, only bindings are enabled for which the guard evaluates to True
         result = []
         for binding in bindings:
             variable_values = []
@@ -387,28 +386,28 @@ class SimProblem:
                 if time is None or token.time > time:
                     time = token.time
             enabled = True
-            if transition.guard is not None:
+            if event.guard is not None:
                 try:
-                    enabled = transition.guard(*variable_values)
+                    enabled = event.guard(*variable_values)
                 except Exception as e:
-                    raise TypeError("Transition " + transition + ": guard generates exception for values " + str(variable_values) + ".") from e
+                    raise TypeError("Event " + event + ": guard generates exception for values " + str(variable_values) + ".") from e
                 if self._debugging and not isinstance(enabled, bool):
-                    raise TypeError("Transition " + transition + ": guard does evaluate to a Boolean for values " + str(variable_values) + ".")
+                    raise TypeError("Event " + event + ": guard does evaluate to a Boolean for values " + str(variable_values) + ".")
             if enabled:
                 result.append((binding, time))
         return result
 
     def bindings(self):
         """
-        Calculates the set of timed bindings that is enabled over all transitions in the problem.
-        Each binding is a tuple ([(place, token), (place, token), ...], time, transition) that represents a single enabling binding.
+        Calculates the set of timed bindings that is enabled over all events in the problem.
+        Each binding is a tuple ([(place, token), (place, token), ...], time, event) that represents a single enabling binding.
         If no timed binding is enabled at the current clock time, updates the current clock time to the earliest time at which there is.
-        :return: list of tuples ([(place, token), (place, token), ...], time, transition)
+        :return: list of tuples ([(place, token), (place, token), ...], time, event)
         """
         untimed_bindings = []
         timed_bindings = []
-        for t in self.transitions:
-            for (binding, time) in self.transition_bindings(t):
+        for t in self.events:
+            for (binding, time) in self.event_bindings(t):
                 if time is None:
                     untimed_bindings.append((binding, time, t))
                 else:
@@ -424,9 +423,9 @@ class SimProblem:
     def fire(self, timed_binding):
         """
         Fires the specified timed binding.
-        Binding is a tuple ([(place, token), (place, token), ...], time, transition)
+        Binding is a tuple ([(place, token), (place, token), ...], time, event)
         """
-        (binding, time, transition) = timed_binding
+        (binding, time, event) = timed_binding
 
         # process incoming places:
         variable_assignment = []
@@ -436,39 +435,39 @@ class SimProblem:
             # assign values to the variables on the arcs
             variable_assignment.append(token.value)
 
-        # calculate the result of the behavior of the transition
+        # calculate the result of the behavior of the event
         try:
-            result = transition.behavior(*variable_assignment)
+            result = event.behavior(*variable_assignment)
         except Exception as e:
-            raise TypeError("Transition " + str(transition) + ": behavior function generates exception for values " + str(variable_assignment) + ".") from e
+            raise TypeError("Event " + str(event) + ": behavior function generates exception for values " + str(variable_assignment) + ".") from e
         if self._debugging:
             if type(result) != list:
-                raise TypeError("Transition " + str(transition) + ": behavior function does not generate a list for values " + str(variable_assignment) + ".")
-            if len(result) != len(transition.outgoing):
-                raise TypeError("Transition " + str(transition) + ": behavior function does not generate as many values as there are output variables for values " + str(variable_assignment) + ".")
+                raise TypeError("Event " + str(event) + ": behavior function does not generate a list for values " + str(variable_assignment) + ".")
+            if len(result) != len(event.outgoing):
+                raise TypeError("Event " + str(event) + ": behavior function does not generate as many values as there are output variables for values " + str(variable_assignment) + ".")
             i = 0
             for r in result:
                 if not isinstance(r, SimToken):
-                    raise TypeError("Transition " + str(transition) + ": does not generate a token for variable " + str(transition.outgoing[i]) + " for values " + str(variable_assignment) + ".")
+                    raise TypeError("Event " + str(event) + ": does not generate a token for variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
                 if not (type(r.time) is int or type(r.time) is float):
-                    raise TypeError("Transition " + str(transition) + ": does not generate a numeric value for the delay of variable " + str(transition.outgoing[i]) + " for values " + str(variable_assignment) + ".")
+                    raise TypeError("Event " + str(event) + ": does not generate a numeric value for the delay of variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
                 i += 1
 
         for i in range(len(result)):
             token = SimToken(result[i].value, time=self.clock + result[i].time)
-            transition.outgoing[i].add_token(token)
+            event.outgoing[i].add_token(token)
 
     def simulate(self, duration, reporter=None):
         """
         Executes a simulation run for the problem for the specified duration.
-        A simulation run executes transitions until this is no longer possible, or until the specified duration.
-        If at any moment multiple transitions can happen, one is selected at random.
+        A simulation run executes events until this is no longer possible, or until the specified duration.
+        If at any moment multiple events can happen, one is selected at random.
         At the end of the simulation run, the problem is in the state that is the result of the run.
-        If the reporter is set, its callback function is called with parameters (binding, time, transition)
-        each time a transition happens (for a binding at a moment in simulation time).
+        If the reporter is set, its callback function is called with parameters (binding, time, event)
+        each time a event happens (for a binding at a moment in simulation time).
 
         :param duration: the duration of the simulation.
-        :param reporter: a class that implements a callback function, which is called each time a transition happens.
+        :param reporter: a class that implements a callback function, which is called each time a event happens.
         """
         active_model = True
         while self.clock <= duration and active_model:
@@ -482,27 +481,27 @@ class SimProblem:
                 active_model = False
 
 
-def transition(sim_problem: SimProblem, outflow: list, guard=None):
+def event(sim_problem: SimProblem, outflow: list, guard=None):
     """
-    A decorator that can be used to turn a Python function into a SimTransition.
-    The transition will be added to the specified sim_problem.
+    A decorator that can be used to turn a Python function into a SimEvent.
+    The event will be added to the specified sim_problem.
     If they do not yet exist, SimVar will be added for each parameter of the Python function and for each element in outflow.
-    The parameters of the function will be treated as inflow variables of the SimTransition (by name).
-    The elements of outflow must be names of SimVar and will be treated as outflow variables of the SimTransition (by name).
-    The name of the SimTransition will be the name of the Python function.
+    The parameters of the function will be treated as inflow variables of the SimEvent (by name).
+    The elements of outflow must be names of SimVar and will be treated as outflow variables of the SimEvent (by name).
+    The name of the SimEvent will be the name of the Python function.
 
-    :param sim_problem: the SimProblem to which to add the SimTransition.
+    :param sim_problem: the SimProblem to which to add the SimEvent.
     :param outflow: a list of names of outflow variables.
-    :param guard: an optional guard for the SimTransition.
+    :param guard: an optional guard for the SimEvent.
     :return: the Python function.
     """
-    def decorator_transition(func):
+    def decorator_event(func):
         parameters = inspect.signature(func).parameters
         for parameter in list(parameters.keys()) + outflow:
             if parameter not in sim_problem.id2node:
-                sim_problem.add_svar(parameter)
+                sim_problem.add_var(parameter)
         inflow_svars = [sim_problem.id2node[parameter] for parameter in parameters]
         outflow_svars = [sim_problem.id2node[parameter] for parameter in outflow]
-        sim_problem.add_stransition(inflow_svars, outflow_svars, func, guard=guard)
+        sim_problem.add_event(inflow_svars, outflow_svars, func, guard=guard)
         return func
-    return decorator_transition
+    return decorator_event

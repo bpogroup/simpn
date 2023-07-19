@@ -4,32 +4,32 @@ from simpn.reporters import SimpleReporter
 
 my_problem = SimProblem()
 
-arrival = my_problem.add_svar("arrival")
-arrived = my_problem.add_svar("arrived")
-busy = my_problem.add_svar("busy")
-resource = my_problem.add_svar("resource")
-completed = my_problem.add_svar("completed")
+arrival = my_problem.add_var("arrival")
+arrived = my_problem.add_var("arrived")
+busy = my_problem.add_var("busy")
+resource = my_problem.add_var("resource")
+completed = my_problem.add_var("completed")
 
 
 def arrive(a):
     return [SimToken(a, random.expovariate(1)), SimToken(random.randint(1, 2))]
 
 
-my_problem.add_stransition([arrival], [arrival, arrived], arrive)
+my_problem.add_event([arrival], [arrival, arrived], arrive)
 
 
 def start(a, r):
     return [SimToken((a, r), 0.75)]
 
 
-my_problem.add_stransition([arrived, resource], [busy], start, guard=lambda a, r: a == r)
+my_problem.add_event([arrived, resource], [busy], start, guard=lambda a, r: a == r)
 
 
 def complete(b):
     return [SimToken(b[0], 0), SimToken(b[1], 0)]
 
 
-my_problem.add_stransition([busy], [completed, resource], complete)
+my_problem.add_event([busy], [completed, resource], complete)
 
 
 resource.put(1)

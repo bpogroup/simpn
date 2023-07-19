@@ -5,20 +5,20 @@ class Reporter:
     """
     def callback(self, timed_binding):
         """
-        A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.
-        It receives a timed_binding, which is a triple (binding, time, transition):
-        - binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), ...] of the variable values that caused the transition.
-        - time is the simulation time at which the transition happened.
-        - transition: SimTransition is the transition that happened.
+        A function that is invoked by a simpn.simulator.SimProblem each time a event happened.
+        It receives a timed_binding, which is a triple (binding, time, event):
+        - binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), ...] of the variable values that caused the event.
+        - time is the simulation time at which the event happened.
+        - event: SimEvent is the event that happened.
 
-        :param timed_binding: the triple (binding, time, transition) that described the transition that happened with its variable values and the time at which it happened.
+        :param timed_binding: the triple (binding, time, event) that described the event that happened with its variable values and the time at which it happened.
         """
         raise NotImplementedError
 
 
 class SimpleReporter(Reporter):
     """
-    A simple reporter that just prints the occurring transitions to the standard output.
+    A simple reporter that just prints the occurring events to the standard output.
     """
     def callback(self, timed_binding):
         print(timed_binding)
@@ -44,12 +44,12 @@ class ProcessReporter(Reporter):
         self.total_cycle_time = 0  # only of completed cases
 
     def callback(self, timed_binding):
-        (binding, time, transition) = timed_binding
-        if transition.get_id().endswith("<start_event>"):
+        (binding, time, event) = timed_binding
+        if event.get_id().endswith("<start_event>"):
             case_id = binding[0][1].value  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             self.status[case_id] = (0, time, 0, 0, time)
             self.nr_started += 1
-        elif transition.get_id().endswith("<task:start>"):
+        elif event.get_id().endswith("<task:start>"):
             case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.status[case_id]
             if nr_busy_tasks == 0:
@@ -57,7 +57,7 @@ class ProcessReporter(Reporter):
                 time_last_busy_change = time
             nr_busy_tasks += 1
             self.status[case_id] = (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change)
-        elif transition.get_id().endswith("<task:complete>"):
+        elif event.get_id().endswith("<task:complete>"):
             case_id = binding[0][1].value[0][0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.status[case_id]
             if nr_busy_tasks == 1:
@@ -65,7 +65,7 @@ class ProcessReporter(Reporter):
                 time_last_busy_change = time
             nr_busy_tasks -= 1
             self.status[case_id] = (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change)
-        elif transition.get_id().endswith("<end_event>"):
+        elif event.get_id().endswith("<end_event>"):
             case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.status[case_id]
             del self.status[case_id]

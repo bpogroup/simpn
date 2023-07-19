@@ -60,7 +60,7 @@
 <td><p>A reporter can be passed to the simpn.simulator.SimProblem.simulate function to report on what happens during the simulator.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.SimpleReporter" title="simpn.reporters.SimpleReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimpleReporter</span></code></a>()</p></td>
-<td><p>A simple reporter that just prints the occurring transitions to the standard output.</p></td>
+<td><p>A simple reporter that just prints the occurring events to the standard output.</p></td>
 </tr>
 </tbody>
 </table>
@@ -78,21 +78,21 @@ It assumes tasks are executed for cases that arrive via start_events and complet
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter.callback" title="simpn.reporters.ProcessReporter.callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">callback</span></code></a>(timed_binding)</p></td>
-<td><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.</p></td>
+<td><p>A function that is invoked by a simpn.simulator.SimProblem each time a event happened.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.reporters.ProcessReporter.callback">
 <span class="sig-name descname"><span class="pre">callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.ProcessReporter.callback" title="Permalink to this definition">¶</a></dt>
-<dd><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.
-It receives a timed_binding, which is a triple (binding, time, transition):
-- binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), …] of the variable values that caused the transition.
-- time is the simulation time at which the transition happened.
-- transition: SimTransition is the transition that happened.</p>
+<dd><p>A function that is invoked by a simpn.simulator.SimProblem each time a event happened.
+It receives a timed_binding, which is a triple (binding, time, event):
+- binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), …] of the variable values that caused the event.
+- time is the simulation time at which the event happened.
+- event: SimEvent is the event that happened.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>timed_binding</strong> – the triple (binding, time, transition) that described the transition that happened with its variable values and the time at which it happened.</p>
+<dd class="field-odd"><p><strong>timed_binding</strong> – the triple (binding, time, event) that described the event that happened with its variable values and the time at which it happened.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -108,21 +108,21 @@ To this end, a reported must implement the callback function.</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.Reporter.callback" title="simpn.reporters.Reporter.callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">callback</span></code></a>(timed_binding)</p></td>
-<td><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.</p></td>
+<td><p>A function that is invoked by a simpn.simulator.SimProblem each time a event happened.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.reporters.Reporter.callback">
 <span class="sig-name descname"><span class="pre">callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.Reporter.callback" title="Permalink to this definition">¶</a></dt>
-<dd><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.
-It receives a timed_binding, which is a triple (binding, time, transition):
-- binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), …] of the variable values that caused the transition.
-- time is the simulation time at which the transition happened.
-- transition: SimTransition is the transition that happened.</p>
+<dd><p>A function that is invoked by a simpn.simulator.SimProblem each time a event happened.
+It receives a timed_binding, which is a triple (binding, time, event):
+- binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), …] of the variable values that caused the event.
+- time is the simulation time at which the event happened.
+- event: SimEvent is the event that happened.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>timed_binding</strong> – the triple (binding, time, transition) that described the transition that happened with its variable values and the time at which it happened.</p>
+<dd class="field-odd"><p><strong>timed_binding</strong> – the triple (binding, time, event) that described the event that happened with its variable values and the time at which it happened.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -132,26 +132,26 @@ It receives a timed_binding, which is a triple (binding, time, transition):
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.reporters.SimpleReporter">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">SimpleReporter</span></span><a class="headerlink" href="#simpn.reporters.SimpleReporter" title="Permalink to this definition">¶</a></dt>
-<dd><p>A simple reporter that just prints the occurring transitions to the standard output.</p>
+<dd><p>A simple reporter that just prints the occurring events to the standard output.</p>
 <p><strong>Methods:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.SimpleReporter.callback" title="simpn.reporters.SimpleReporter.callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">callback</span></code></a>(timed_binding)</p></td>
-<td><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.</p></td>
+<td><p>A function that is invoked by a simpn.simulator.SimProblem each time a event happened.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.reporters.SimpleReporter.callback">
 <span class="sig-name descname"><span class="pre">callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.SimpleReporter.callback" title="Permalink to this definition">¶</a></dt>
-<dd><p>A function that is invoked by a simpn.simulator.SimProblem each time a transition happened.
-It receives a timed_binding, which is a triple (binding, time, transition):
-- binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), …] of the variable values that caused the transition.
-- time is the simulation time at which the transition happened.
-- transition: SimTransition is the transition that happened.</p>
+<dd><p>A function that is invoked by a simpn.simulator.SimProblem each time a event happened.
+It receives a timed_binding, which is a triple (binding, time, event):
+- binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), …] of the variable values that caused the event.
+- time is the simulation time at which the event happened.
+- event: SimEvent is the event that happened.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>timed_binding</strong> – the triple (binding, time, transition) that described the transition that happened with its variable values and the time at which it happened.</p>
+<dd class="field-odd"><p><strong>timed_binding</strong> – the triple (binding, time, event) that described the event that happened with its variable values and the time at which it happened.</p>
 </dd>
 </dl>
 </dd></dl>
