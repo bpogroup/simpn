@@ -1,6 +1,6 @@
 import random
 import inspect
-import copy
+from sortedcontainers import SortedList
 
 
 class SimVar:
@@ -9,20 +9,22 @@ class SimVar:
     A simulation variable can have multiple values. These values are available at particular times.
     For example, a variable van have the value 1 at time 0 (denoted as 1@0) and also 2@0.
     These values are also called tokens. Multiple tokens are called a marking of the variable.
-    The marking is represented as a dictionary of tokens -> the number of each token.
-    For example, {1@0: 1, 2@0: 1} represents the situation above, in which there is one token
-    with value 1 at time 0 and one with value 2 at time 0.
+    The marking is represented as:
+
+     - a dictionary marking_count of tokens -> the number of each token.
+       For example, {1@0: 1, 2@0: 1} represents the situation above, in which there is one token
+       with value 1 at time 0 and one with value 2 at time 0.
+     - a sorted list marking_order of tokens, which keeps tokens in the order of their timestamp.
+
+     The functions put and remove, put and remove tokens in such a way that the marking_count and marking_order are maintained.
 
     :param _id: the identifier of the SimVar.
-    :param marking: the marking of the SimVar.
     """
 
-    def __init__(self, _id, marking=None):
+    def __init__(self, _id):
         self._id = _id
-        if marking is None:
-            self.marking = dict()
-        else:
-            self.marking = copy.deepcopy(marking)
+        self.marking_count = dict()
+        self.marking_order = SortedList(key=lambda token: token.time)
 
     def put(self, value, time=0):
         """
@@ -41,10 +43,11 @@ class SimVar:
         :param token: the token value to put in the SimVar.
         :param count: the number of times to put the token value in the SimVar (defaults to 1 time).
         """
-        if token not in self.marking:
-            self.marking[token] = count
+        if token not in self.marking_count:
+            self.marking_count[token] = count
+            self.marking_order.add(token)
         else:
-            self.marking[token] += count
+            self.marking_count[token] += count
 
     def remove_token(self, token):
         """
@@ -52,12 +55,13 @@ class SimVar:
 
         :param token: the token value to remove from the SimVar.
         """
-        if token in self.marking:
-            self.marking[token] -= 1
+        if token in self.marking_count:
+            self.marking_count[token] -= 1
         else:
             raise LookupError("No token '" + token + "' at place '" + str(self) + "'.")
-        if self.marking[token] == 0:
-            del self.marking[token]
+        if self.marking_count[token] == 0:
+            del self.marking_count[token]
+            self.marking_order.remove(token)
 
     def __str__(self):
         return self._id
@@ -214,12 +218,12 @@ class SimProblem:
         result += "}\n"
         markings = []
         for p in self.places:
-            if len(p.marking) > 0:
+            if len(p.marking_order) > 0:
                 mstr = str(p) + ":"
                 ti = 0
-                for (token, count) in p.marking.items():
-                    mstr += str(count) + "`" + str(token) + "`"
-                    if ti < len(p.marking) - 1:
+                for token in p.marking_order:
+                    mstr += str(p.marking_count[token]) + "`" + str(token) + "`"
+                    if ti < len(p.marking_order) - 1:
                         mstr += "++"
                     ti += 1
                 markings.append(mstr)
@@ -338,7 +342,7 @@ class SimProblem:
         bindings = [[]]
         for place in transition.incoming:
             new_bindings = []
-            for token in place.marking.keys():  # get set of colors in incoming place
+            for token in place.marking_order:  # get set of colors in incoming place
                 for binding in bindings:
                     new_binding = binding.copy()
                     new_binding.append((place, token))
@@ -470,7 +474,7 @@ class SimProblem:
         while self.clock <= duration and active_model:
             bindings = self.bindings()
             if len(bindings) > 0:
-                timed_binding = random.choice(bindings)
+                timed_binding = bindings[0]
                 self.fire(timed_binding)
                 if reporter is not None:
                     reporter.callback(timed_binding)

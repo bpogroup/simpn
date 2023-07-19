@@ -21,11 +21,36 @@ class TestBasics(unittest.TestCase):
         a.put("a")
         b.put(1)
 
-        self.assertEqual(len(a.marking), 3, "added 3 token types to a")
-        self.assertEqual(a.marking[SimToken(1, 1)], 1, "added 1 token with value 1 at time 1 to a")
-        self.assertEqual(a.marking[SimToken(1, 0)], 1, "added 1 token with value 1 at time 0 to a")
-        self.assertEqual(a.marking[SimToken("a", 0)], 2, "added 1 token with value a at time 0 to a")
-        self.assertEqual(len(b.marking), 1, "added 1 token types to b")
+        self.assertEqual(len(a.marking_count), 3, "added 3 token types to a")
+        self.assertEqual(len(a.marking_order), 3, "added 3 token types to a")
+        self.assertEqual(a.marking_order[2], SimToken(1, 1), "last token is 1@1")
+        self.assertEqual(a.marking_count[SimToken(1, 1)], 1, "added 1 token with value 1 at time 1 to a")
+        self.assertEqual(a.marking_count[SimToken(1, 0)], 1, "added 1 token with value 1 at time 0 to a")
+        self.assertEqual(a.marking_count[SimToken("a", 0)], 2, "added 1 token with value a at time 0 to a")
+        self.assertEqual(len(b.marking_count), 1, "added 1 token types to b")
+        self.assertEqual(len(b.marking_order), 1, "added 1 token types to b")
+        self.assertEqual(b.marking_order[0], SimToken(1), "token is 1@0")
+
+    def test_remove(self):
+        test_problem = SimProblem()
+        a = test_problem.add_svar("a")
+        a.put(1)
+        a.put(1, 1)
+        a.put(1, 2)
+        a.put("a")
+        a.put("a")
+        a.put("a", 1)
+        a.remove_token(SimToken(1, 1))
+        a.remove_token(SimToken("a"))
+
+        self.assertEqual(len(a.marking_count), 4, "4 token types left on a")
+        self.assertEqual(len(a.marking_order), 4, "4 token types left on a")
+        self.assertEqual(a.marking_order[3], SimToken(1, 2), "last token is 1@2")
+        self.assertEqual(a.marking_order[2], SimToken("a", 1), "before-last token is a@1")
+        self.assertEqual(a.marking_count[SimToken(1, 0)], 1, "1 token with value 1 at time 0")
+        self.assertEqual(a.marking_count[SimToken(1, 2)], 1, "1 token with value 1 at time 2")
+        self.assertEqual(a.marking_count[SimToken("a", 0)], 1, "1 token with value a at time 0")
+        self.assertEqual(a.marking_count[SimToken("a", 1)], 1, "1 token with value a at time 1")
 
     def test_add_stransition(self):
         def test_behavior(d, e):
@@ -123,9 +148,9 @@ class TestBasics(unittest.TestCase):
         ta = test_problem.add_stransition([a, b], [e], lambda c, d: [SimToken(c + d)], name="ta")
         self.assertEqual(test_problem.bindings(), [([(a, SimToken(1, 1)), (b, SimToken(2, 1))], 1, ta)], "correct token combinations")
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEqual(len(a.marking), 0, "fire consumes tokens")
-        self.assertEqual(len(b.marking), 0, "fire consumes tokens")
-        self.assertEqual(e.marking[SimToken(3, 1)], 1, "fire produces token")
+        self.assertEqual(len(a.marking_count), 0, "fire consumes tokens")
+        self.assertEqual(len(b.marking_count), 0, "fire consumes tokens")
+        self.assertEqual(e.marking_count[SimToken(3, 1)], 1, "fire produces token")
 
     def test_fire_delay_function(self):
         test_problem = SimProblem()
@@ -134,9 +159,9 @@ class TestBasics(unittest.TestCase):
         b = test_problem.add_svar("b")
         b.put(2, 1)
         e = test_problem.add_svar("e")
-        ta = test_problem.add_stransition([a, b], [e], lambda c, d: [SimToken(c + d, 1)], name="ta")
+        test_problem.add_stransition([a, b], [e], lambda c, d: [SimToken(c + d, 1)], name="ta")
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEqual(e.marking[SimToken(3, 2)], 1, "fire produces token with delay")
+        self.assertEqual(e.marking_count[SimToken(3, 2)], 1, "fire produces token with delay")
 
     def test_fire_delay_list(self):
         test_problem = SimProblem()
@@ -145,9 +170,35 @@ class TestBasics(unittest.TestCase):
         b = test_problem.add_svar("b")
         b.put(2, 1)
         e = test_problem.add_svar("e")
-        ta = test_problem.add_stransition([a, b], [e], lambda c, d: [SimToken(c + d, 2)], name="ta")
+        test_problem.add_stransition([a, b], [e], lambda c, d: [SimToken(c + d, 2)], name="ta")
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEqual(e.marking[SimToken(3, 3)], 1, "fire produces token with delay")
+        self.assertEqual(e.marking_count[SimToken(3, 3)], 1, "fire produces token with delay")
+
+    def test_binding_order(self):
+        test_problem = SimProblem()
+        test_problem.clock = 4
+        a = test_problem.add_svar("a")
+        a.put("b", 3)
+        a.put("d", 1)
+        a.put("c", 2)
+        a.put("a", 4)
+        b = test_problem.add_svar("b")
+        b.put("b", 3)
+        b.put("a", 4)
+        b.put("d", 1)
+        b.put("c", 2)
+        test_problem.add_stransition([a, b], [], lambda c, d: [], name="ta")
+        test_problem.clock = 4
+        bindings = test_problem.bindings()
+        # for two tokens that have the same time for place b, the first token on a must always have time <= the second token
+        # for two tokens that have the same time for place a, the first token on b must always have time <= the second token
+        for time in range(1, 5):
+            for i in range(len(bindings)):
+                for j in range(i+1, len(bindings)):
+                    if bindings[i][0][1][1].time == time and bindings[j][0][1][1].time == time:
+                        self.assertLessEqual(bindings[i][0][0][1].time, bindings[j][0][0][1].time, "two bindings with index i, j, i < j, with the same time for b, must have binding[i] time for a <=  binding[j] time for a")
+                    if bindings[i][0][0][1].time == time and bindings[j][0][0][1].time == time:
+                        self.assertLessEqual(bindings[i][0][1][1].time, bindings[j][0][1][1].time, "two bindings with index i, j, i < j, with the same time for a, must have binding[i] time for b <=  binding[j] time for b")
 
 
 if __name__ == '__main__':

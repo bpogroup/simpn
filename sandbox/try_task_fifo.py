@@ -18,9 +18,9 @@ resource = my_problem.add_svar("resource")
 completed = my_problem.add_svar("completed")
 
 prototype.start_event(my_problem, [], [arrived], "arrive", lambda: random.expovariate(1), behavior=lambda: [SimToken(random.randint(1, 2))])
-# prototype.task(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), 0.75)])  # unordered execution
+prototype.task(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), 0.75)])  # unordered execution
 # prototype.task_fifo(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), 0.75)], guard=lambda c, r: c[1] == r)  # ordered execution with guard
-prototype.task_fifo(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), 0.75)])  # ordered execution
+# prototype.task_fifo(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), 0.75)])  # ordered execution
 prototype.end_event(my_problem, [completed], [], name="done")
 
 resource.put(1)

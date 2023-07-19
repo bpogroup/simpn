@@ -62,7 +62,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTransition" title="simpn.simulator.SimTransition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTransition</span></code></a>(_id[, guard, behavior, ...])</p></td>
 <td><p>A simulation transition SimTransition that can happen when tokens are available on all of its incoming SimVar and its guard evaluates to True.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVar" title="simpn.simulator.SimVar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVar</span></code></a>(_id[, marking])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVar" title="simpn.simulator.SimVar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVar</span></code></a>(_id)</p></td>
 <td><p>A simulation variable SimVar has an identifier and a marking.</p></td>
 </tr>
 </tbody>
@@ -333,20 +333,24 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimVar">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar" title="Permalink to this definition">¶</a></dt>
 <dd><p>A simulation variable SimVar has an identifier and a marking.
 A simulation variable can have multiple values. These values are available at particular times.
 For example, a variable van have the value 1 at time 0 (denoted as 1&#64;0) and also 2&#64;0.
 These values are also called tokens. Multiple tokens are called a marking of the variable.
-The marking is represented as a dictionary of tokens -&gt; the number of each token.
+The marking is represented as:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>a dictionary marking_count of tokens -&gt; the number of each token.
 For example, {1&#64;0: 1, 2&#64;0: 1} represents the situation above, in which there is one token
-with value 1 at time 0 and one with value 2 at time 0.</p>
+with value 1 at time 0 and one with value 2 at time 0.</p></li>
+<li><p>a sorted list marking_order of tokens, which keeps tokens in the order of their timestamp.</p></li>
+</ul>
+<p>The functions put and remove, put and remove tokens in such a way that the marking_count and marking_order are maintained.</p>
+</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>_id</strong> – the identifier of the SimVar.</p></li>
-<li><p><strong>marking</strong> – the marking of the SimVar.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>_id</strong> – the identifier of the SimVar.</p>
 </dd>
 </dl>
 <p><strong>Methods:</strong></p>
