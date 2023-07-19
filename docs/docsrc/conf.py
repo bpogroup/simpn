@@ -2,7 +2,7 @@ import os
 import sys
 import sphinx_readable_theme
 
-sys.path.append(os.path.abspath('./source'))
+sys.path.append(os.path.abspath('./docsrc'))
 sys.path.append(os.path.abspath('.'))
 sys.path.append(os.path.abspath('..'))
 sys.path.append(os.path.abspath('../../simpn/'))
