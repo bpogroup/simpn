@@ -21,7 +21,15 @@ class SimpleReporter(Reporter):
     A simple reporter that just prints the occurring events to the standard output.
     """
     def callback(self, timed_binding):
-        print(timed_binding)
+        result = str(timed_binding[2]) + "{"
+        i = 0
+        for var, token in timed_binding[0]:
+            result += str(var) + ": " + str(token.value)
+            if i < len(timed_binding[0])-1:
+                result += ", "
+            i += 1
+        result += "}" + "@t=" + str(timed_binding[1])
+        print(result)
 
 
 class ProcessReporter(Reporter):

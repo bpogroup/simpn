@@ -481,7 +481,7 @@ class SimProblem:
                 active_model = False
 
 
-def event(sim_problem: SimProblem, outflow: list, guard=None):
+def event(sim_problem: SimProblem, inflow: list, outflow: list, guard=None):
     """
     A decorator that can be used to turn a Python function into a SimEvent.
     The event will be added to the specified sim_problem.
@@ -491,6 +491,7 @@ def event(sim_problem: SimProblem, outflow: list, guard=None):
     The name of the SimEvent will be the name of the Python function.
 
     :param sim_problem: the SimProblem to which to add the SimEvent.
+    :param inflow: a list of names of inflow variables. Just there for documentation purposes, it is not being used.
     :param outflow: a list of names of outflow variables.
     :param guard: an optional guard for the SimEvent.
     :return: the Python function.

@@ -70,7 +70,7 @@
 <p><strong>Functions:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.event" title="simpn.simulator.event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">event</span></code></a>(sim_problem, outflow[, guard])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.event" title="simpn.simulator.event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">event</span></code></a>(sim_problem, inflow, outflow[, guard])</p></td>
 <td><p>A decorator that can be used to turn a Python function into a SimEvent.</p></td>
 </tr>
 </tbody>
@@ -410,7 +410,7 @@ with value 1 at time 0 and one with value 2 at time 0.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpn.simulator.event">
-<span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><span class="pre">SimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.event" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><span class="pre">SimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.event" title="Permalink to this definition">¶</a></dt>
 <dd><p>A decorator that can be used to turn a Python function into a SimEvent.
 The event will be added to the specified sim_problem.
 If they do not yet exist, SimVar will be added for each parameter of the Python function and for each element in outflow.
@@ -421,6 +421,7 @@ The name of the SimEvent will be the name of the Python function.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>sim_problem</strong> – the SimProblem to which to add the SimEvent.</p></li>
+<li><p><strong>inflow</strong> – a list of names of inflow variables. Just there for documentation purposes, it is not being used.</p></li>
 <li><p><strong>outflow</strong> – a list of names of outflow variables.</p></li>
 <li><p><strong>guard</strong> – an optional guard for the SimEvent.</p></li>
 </ul>
@@ -442,7 +443,7 @@ The name of the SimEvent will be the name of the Python function.</p>
         <div class="sphinxsidebarwrapper">
 <h3><a href="index.html">Table of Contents</a></h3>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="howto.html">How to use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html">A Basic Tutorial</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="api.html">API Documentation</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Simulator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reporters.html">Reporters</a></li>
