@@ -11,6 +11,23 @@ SimPN provides a simple syntax that is based on Python functions and variables, 
   :language: python
   :class: highlight
 
+Installation
+============
+
+At this moment, the code is only available in beta from the TestPyPI repository.
+This means that installing it with pip is a bit more involved than usual.
+You must first install the dependencies as follows.
+
+.. code-block::
+
+    python -m pip install sortedcontainers==2.4.0
+
+Next, you can install the package itself.
+
+.. code-block::
+
+    python -m pip install --index-url https://test.pypi.org/simple/ --no-deps simpn
+
 A Basic Tutorial
 ================
 

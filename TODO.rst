@@ -4,7 +4,6 @@ TODO
 Code:
 
 - Create decorators for prototypes.
-- Make a deployment action.
 - Make a visualization.
 - Do a stress test for performance.
 - Implement replications, warm-up time.
@@ -12,10 +11,9 @@ Code:
 
 Documentation:
 
-- Make a simple HOWTO for GitHub
 - Document the basic theory.
+  Note in the documentation that 'mutable types' do not work. Consequently, must use the pn_list, rather than the traditional Python list.
 - Document how each of the basic patterns can be implemented (priority queue, ...).
-- Note in the documentation that 'mutable types' do not work. Consequently, must use the pn_list, rather than the traditional Python list.
 
 Nice to have:
 

@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Simulation with Petri Nets &#8212; SimPN  documentation</title>
+    <title>SimPN &#8212; SimPN  documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/readable.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -13,7 +13,7 @@
     <script src="_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="How to use" href="howto.html" />
+    <link rel="next" title="SimPN" href="howto.html" />
    
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
@@ -33,10 +33,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="howto.html" title="How to use"
+          <a href="howto.html" title="SimPN"
              accesskey="N">next</a> |</li>
         <li class="nav-item nav-item-0"><a href="#">SimPN  documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Simulation with Petri Nets</a></li> 
+        <li class="nav-item nav-item-this"><a href="">SimPN</a></li> 
       </ul>
     </div>  
 
@@ -45,19 +45,133 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="simulation-with-petri-nets">
-<h1>Simulation with Petri Nets<a class="headerlink" href="#simulation-with-petri-nets" title="Permalink to this heading">¶</a></h1>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="howto.html">How to use</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="simulator.html">Simulator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="reporters.html">Reporters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="prototypes.html">Prototypes</a></li>
-</ul>
-</li>
-</ul>
+  <section id="simpn">
+<h1>SimPN<a class="headerlink" href="#simpn" title="Permalink to this heading">¶</a></h1>
+<p>SimPN (Simulation with Petri Nets) is a package for discrete event simulation in Python.</p>
+<p>SimPN provides a simple syntax that is based on Python functions and variables, making it familiar for people who already know Python. At the same time, it uses the power of and flexibility of <a class="reference external" href="http://dx.doi.org/10.1145/2663340">Colored Petri Nets (CPN)</a> for simulation. It also provides prototypes for easy modeling of frequently occurring simulation constructs, such as (customer) arrival, processing tasks, queues, choice, parallelism, etc.</p>
+</section>
+<section id="a-basic-tutorial">
+<h1>A Basic Tutorial<a class="headerlink" href="#a-basic-tutorial" title="Permalink to this heading">¶</a></h1>
+<p>To illustrate how SimPN works, let’s consider a simulation model of a cash register at a small shop,
+which we can initialize as follows. This imports parts from the SimPN library that we use here
+and further on in the example.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simpn.simulator</span> <span class="kn">import</span> <span class="n">SimProblem</span><span class="p">,</span> <span class="n">SimToken</span>
+
+<span class="n">shop</span> <span class="o">=</span> <span class="n">SimProblem</span><span class="p">()</span>
+</pre></div>
 </div>
+<p>A discrete event simulation is defined by the <em>state</em> of the system that is simulated and the <em>events</em> that can happen
+in the system.</p>
+<section id="simulation-state-and-variables">
+<h2>Simulation State and Variables<a class="headerlink" href="#simulation-state-and-variables" title="Permalink to this heading">¶</a></h2>
+<p>In case of our shop, the state of the system consists of customers that are waiting in line at
+the cash register, resources that are free to help the customer, and resources that are busy helping a customer.
+Consequently, we can model the state of our simulation, by defining two <em>variables</em> as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">customers</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">&quot;customers&quot;</span><span class="p">)</span>
+<span class="n">resources</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">&quot;resources&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A simulation variable is different from a regular Python variable in two important ways. First, a simulation variable
+can contain multiple values, while a regular Python variable can only contain one value. Second, values of a simulation
+variable are available from a specific moment in (simulation) time. More about that later.
+So, with that in mind, let’s give our variables a value.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">resources</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;cashier&quot;</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c1&quot;</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c3&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We now gave the <cite>resources</cite> variable one value, the string <cite>cashier</cite>, but we gave the <cite>customers</cite> variable three values.
+You can probably understand why we did that: we now have one cashier and three customers waiting. This is the
+<em>initial state</em> of our simulation model.</p>
+</section>
+<section id="simulation-events">
+<h2>Simulation Events<a class="headerlink" href="#simulation-events" title="Permalink to this heading">¶</a></h2>
+<p>Simulation events define what can happen in the system and how the system (state variables) change when they do.
+We define simulation events as Python functions that take a system state and return a new system state.
+Remember that the system state is defined in terms of variables, so an event function takes (values of) state variables as
+input and produces (values of) state variables as output.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="n">customer</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">SimToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">)]</span>
+
+<span class="n">shop</span><span class="o">.</span><span class="n">add_event</span><span class="p">([</span><span class="n">customers</span><span class="p">,</span> <span class="n">resources</span><span class="p">],</span> <span class="p">[</span><span class="n">resources</span><span class="p">],</span> <span class="n">process</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In our example we introduce a single event that represents a resource processing a waiting customer.
+First, let’s focus on <cite>shop.add_event</cite> in the code below. This tells the simulator that our event takes a value from the
+<cite>customers</cite> variable and a value from the <cite>resources</cite> variable as input, produces a value for the <cite>resources</cite>
+variable as output, and uses the <cite>process</cite> function to change the state variables.
+Describing that in natural language: it takes a customer and a resource and, when it is done, returns a resource.</p>
+<p>The <cite>process</cite> function defines how the event modifies the system state (variables).
+Taking a value from the <cite>customers</cite> variable (and calling it <cite>customer</cite>) and a value from the <cite>resources</cite> variable
+(and calling it <cite>resource</cite>), the function returns the <cite>resource</cite> again. This return value will be put into the
+<cite>resources</cite> variable, as per the <cite>shop.add_event</cite> definition. However, as you can see, there are several things
+going on in the return statement.</p>
+<p>First, the function does not return a single resource value, but a list of values. This is simply a convention
+that you have to remember: event functions return a list of values. The reason for this is that we defined the
+simulation event in <cite>shop.add_event</cite> as taking a list of values (consisting of one value from customers and one value from
+resources) as input and as producing a list of values (consisting of one value for resources) as output.
+Accordingly, we must produce a list of values as output, even it there is only one value.</p>
+<p>Second, the function does not return the <cite>resource</cite>, but returns a <cite>SimToken</cite> containing the resource.
+That is because in simulation, values have a time from which they are available. A value with a time
+is called a <em>token</em>. This represents that the value is only available at, or after, the specified time.
+In this case, the resource value is made available after 0.75. You can consider this the time it takes the resource to
+process the customer. Since it takes 0.75 to process a customer, the resource is only made available
+again after 0.75. In the meantime no new <cite>process</cite> events can happen, because a value from <cite>resources</cite>,
+which is needed as input for such an event, is not available.</p>
+</section>
+<section id="putting-it-all-together">
+<h2>Putting it all together<a class="headerlink" href="#putting-it-all-together" title="Permalink to this heading">¶</a></h2>
+<p>Now we have modeled the entire system and we can simulate it.
+To do that, we call the <cite>simulate</cite> function on the model.
+This function takes two parameters. One is the amount of time for which the simulation will be run.
+The other is the reporter that will be used to report the results of the simulation.
+In our example we will run the simulation for 10. (Since we only have 3 customers, and each customer
+takes 0.75 to process, this should be more than enough.) We will use a <cite>SimpleReporter</cite> from the
+reporters package to report the result. This reporter simply prints each event that happens
+to the standard output.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simpn.reporters</span> <span class="kn">import</span> <span class="n">SimpleReporter</span>
+
+<span class="n">shop</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">SimpleReporter</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>As expected, running this code leads to the following output.
+The event of (starting) processing customer c1 happens at time t=0.
+It uses value <cite>c2</cite> for variable <cite>customers</cite> and value <cite>cashier</cite> for variable <cite>resources</cite>.
+The event of (starting) processing customer c2 happens at time t=0.75.
+This is logical, because our definition of the <cite>process</cite> event that the value <cite>cashier</cite> is only available
+in the variable <cite>resources</cite> again after 0.75. Accordingly, processing of c3 happens at time t=1.5.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">process</span><span class="p">{</span><span class="n">customers</span><span class="p">:</span> <span class="n">c1</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">cashier</span><span class="p">}</span><span class="nd">@t</span><span class="o">=</span><span class="mi">0</span>
+<span class="n">process</span><span class="p">{</span><span class="n">customers</span><span class="p">:</span> <span class="n">c2</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">cashier</span><span class="p">}</span><span class="nd">@t</span><span class="o">=</span><span class="mf">0.75</span>
+<span class="n">process</span><span class="p">{</span><span class="n">customers</span><span class="p">:</span> <span class="n">c3</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">cashier</span><span class="p">}</span><span class="nd">@t</span><span class="o">=</span><span class="mf">1.5</span>
+</pre></div>
+</div>
+<p>For completeness, the full code of the example is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simpn.simulator</span> <span class="kn">import</span> <span class="n">SimProblem</span><span class="p">,</span> <span class="n">SimToken</span>
+
+<span class="n">shop</span> <span class="o">=</span> <span class="n">SimProblem</span><span class="p">()</span>
+
+<span class="n">resources</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">&quot;resources&quot;</span><span class="p">)</span>
+<span class="n">customers</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">&quot;customers&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="n">customer</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">SimToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">)]</span>
+
+<span class="n">shop</span><span class="o">.</span><span class="n">add_event</span><span class="p">([</span><span class="n">customers</span><span class="p">,</span> <span class="n">resources</span><span class="p">],</span> <span class="p">[</span><span class="n">resources</span><span class="p">],</span> <span class="n">process</span><span class="p">)</span>
+
+<span class="n">resources</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;cashier&quot;</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c1&quot;</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c3&quot;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">simpn.reporters</span> <span class="kn">import</span> <span class="n">SimpleReporter</span>
+
+<span class="n">shop</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">SimpleReporter</span><span class="p">())</span>
+</pre></div>
+</div>
+<div class="toctree-wrapper compound">
+</div>
+</section>
 </section>
 
 
@@ -69,7 +183,8 @@
         <div class="sphinxsidebarwrapper">
 <h3><a href="#">Table of Contents</a></h3>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="howto.html">How to use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html">SimPN</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html#a-basic-tutorial">A Basic Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a></li>
 </ul>
 

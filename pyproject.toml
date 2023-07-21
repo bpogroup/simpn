@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "simpn"
+version = "0.0.2"
+authors = [
+  { name="Remco Dijkman", email="r.m.dijkman@tue.nl" },
+]
+description = "A package for Discrete Event Simulation, using the theory of Petri Nets."
+readme = "README.rst"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "sortedcontainers==2.4.0"
+]
+
+[tool.hatch.build]
+exclude = [
+    "/doc*",
+    "/examples",
+    "/sandbox",
+    "/tests",
+    "/TODO.rst",
+    "/.*",
+    "/requirements.txt"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/bpogroup/simpn"
+"Documentation" = "https://bpogroup.github.io/simpn/"
