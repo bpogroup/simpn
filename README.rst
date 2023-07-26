@@ -103,7 +103,7 @@ First, the function does not return a single resource value, but a list of value
 that you have to remember: event functions return a list of values. The reason for this is that we defined the
 simulation event in `shop.add_event` as taking a list of values (consisting of one value from customers and one value from
 resources) as input and as producing a list of values (consisting of one value for resources) as output.
-Accordingly, we must produce a list of values as output, even it there is only one value.
+Accordingly, we must produce a list of values as output, even if there is only one value.
 
 Second, the function does not return the `resource`, but returns a `SimToken` containing the resource.
 That is because in simulation, values have a time from which they are available. A value with a time

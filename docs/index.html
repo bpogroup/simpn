@@ -50,6 +50,19 @@
 <p>SimPN (Simulation with Petri Nets) is a package for discrete event simulation in Python.</p>
 <p>SimPN provides a simple syntax that is based on Python functions and variables, making it familiar for people who already know Python. At the same time, it uses the power of and flexibility of <a class="reference external" href="http://dx.doi.org/10.1145/2663340">Colored Petri Nets (CPN)</a> for simulation. It also provides prototypes for easy modeling of frequently occurring simulation constructs, such as (customer) arrival, processing tasks, queues, choice, parallelism, etc.</p>
 </section>
+<section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h1>
+<p>At this moment, the code is only available in beta from the TestPyPI repository.
+This means that installing it with pip is a bit more involved than usual.
+You must first install the dependencies as follows.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">sortedcontainers</span><span class="o">==</span><span class="mf">2.4.0</span>
+</pre></div>
+</div>
+<p>Next, you can install the package itself.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">index</span><span class="o">-</span><span class="n">url</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">test</span><span class="o">.</span><span class="n">pypi</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">simple</span><span class="o">/</span> <span class="o">--</span><span class="n">no</span><span class="o">-</span><span class="n">deps</span> <span class="n">simpn</span>
+</pre></div>
+</div>
+</section>
 <section id="a-basic-tutorial">
 <h1>A Basic Tutorial<a class="headerlink" href="#a-basic-tutorial" title="Permalink to this heading">¶</a></h1>
 <p>To illustrate how SimPN works, let’s consider a simulation model of a cash register at a small shop,
@@ -111,7 +124,7 @@ going on in the return statement.</p>
 that you have to remember: event functions return a list of values. The reason for this is that we defined the
 simulation event in <cite>shop.add_event</cite> as taking a list of values (consisting of one value from customers and one value from
 resources) as input and as producing a list of values (consisting of one value for resources) as output.
-Accordingly, we must produce a list of values as output, even it there is only one value.</p>
+Accordingly, we must produce a list of values as output, even if there is only one value.</p>
 <p>Second, the function does not return the <cite>resource</cite>, but returns a <cite>SimToken</cite> containing the resource.
 That is because in simulation, values have a time from which they are available. A value with a time
 is called a <em>token</em>. This represents that the value is only available at, or after, the specified time.
@@ -184,6 +197,7 @@ in the variable <cite>resources</cite> again after 0.75. Accordingly, processing
 <h3><a href="#">Table of Contents</a></h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="howto.html">SimPN</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html#installation">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#a-basic-tutorial">A Basic Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a></li>
 </ul>

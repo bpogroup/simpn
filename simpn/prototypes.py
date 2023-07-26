@@ -1,6 +1,6 @@
 import inspect
 from simpn.simulator import SimToken
-from simpn.types import pn_list
+from simpn.immutabletypes import pn_list
 
 
 def start_event(model, inflow, outflow, name, interarrival_time, behavior=None):

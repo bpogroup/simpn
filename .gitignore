@@ -2,6 +2,7 @@
 
 # dotenv
 .env
+.vscode/
 
 # virtualenv
 .venv
