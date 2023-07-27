@@ -44,6 +44,16 @@ def start_event(model, inflow, outflow, name, interarrival_time, behavior=None):
     return result
 
 
+def basic_event(model, inflow, outflow, name, behavior, guard=None):
+    """
+    Just here for uniformity. Generates a simple event that can normally be created using model.add_event.
+    The parameters are the same as for model.add_event and will simply be passed to that function.
+
+    :return: the SimEvent that completes the task.
+    """
+    model.add_event(inflow, outflow, behavior, name=name, guard=guard)
+
+
 def task(model, inflow, outflow, name, behavior, guard=None):
     """
     Generates a composition of SimVar and SimEvent that represents a BPMN task.
@@ -77,70 +87,6 @@ def task(model, inflow, outflow, name, behavior, guard=None):
     complete_event_name = name + "<task:complete>"
     busyvar = model.add_var(busyvar_name)
     model.add_event(inflow, [busyvar], behavior, name=start_event_name, guard=guard)
-    complete_event = model.add_event([busyvar], outflow, lambda b: [SimToken(b[0]), SimToken(b[1])], name=complete_event_name)
-
-    return complete_event
-
-
-def task_fifo(model, inflow, outflow, name, behavior, guard=None):
-    """
-    Generates a composition of SimVar and SimEvent that represents a BPMN task.
-    The difference with the task composition is that this task enforces FIFO processing of cases.
-    Adds it to the specified model. The task must have two inflow and two outflow SimVar.
-    The first SimVar represents the case that must be processed by the task and the second the resource.
-    The behavior specifies how the task may change the case data.
-    It also specifies the processing time of the task in the form of a SimToken delay.
-    The behavior must take two input parameters according to the inflow and produces a single outflow, which is a tuple (case, resource)@delay.
-
-    :param model: the SimProblem to which the task composition must be added.
-    :param inflow: a list with two SimVar: a case SimVar and a resource SimVar.
-    :param outflow: a list with two SimVar: a case SimVar and a resource SimVar.
-    :param name: the name of the task.
-    :param behavior: the behavior function, which takes two input parameters according to the inflow and produces a single outflow, which is a tuple (case, resource)@delay.
-    :param guard: an optional guard that specifies which combination of case and resource is allowed. The guard must take two input parameters according to the inflow.
-    :return: the SimEvent that completes the task.
-    """
-
-    # Process other variables
-    if len(inflow) != 2:
-        raise TypeError("Task event " + name + ": must have two input parameters; the first for cases and the second for resources.")
-    if len(outflow) != 2:
-        raise TypeError("Task event " + name + ": must have two output parameters; the first for cases and the second for resources.")
-    if not callable(behavior):
-        raise TypeError("Task event " + name + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
-    if len(inspect.signature(behavior).parameters) != 2:
-        raise TypeError("Task event " + name + ": the behavior function must have two parameters.")
-
-    busyvar_name = name + "_busy"
-    queuevar_name = name + "_queue"
-    queue_event_name = name + "<task:queue>"
-    start_event_name = name + "<task:start>"
-    complete_event_name = name + "<task:complete>"
-    busyvar = model.add_var(busyvar_name)
-    queuevar = model.add_var(queuevar_name)
-    queuevar.put(pn_list())
-    def enqueue(element, queue):  # puts the element in the queue, returns the queue as an outflow
-        return [SimToken(queue.append(element))]
-    def dequeue(queue, resource):  # removes the first element from the queue, returns [queue, element] as outflow
-        return [SimToken(queue.delete(0)), SimToken((queue[0], resource))]
-    def in_queue(queue, resource):  # returns True if there is some element in the queue, such that guard(element, resource)
-        for element in queue:
-            if guard(element, resource):
-                return True
-        return False
-    def dequeue_guard(queue, resource):  # removes the first element from the queue for which guard(element, resource), returns [queue, element] as outflow
-        i = 0
-        while True:  # this method must only be called if in_queue(queue, resource, guard)
-            if guard(queue[i], resource):
-                break
-            i += 1
-        return [SimToken(queue.delete(i)), SimToken((queue[i], resource))]
-
-    model.add_event([inflow[0], queuevar], [queuevar], enqueue, name=queue_event_name)
-    if guard is None:
-        model.add_event([queuevar, inflow[1]], [queuevar, busyvar], dequeue, name=start_event_name, guard=lambda queue, _: len(queue) > 0)
-    else:
-        model.add_event([queuevar, inflow[1]], [queuevar, busyvar], dequeue_guard, name=start_event_name, guard=in_queue)
     complete_event = model.add_event([busyvar], outflow, lambda b: [SimToken(b[0]), SimToken(b[1])], name=complete_event_name)
 
     return complete_event

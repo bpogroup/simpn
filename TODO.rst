@@ -4,6 +4,7 @@ TODO
 Code:
 
 - Create decorators for prototypes.
+  Maybe decorators are not the best way to go and we can simply pass strings to inflow/ outflow variables. 
 - Make a visualization.
 - Do a stress test for performance.
 - Implement replications, warm-up time.
