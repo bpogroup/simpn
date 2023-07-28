@@ -88,14 +88,14 @@ Consequently, we can model the state of our simulation, by defining two <em>vari
 can contain multiple values, while a regular Python variable can only contain one value. Second, values of a simulation
 variable are available from a specific moment in (simulation) time. More about that later.
 So, with that in mind, let’s give our variables a value.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">resources</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;cashier&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">resources</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;cassier&quot;</span><span class="p">)</span>
 <span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c1&quot;</span><span class="p">)</span>
 <span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
 <span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c3&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>We now gave the <cite>resources</cite> variable one value, the string <cite>cashier</cite>, but we gave the <cite>customers</cite> variable three values.
-You can probably understand why we did that: we now have one cashier and three customers waiting. This is the
+<p>We now gave the <cite>resources</cite> variable one value, the string <cite>cassier</cite>, but we gave the <cite>customers</cite> variable three values.
+You can probably understand why we did that: we now have one cassier and three customers waiting. This is the
 <em>initial state</em> of our simulation model.</p>
 </section>
 <section id="simulation-events">
@@ -150,13 +150,13 @@ to the standard output.</p>
 </div>
 <p>As expected, running this code leads to the following output.
 The event of (starting) processing customer c1 happens at time t=0.
-It uses value <cite>c2</cite> for variable <cite>customers</cite> and value <cite>cashier</cite> for variable <cite>resources</cite>.
+It uses value <cite>c2</cite> for variable <cite>customers</cite> and value <cite>cassier</cite> for variable <cite>resources</cite>.
 The event of (starting) processing customer c2 happens at time t=0.75.
-This is logical, because our definition of the <cite>process</cite> event that the value <cite>cashier</cite> is only available
+This is logical, because our definition of the <cite>process</cite> event that the value <cite>cassier</cite> is only available
 in the variable <cite>resources</cite> again after 0.75. Accordingly, processing of c3 happens at time t=1.5.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">process</span><span class="p">{</span><span class="n">customers</span><span class="p">:</span> <span class="n">c1</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">cashier</span><span class="p">}</span><span class="nd">@t</span><span class="o">=</span><span class="mi">0</span>
-<span class="n">process</span><span class="p">{</span><span class="n">customers</span><span class="p">:</span> <span class="n">c2</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">cashier</span><span class="p">}</span><span class="nd">@t</span><span class="o">=</span><span class="mf">0.75</span>
-<span class="n">process</span><span class="p">{</span><span class="n">customers</span><span class="p">:</span> <span class="n">c3</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">cashier</span><span class="p">}</span><span class="nd">@t</span><span class="o">=</span><span class="mf">1.5</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">process</span><span class="p">{</span><span class="n">customers</span><span class="p">:</span> <span class="n">c1</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">cassier</span><span class="p">}</span><span class="nd">@t</span><span class="o">=</span><span class="mi">0</span>
+<span class="n">process</span><span class="p">{</span><span class="n">customers</span><span class="p">:</span> <span class="n">c2</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">cassier</span><span class="p">}</span><span class="nd">@t</span><span class="o">=</span><span class="mf">0.75</span>
+<span class="n">process</span><span class="p">{</span><span class="n">customers</span><span class="p">:</span> <span class="n">c3</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">cassier</span><span class="p">}</span><span class="nd">@t</span><span class="o">=</span><span class="mf">1.5</span>
 </pre></div>
 </div>
 <p>For completeness, the full code of the example is:</p>
@@ -172,7 +172,7 @@ in the variable <cite>resources</cite> again after 0.75. Accordingly, processing
 
 <span class="n">shop</span><span class="o">.</span><span class="n">add_event</span><span class="p">([</span><span class="n">customers</span><span class="p">,</span> <span class="n">resources</span><span class="p">],</span> <span class="p">[</span><span class="n">resources</span><span class="p">],</span> <span class="n">process</span><span class="p">)</span>
 
-<span class="n">resources</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;cashier&quot;</span><span class="p">)</span>
+<span class="n">resources</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;cassier&quot;</span><span class="p">)</span>
 <span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c1&quot;</span><span class="p">)</span>
 <span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
 <span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c3&quot;</span><span class="p">)</span>

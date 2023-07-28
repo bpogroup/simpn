@@ -5,6 +5,10 @@ Code:
 
 - Create decorators for prototypes.
   Maybe decorators are not the best way to go and we can simply pass strings to inflow/ outflow variables. 
+  It is clear that it is pretty easy to lose track of the information that is passed via the variables.
+  We should do something to make that more insightful. One thing we could do is typechecking on the variables.
+  Another thing we could do is relate the variables more clearly to (the figure of) the model.
+  Also, we could encourage including print statements.
 - Make a visualization.
 - Do a stress test for performance.
 - Implement replications, warm-up time.

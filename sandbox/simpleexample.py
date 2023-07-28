@@ -10,7 +10,7 @@ def process(customer, resource):
 
 shop.add_event([customers, resources], [resources], process)
 
-resources.put("cashier")
+resources.put("cassier")
 customers.put("c1")
 customers.put("c2")
 customers.put("c3")

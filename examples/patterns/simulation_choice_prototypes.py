@@ -2,7 +2,7 @@ from simpn.simulator import SimProblem
 from simpn.simulator import SimToken
 from random import expovariate as exp, uniform as uniform
 from simpn.reporters import EventLogReporter
-from simpn.prototypes import task, start_event
+from simpn.prototypes import task, start_event, choice
 
 shop = SimProblem()
 
@@ -24,13 +24,7 @@ task(shop, [to_scan_groceries, cassier], [to_choose, cassier], "scan_groceries",
 
 def choose(c):
   return [SimToken((c[0], uniform(1,100)))]
-shop.add_event([to_choose], [chosen], choose)
-
-def pass_customer(c):
-  return [SimToken(c)]
-
-shop.add_event([chosen], [to_use_atm], pass_customer, name="choose_use_atm", guard=lambda c: c[1] < 25)
-shop.add_event([chosen], [done], pass_customer, name="choose_home", guard=lambda c: c[1] >= 25)
+choice(shop, [to_choose], [to_use_atm, done], "choose", choose, [lambda c: c[1] < 25, lambda c: c[1] >= 25])
 
 def start_use_atm(c, r):
   return [SimToken((c, r), exp(1/9))]

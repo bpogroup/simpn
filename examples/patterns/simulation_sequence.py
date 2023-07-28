@@ -8,41 +8,41 @@ shop = SimProblem()
 arrival = shop.add_var("arrival")
 done = shop.add_var("done")
 
-to_scan = shop.add_var("to_scan")
-cashier = shop.add_var("cashier")
-busy_scan = shop.add_var("busy_scan")
+to_scan_groceries_groceries = shop.add_var("to_scan_groceries_groceries")
+cassier = shop.add_var("cassier")
+busy_scan_groceries = shop.add_var("busy_scan_groceries")
 
-to_bag = shop.add_var("to_bag")
+to_bag_groceries = shop.add_var("to_bag_groceries")
 bagger = shop.add_var("bagger")
-busy_bag = shop.add_var("busy_bag")
+busy_bag_groceries = shop.add_var("busy_bag_groceries")
 
 bagger.put("b1")
-cashier.put("r1")
+cassier.put("r1")
 arrival.put(1)
 
-def start_scan(c, r):
+def start_scan_groceries(c, r):
   return [SimToken((c, r), exp(1/9))]
 
-shop.add_event([to_scan, cashier], [busy_scan], start_scan)
+shop.add_event([to_scan_groceries_groceries, cassier], [busy_scan_groceries], start_scan_groceries)
 
-def complete_scan(b):
+def complete_scan_groceries(b):
   return [SimToken(b[1]), SimToken(b[0])]
 
-shop.add_event([busy_scan], [cashier, to_bag], complete_scan)
+shop.add_event([busy_scan_groceries], [cassier, to_bag_groceries], complete_scan_groceries)
 
-def start_bag(c, r):
+def start_bag_groceries(c, r):
   return [SimToken((c, r), exp(1/9))]
 
-shop.add_event([to_bag, bagger], [busy_bag], start_bag)
+shop.add_event([to_bag_groceries, bagger], [busy_bag_groceries], start_bag_groceries)
 
-def complete_bag(b):
+def complete_bag_groceries(b):
   return [SimToken(b[1]), SimToken(b[0])]
 
-shop.add_event([busy_bag], [bagger, done], complete_bag)
+shop.add_event([busy_bag_groceries], [bagger, done], complete_bag_groceries)
 
-def arrive(a):
+def customer_arrived(a):
   return [SimToken(a+1, exp(1/10)), SimToken('c' + str(a))]
 
-shop.add_event([arrival], [arrival, to_scan], arrive)
+shop.add_event([arrival], [arrival, to_scan_groceries_groceries], customer_arrived)
 
 shop.simulate(10, SimpleReporter())

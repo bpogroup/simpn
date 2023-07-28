@@ -63,13 +63,13 @@ So, with that in mind, let's give our variables a value.
 
 .. code-block:: python
 
-    resources.put("cashier")
+    resources.put("cassier")
     customers.put("c1")
     customers.put("c2")
     customers.put("c3")
 
-We now gave the `resources` variable one value, the string `cashier`, but we gave the `customers` variable three values.
-You can probably understand why we did that: we now have one cashier and three customers waiting. This is the
+We now gave the `resources` variable one value, the string `cassier`, but we gave the `customers` variable three values.
+You can probably understand why we did that: we now have one cassier and three customers waiting. This is the
 *initial state* of our simulation model.
 
 Simulation Events
@@ -133,16 +133,16 @@ to the standard output.
 
 As expected, running this code leads to the following output.
 The event of (starting) processing customer c1 happens at time t=0.
-It uses value `c2` for variable `customers` and value `cashier` for variable `resources`.
+It uses value `c2` for variable `customers` and value `cassier` for variable `resources`.
 The event of (starting) processing customer c2 happens at time t=0.75.
-This is logical, because our definition of the `process` event that the value `cashier` is only available
+This is logical, because our definition of the `process` event that the value `cassier` is only available
 in the variable `resources` again after 0.75. Accordingly, processing of c3 happens at time t=1.5.
 
 .. code-block::
 
-    process{customers: c1, resources: cashier}@t=0
-    process{customers: c2, resources: cashier}@t=0.75
-    process{customers: c3, resources: cashier}@t=1.5
+    process{customers: c1, resources: cassier}@t=0
+    process{customers: c2, resources: cassier}@t=0.75
+    process{customers: c3, resources: cassier}@t=1.5
 
 For completeness, the full code of the example is:
 
@@ -160,7 +160,7 @@ For completeness, the full code of the example is:
 
     shop.add_event([customers, resources], [resources], process)
 
-    resources.put("cashier")
+    resources.put("cassier")
     customers.put("c1")
     customers.put("c2")
     customers.put("c3")
