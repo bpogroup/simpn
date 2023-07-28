@@ -36,7 +36,7 @@ def start_use_atm(c, r):
 task(shop, [to_use_atm, atm], [from_use_atm, atm], "use_atm", start_use_atm)
 
 
-shop.add_event([from_scan_groceries, from_use_atm], [to_done], lambda c1, c2: [SimToken(c1)], name="join")
+shop.add_event([from_scan_groceries, from_use_atm], [to_done], lambda c1, c2: [SimToken(c1)], name="join", guard=lambda c1, c2: c1 == c2)
 
 
 end_event(shop, [to_done], [], "done")
