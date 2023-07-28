@@ -157,24 +157,36 @@ class EventLogReporter(Reporter):
 
     def callback(self, timed_binding):
         (binding, time, event) = timed_binding        
-        if event.get_id().endswith("<task:start>"):
-            case_id = binding[0][1].value[0]
-            task = event.get_id()[:-len("<task:start>")]
-        elif event.get_id().endswith("<task:complete>"):    
-            case_id = binding[0][1].value[0][0]
-            task = event.get_id()[:-len("<task:complete>")]
-            resource = binding[0][1].value[1]
         if event.get_id().endswith("<task:start>"):            
+            case_id = binding[0][1].value[0]
+            task = event.get_id()[:event.get_id().index("<")]
             self.task_start_times[(case_id, task)] = time
-        elif event.get_id().endswith("<task:complete>") and (case_id, task) in self.task_start_times.keys():            
+        elif event.get_id().endswith("<task:complete>"):
+            case_id = binding[0][1].value[0][0]
+            task = event.get_id()[:event.get_id().index("<")]
+            resource = binding[0][1].value[1]
+            if (case_id, task) in self.task_start_times.keys():
+                self.logfile.write(str(case_id) + ",")
+                self.logfile.write(task + ",")
+                self.logfile.write(str(resource) + ",")
+                self.logfile.write(self.displace(self.task_start_times[(case_id, task)]).strftime(self.time_format) + ",")
+                self.logfile.write(self.displace(time).strftime(self.time_format))
+                self.logfile.write("\n")
+                self.logfile.flush()
+                del self.task_start_times[(case_id, task)]
+        elif event.get_id().endswith("<start_event>") or event.get_id().endswith("<intermediate_event>") or event.get_id().endswith("<end_event>"):
+            if event.get_id().endswith("<start_event>"):
+                case_id = binding[0][1].value
+            else:
+                case_id = binding[0][1].value[0]
+            event = event.get_id()[:event.get_id().index("<")]
             self.logfile.write(str(case_id) + ",")
-            self.logfile.write(task + ",")
-            self.logfile.write(str(resource) + ",")
-            self.logfile.write(self.displace(self.task_start_times[(case_id, task)]).strftime(self.time_format) + ",")
+            self.logfile.write(event + ",")
+            self.logfile.write(",")
+            self.logfile.write(self.displace(time).strftime(self.time_format) + ",")
             self.logfile.write(self.displace(time).strftime(self.time_format))
             self.logfile.write("\n")
             self.logfile.flush()
-            del self.task_start_times[(case_id, task)]
 
     def close(self):
         self.logfile.close()
