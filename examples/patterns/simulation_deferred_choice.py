@@ -11,6 +11,7 @@ to_scan_groceries = shop.add_var("to_scan_groceries")
 to_leave = shop.add_var("to_leave")
 cassier = shop.add_var("cassier")
 left = shop.add_var("left")
+to_remove = shop.add_var("to_remove")
 done = shop.add_var("done")
 
 cassier.put("r1")
@@ -29,7 +30,14 @@ end_event(shop, [left], [], "left")
 
 def start_scan_groceries(c, r):
   return [SimToken((c, r), exp(1/9))]
-task(shop, [to_scan_groceries, cassier], [done, cassier], "scan_groceries", start_scan_groceries)
+task(shop, [to_scan_groceries, cassier], [to_remove, cassier], "scan_groceries", start_scan_groceries)
+
+
+def remove(c, r):
+  print("removed", c)
+  return [SimToken(c)]
+shop.add_event([to_remove, to_leave], [done], remove, guard=lambda c1, c2: c1==c2)
+
 
 end_event(shop, [done], [], "done")
 
