@@ -32,14 +32,14 @@ def start_event(model, inflow, outflow, name, interarrival_time, behavior=None):
     invar_name = name + "_timer"
     invar = model.add_var(invar_name)
     if behavior is None:
-        result = model.add_event([invar], [invar, outflow[0]], lambda a: [SimToken(a + 1, interarrival_time_f()), SimToken((a,))], name=name + "<start_event>")
+        result = model.add_event([invar], [invar, outflow[0]], lambda a: [SimToken(name + str(int(a[len(name):]) + 1), interarrival_time_f()), SimToken((a,))], name=name + "<start_event>")
     else:
         if not callable(behavior):
             raise TypeError("Start event " + name + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
         if len(inspect.signature(behavior).parameters) != 0:
             raise TypeError("Start event " + name + ": the behavior function must not have many parameters.")
-        result = model.add_event([invar], [invar, outflow[0]], lambda a: [SimToken(a + 1, interarrival_time_f()), SimToken((a, behavior()[0].value))], name=name + "<start_event>")
-    invar.put(0)
+        result = model.add_event([invar], [invar, outflow[0]], lambda a: [SimToken(name + str(int(a[len(name):]) + 1), interarrival_time_f()), SimToken((a, behavior()[0].value))], name=name + "<start_event>")
+    invar.put(name + "0")
 
     return result
 
