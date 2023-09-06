@@ -201,5 +201,31 @@ class TestBasics(unittest.TestCase):
                         self.assertLessEqual(bindings[i][0][1][1].time, bindings[j][0][1][1].time, "two bindings with index i, j, i < j, with the same time for a, must have binding[i] time for b <=  binding[j] time for b")
 
 
+class TestSimVarCounter(unittest.TestCase):
+
+    def test_simvarcounter_simple(self):
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        b = test_problem.add_var("b")
+        c = test_problem.add_var("c")
+        ta = test_problem.add_event([a], [a, b, c], lambda x: [SimToken(x), SimToken(x), SimToken(x, 1)], name="ta")
+        self.assertEqual(len(test_problem.bindings()), 1, "one binding")
+        test_problem.fire(test_problem.bindings()[0])
+        self.assertEqual(len(test_problem.bindings()), 1, "one binding")
+        test_problem.fire(test_problem.bindings()[0])
+        self.assertTrue(len(a.marking_count) == 1 and a.marking_count[SimToken(1)] == 1, "two fires leave one token 1@0 in a")
+        self.assertTrue(len(b.marking_count) == 1 and b.marking_count[SimToken(1)] == 2, "two fires produce two tokens 1@0 in b")
+        self.assertTrue(len(c.marking_count) == 1 and c.marking_count[SimToken(1, 1)] == 2, "two fires produce two tokens 1@1 in c")
+
+        a_counter = test_problem.var("a.count")
+        self.assertTrue(len(a_counter.marking_count) == 1 and a_counter.marking_count[SimToken(1)] == 1, "counter also reflects that there is one token in a")
+        self.assertTrue(len(a_counter.marking_order) == 1 and a_counter.marking_order[0] == SimToken(1), "counter also reflects that there is one token in a")
+
+    #TODO: do more tests for finding the counter variable
+    #TODO: do more tests for the counter counting correctly (also remove tokens - check what affects the total counter in simvar)
+    #TODO: optionally, split up the test above into more fine-grained tests
+
+
 if __name__ == '__main__':
     unittest.main()

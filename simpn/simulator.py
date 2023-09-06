@@ -24,6 +24,7 @@ class SimVar:
         self._id = _id
         self.marking_count = dict()
         self.marking_order = SortedList(key=lambda token: token.time)
+        self.total_count = 0
 
     def put(self, value, time=0):
         """
@@ -47,6 +48,7 @@ class SimVar:
             self.marking_order.add(token)
         else:
             self.marking_count[token] += count
+        self.total_count += count
 
     def remove_token(self, token):
         """
@@ -56,11 +58,50 @@ class SimVar:
         """
         if token in self.marking_count:
             self.marking_count[token] -= 1
+            self.total_count -= 1
         else:
             raise LookupError("No token '" + token + "' at place '" + str(self) + "'.")
         if self.marking_count[token] == 0:
             del self.marking_count[token]
             self.marking_order.remove(token)
+
+    def __str__(self):
+        return self._id
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class SimVarCounter:
+    """
+    A simulation variable that only always contains one token.
+    This token has an integer value that represents the number of tokens in the SimVar that it counts.
+    The identifier of this SimVar is <simvar_id>.count, where simvar_id is the _id of the SimVar that it counts.
+    """
+    COUNT_SUFFIX = ".count"
+    
+    def __init__(self, simvar):
+        self._id = simvar._id + SimVarCounter.COUNT_SUFFIX
+        self.simvar = simvar
+
+    @property
+    def marking_count(self):
+        token = SimToken(self.simvar.total_count)
+        return {token: 1}
+
+    @property
+    def marking_order(self):
+        token = SimToken(self.simvar.total_count)
+        return SortedList([token])
+
+    def put(self, value, time=0):
+        pass
+
+    def add_token(self, token, count=1):
+        pass
+
+    def remove_token(self, token):
+        pass
 
     def __str__(self):
         return self._id
@@ -256,6 +297,7 @@ class SimProblem:
         """
         Returns the SimVar with the given name.
         Raises an error if no such SimVar exists.
+        If the name is a SimVar counter name and it does not yet exist, it is created.
 
         :param name: the name of the SimVar.
         :return: the SimVar with the given name or an Error.
@@ -265,6 +307,16 @@ class SimProblem:
                 return self.id2node[name]
             else:
                 raise TypeError(name + " is not a SimVar.")
+        elif name.endswith(SimVarCounter.COUNT_SUFFIX) and name[:-len(SimVarCounter.COUNT_SUFFIX)] in self.id2node:
+            simvar = self.id2node[name[:-len(SimVarCounter.COUNT_SUFFIX)]]
+            if isinstance(simvar, SimVar):
+                # Generate and add SimVarCount for the SimVar        
+                counter = SimVarCounter(simvar)
+                self.places.append(counter)
+                self.id2node[counter._id] = counter
+                return counter                
+            else:
+                raise TypeError("Cannot create SimVar counter " + name + ". " + name[:-len(SimVarCounter.COUNT_SUFFIX)] + " is not a SimVar.")
         else:
             raise LookupError("SimVar " + name + ": does not exist.")
 
