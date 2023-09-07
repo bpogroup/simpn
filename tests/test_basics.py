@@ -1,5 +1,7 @@
 import unittest
 from simpn.simulator import SimProblem, SimToken
+from simpn.prototypes import start_event, task
+from random import randint
 
 
 class TestBasics(unittest.TestCase):
@@ -339,6 +341,94 @@ class TestSimVarCounter(unittest.TestCase):
         self.assertEquals(counter.marking_count[SimToken(1)], 1, "There is one token of value 2")
         self.assertEquals(len(counter.marking_order), 1, "There is one token value")
         self.assertEquals(counter.marking_order[0], SimToken(1), "There is one token of value 2")
+
+
+class TestPriorities(unittest.TestCase):
+
+    def test_time_driven_prio(self):
+        test_problem = SimProblem()
+
+        task1_queue = test_problem.add_var("task1_queue")
+        task2_queue = test_problem.add_var("task2_queue")
+        done = test_problem.add_var("done")
+
+        resource = test_problem.add_var("resource")
+        resource.put("r1")
+        resource.put("r2")
+
+        start_event(test_problem, [], [task1_queue], "", 1)
+
+        task(test_problem, [task2_queue, resource], [done, resource], "task2", lambda c, r: [SimToken((c, r), 1.25)])
+
+        task(test_problem, [task1_queue, resource], [task2_queue, resource], "task1", lambda c, r: [SimToken((c, r), 1.25)])
+
+        last_completion = None
+        completion_count = 0
+        while test_problem.clock <= 20:
+            bindings = test_problem.bindings()
+            (binding, time, event) = bindings[0]
+            test_problem.fire((binding, time, event))
+
+            # we check if the tokens in the queues always have time <= the global clock
+            # this is an important assumption for the correctness of the simulation
+            for token in task1_queue.marking_order:
+                self.assertLessEqual(token.time, test_problem.clock, "tokens in the queues always have time <= the global clock")
+            for token in task2_queue.marking_order:
+                self.assertLessEqual(token.time, test_problem.clock, "tokens in the queues always have time <= the global clock")
+
+            # we check if the jobs are completed in the order of their arrival
+            #   this must be true, because they are started in the order of their arrival, and the processing time is deterministic
+            if event._id == "task2<task:complete>":
+                completion_count += 1
+                completion = int(binding[0][1].value[0][0])
+                if last_completion is not None:
+                    self.assertGreaterEqual(completion, last_completion, "jobs are completed in the order of their arrival")
+                last_completion = completion
+            
+        self.assertGreater(completion_count, 10, "there are at least 10 completions")
+
+    def test_priority_driven_prio(self):
+        test_problem = SimProblem()
+
+        def priority(token):
+            return token.value[1]
+        task1_queue = test_problem.add_var("task1_queue", priority=priority)
+        task2_queue = test_problem.add_var("task2_queue", priority=priority)
+        done = test_problem.add_var("done")
+
+        resource = test_problem.add_var("resource")
+        resource.put("r1")
+        resource.put("r2")
+        resource.put("r3")
+
+        start_event(test_problem, [], [task1_queue], "", 1, behavior=lambda: [SimToken(randint(1, 2))])
+
+        task(test_problem, [task2_queue, resource], [done, resource], "task2", lambda c, r: [SimToken((c, r), 2)])
+
+        task(test_problem, [task1_queue, resource], [task2_queue, resource], "task1", lambda c, r: [SimToken((c, r), 2)])
+
+        start1_count = 0
+        start2_count = 0
+        while test_problem.clock <= 50:
+            bindings = test_problem.bindings()
+            (binding, time, event) = bindings[0]
+            test_problem.fire((binding, time, event))
+
+            # tokens with higher priority must always start first
+            if event._id == "task1<task:start>":
+                start1_count += 1
+                prio = binding[0][1].value[1]
+                for token in task1_queue.marking_order:
+                    self.assertGreaterEqual(token.value[1], prio, "tokens with higher priority must always start first")
+
+            if event._id == "task2<task:start>":
+                start2_count += 2
+                prio = binding[0][1].value[1]
+                for token in task2_queue.marking_order:
+                    self.assertGreaterEqual(token.value[1], prio, "tokens with higher priority must always start first")
+
+        self.assertGreater(start1_count, 10, "there are at least 10 starts of task 1")
+        self.assertGreater(start2_count, 10, "there are at least 10 starts of task 2")
 
 
 if __name__ == '__main__':

@@ -18,12 +18,13 @@ class SimVar:
      The functions put and remove, put and remove tokens in such a way that the marking_count and marking_order are maintained.
 
     :param _id: the identifier of the SimVar.
+    :param priority: a function that takes a token as input and returns a value that is used to sort the tokens in the order in which they will be processed (lower values first). The default is processing in the order of the time of the token.
     """
 
-    def __init__(self, _id):
+    def __init__(self, _id, priority=lambda token: token.time):
         self._id = _id
         self.marking_count = dict()
-        self.marking_order = SortedList(key=lambda token: token.time)
+        self.marking_order = SortedList(key=priority)
         self.total_count = 0
 
     def put(self, value, time=0):
@@ -275,11 +276,12 @@ class SimProblem:
         result += "}"                
         return result
 
-    def add_var(self, name):
+    def add_var(self, name, priority=lambda token: token.time):
         """
         Creates a new SimVar with the specified name as identifier. Adds the SimVar to the problem and returns it.
 
         :param name: a name for the SimVar.
+        :param priority: a function that takes a token as input and returns a value that is used to sort the tokens in the order in which they will be processed (lower values first). The default is processing in the order of the time of the token.
         :return: a SimVar with the specified name as identifier.
         """
         # Check name
@@ -287,7 +289,7 @@ class SimProblem:
             raise TypeError("Node with name " + name + " already exists. Names must be unique.")
 
         # Generate and add SimVar
-        result = SimVar(name)
+        result = SimVar(name, priority=priority)
         self.places.append(result)
         self.id2node[name] = result
 
@@ -456,21 +458,19 @@ class SimProblem:
         If no timed binding is enabled at the current clock time, updates the current clock time to the earliest time at which there is.
         :return: list of tuples ([(place, token), (place, token), ...], time, event)
         """
-        untimed_bindings = []
         timed_bindings = []
+        min_enabling_time = None
         for t in self.events:
             for (binding, time) in self.event_bindings(t):
-                if time is None:
-                    untimed_bindings.append((binding, time, t))
-                else:
-                    timed_bindings.append((binding, time, t))
+                timed_bindings.append((binding, time, t))
+                if min_enabling_time is None or time < min_enabling_time:
+                    min_enabling_time = time
         # timed bindings are only enabled if they have time <= clock
         # if there are no such bindings, set the clock to the earliest time at which there are
-        timed_bindings.sort(key=lambda b: b[1])
-        if len(timed_bindings) > 0 and timed_bindings[0][1] > self.clock:
-            self.clock = timed_bindings[0][1]
+        if min_enabling_time is not None and min_enabling_time > self.clock:
+            self.clock = min_enabling_time
         # now return the untimed bindings + the timed bindings that have time <= clock
-        return untimed_bindings + [(binding, time, t) for (binding, time, t) in timed_bindings if time <= self.clock]
+        return [(binding, time, t) for (binding, time, t) in timed_bindings if time <= self.clock]
 
     def fire(self, timed_binding):
         """
