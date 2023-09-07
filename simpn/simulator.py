@@ -72,7 +72,7 @@ class SimVar:
         return self.__str__()
 
 
-class SimVarCounter:
+class SimVarCounter(SimVar):
     """
     A simulation variable that only always contains one token.
     This token has an integer value that represents the number of tokens in the SimVar that it counts.

@@ -203,28 +203,142 @@ class TestBasics(unittest.TestCase):
 
 class TestSimVarCounter(unittest.TestCase):
 
-    def test_simvarcounter_simple(self):
+    def test_simvarcounter_creation(self):
+        # tests that a counter is created for a variable
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        counter = test_problem.var("a.count")
+        self.assertIsNotNone(counter, "counter is created")
+
+    def test_simvarcounter_exception(self):
+        # tests that a counter is not created for a variable that does not exist
+        test_problem = SimProblem()
+        with self.assertRaises(Exception):
+            counter = test_problem.var("a.count")
+    
+    def test_simvarcounter_exception_2(self):
+        # tests that a counter is not created for a problem element that is not a variable
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        ta = test_problem.add_event([a], [a], lambda x: [SimToken(x)], name="ta")
+        with self.assertRaises(Exception):
+            counter = test_problem.var("ta.count")
+    
+    def test_simvarcounter_exception_3(self):
+        # tests that an element that is not a variable is not returned as a counter
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        ta = test_problem.add_event([a], [a], lambda x: [SimToken(x)], name="ta.count")
+        with self.assertRaises(Exception):
+            counter = test_problem.var("ta.count")
+    
+    def test_simvarcounter_add_token(self):
+        # tests if putting a token increases the counter
         test_problem = SimProblem()
         a = test_problem.add_var("a")
         a.put(1)
-        b = test_problem.add_var("b")
-        c = test_problem.add_var("c")
-        ta = test_problem.add_event([a], [a, b, c], lambda x: [SimToken(x), SimToken(x), SimToken(x, 1)], name="ta")
-        self.assertEqual(len(test_problem.bindings()), 1, "one binding")
-        test_problem.fire(test_problem.bindings()[0])
-        self.assertEqual(len(test_problem.bindings()), 1, "one binding")
-        test_problem.fire(test_problem.bindings()[0])
-        self.assertTrue(len(a.marking_count) == 1 and a.marking_count[SimToken(1)] == 1, "two fires leave one token 1@0 in a")
-        self.assertTrue(len(b.marking_count) == 1 and b.marking_count[SimToken(1)] == 2, "two fires produce two tokens 1@0 in b")
-        self.assertTrue(len(c.marking_count) == 1 and c.marking_count[SimToken(1, 1)] == 2, "two fires produce two tokens 1@1 in c")
+        counter = test_problem.var("a.count")
+        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
+        self.assertEquals(counter.marking_count[SimToken(1)], 1, "There is one token of value 1")
+        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
+        self.assertEquals(counter.marking_order[0], SimToken(1), "There is one token of value 1")
 
-        a_counter = test_problem.var("a.count")
-        self.assertTrue(len(a_counter.marking_count) == 1 and a_counter.marking_count[SimToken(1)] == 1, "counter also reflects that there is one token in a")
-        self.assertTrue(len(a_counter.marking_order) == 1 and a_counter.marking_order[0] == SimToken(1), "counter also reflects that there is one token in a")
+    def test_simvarcounter_add_token_2(self):
+        # tests if putting identical token increases the counter
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        a.put(1)
+        counter = test_problem.var("a.count")
+        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
+        self.assertEquals(counter.marking_count[SimToken(2)], 1, "There is one token of value 2")
+        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
+        self.assertEquals(counter.marking_order[0], SimToken(2), "There is one token of value 2")
 
-    #TODO: do more tests for finding the counter variable
-    #TODO: do more tests for the counter counting correctly (also remove tokens - check what affects the total counter in simvar)
-    #TODO: optionally, split up the test above into more fine-grained tests
+    def test_simvarcounter_add_token_3(self):
+        # tests if putting different tokens increases the counter
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        a.put(1)
+        a.put(2)
+        counter = test_problem.var("a.count")
+        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
+        self.assertEquals(counter.marking_count[SimToken(3)], 1, "There is one token of value 3")
+        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
+        self.assertEquals(counter.marking_order[0], SimToken(3), "There is one token of value 3")
+
+    def test_simvarcounter_remove_token(self):
+        # tests if removing a token of which there is 1 decreases the counter
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        a.put(1)
+        a.put(2)
+        counter = test_problem.var("a.count")
+        a.remove_token(SimToken(2))
+        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
+        self.assertEquals(counter.marking_count[SimToken(2)], 1, "There is one token of value 2")
+        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
+        self.assertEquals(counter.marking_order[0], SimToken(2), "There is one token of value 2")
+
+    def test_simvarcounter_add_remove_token_2(self):
+        # tests if removing a token of which there are 2 decreases the counter
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        a.put(1)
+        a.put(2)
+        counter = test_problem.var("a.count")
+        a.remove_token(SimToken(1))
+        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
+        self.assertEquals(counter.marking_count[SimToken(2)], 1, "There is one token of value 2")
+        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
+        self.assertEquals(counter.marking_order[0], SimToken(2), "There is one token of value 2")
+
+    def test_simvarcounter_add_remove_through_firing(self):
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        counter = test_problem.var("a.count")
+        to_add = test_problem.add_var("to_add")
+        to_remove = test_problem.add_var("to_remove")        
+        test_problem.add_event([to_add], [a], lambda x: [SimToken(x)], name="add")
+        test_problem.add_event([to_remove, a], [], lambda x, y: [], name="remove", guard = lambda x, y: x == y)
+
+        to_add.put(1)
+        test_problem.fire(test_problem.bindings()[0])
+        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
+        self.assertEquals(counter.marking_count[SimToken(1)], 1, "There is one token of value 1")
+        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
+        self.assertEquals(counter.marking_order[0], SimToken(1), "There is one token of value 1")
+
+        to_add.put(1)
+        test_problem.fire(test_problem.bindings()[0])
+        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
+        self.assertEquals(counter.marking_count[SimToken(2)], 1, "There is one token of value 2")
+        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
+        self.assertEquals(counter.marking_order[0], SimToken(2), "There is one token of value 2")
+
+        to_add.put(2)
+        test_problem.fire(test_problem.bindings()[0])
+        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
+        self.assertEquals(counter.marking_count[SimToken(3)], 1, "There is one token of value 2")
+        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
+        self.assertEquals(counter.marking_order[0], SimToken(3), "There is one token of value 2")
+
+        to_remove.put(2)
+        test_problem.fire(test_problem.bindings()[0])
+        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
+        self.assertEquals(counter.marking_count[SimToken(2)], 1, "There is one token of value 2")
+        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
+        self.assertEquals(counter.marking_order[0], SimToken(2), "There is one token of value 2")
+
+        to_remove.put(1)
+        test_problem.fire(test_problem.bindings()[0])
+        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
+        self.assertEquals(counter.marking_count[SimToken(1)], 1, "There is one token of value 2")
+        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
+        self.assertEquals(counter.marking_order[0], SimToken(1), "There is one token of value 2")
 
 
 if __name__ == '__main__':
