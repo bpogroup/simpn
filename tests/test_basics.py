@@ -343,6 +343,34 @@ class TestSimVarCounter(unittest.TestCase):
         self.assertEquals(counter.marking_order[0], SimToken(1), "There is one token of value 2")
 
 
+class TestTimeVariable(unittest.TestCase):
+
+    def test_available(self):
+        test_problem = SimProblem()
+
+        time_var = test_problem.var("time")
+
+        self.assertEquals(len(time_var.marking_count), 1, "There is one token value")
+        self.assertEquals(time_var.marking_count[SimToken(0)], 1, "There is one token of value 0")
+        self.assertEquals(len(time_var.marking_order), 1, "There is one token value")
+        self.assertEquals(time_var.marking_order[0], SimToken(0), "There is one token of value 0")
+
+    def test_updating(self):
+        # tests if firing updates the time
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1, 2)
+        test_problem.add_event([a], [], lambda x: [], name="ta")
+        test_problem.fire(test_problem.bindings()[0])
+
+        time_var = test_problem.var("time")
+
+        self.assertEquals(len(time_var.marking_count), 1, "There is one token value")
+        self.assertEquals(time_var.marking_count[SimToken(2)], 1, "There is one token of value 0")
+        self.assertEquals(len(time_var.marking_order), 1, "There is one token value")
+        self.assertEquals(time_var.marking_order[0], SimToken(2), "There is one token of value 0")
+
+
 class TestPriorities(unittest.TestCase):
 
     def test_time_driven_prio(self):

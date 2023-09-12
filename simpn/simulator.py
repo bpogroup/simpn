@@ -111,6 +111,44 @@ class SimVarCounter(SimVar):
         return self.__str__()
 
 
+class SimVarTime(SimVar):
+    """
+    A simulation variable that contains the simulation time.
+    This variable only always has a single token value, which is the simulation time.
+    The identifier of this SimVar is 'time', which consequently is a reserved name.
+    """
+    TIME_ID = "time"
+    
+    def __init__(self, problem):
+        self._id = SimVarTime.TIME_ID
+        self.problem = problem
+
+    @property
+    def marking_count(self):
+        token = SimToken(self.problem.clock)
+        return {token: 1}
+
+    @property
+    def marking_order(self):
+        token = SimToken(self.problem.clock)
+        return SortedList([token])
+
+    def put(self, value, time=0):
+        pass
+
+    def add_token(self, token, count=1):
+        pass
+
+    def remove_token(self, token):
+        pass
+
+    def __str__(self):
+        return self._id
+
+    def __repr__(self):
+        return self.__str__()
+
+
 class SimEvent:
     """
     A simulation event SimEvent that can happen when tokens are available on all of its
@@ -287,6 +325,10 @@ class SimProblem:
         # Check name
         if name in self.id2node:
             raise TypeError("Node with name " + name + " already exists. Names must be unique.")
+        if name.endswith(SimVarCounter.COUNT_SUFFIX):
+            raise TypeError("Cannot create SimVar with name " + name + ". Names ending with " + SimVarCounter.COUNT_SUFFIX + " are reserved for SimVar counters. If you just want to get the counter variable, use the .var() method instead.")
+        if name == SimVarTime.TIME_ID:
+            raise TypeError("Cannot create SimVar with name " + name + ". " + SimVarTime.TIME_ID + " is reserved for the time variable. If you just want to get the time variable, use the .var() method instead.")
 
         # Generate and add SimVar
         result = SimVar(name, priority=priority)
@@ -319,6 +361,12 @@ class SimProblem:
                 return counter                
             else:
                 raise TypeError("Cannot create SimVar counter " + name + ". " + name[:-len(SimVarCounter.COUNT_SUFFIX)] + " is not a SimVar.")
+        elif name == SimVarTime.TIME_ID:
+            # Generate and add SimVarTime
+            time_var = SimVarTime(self)
+            self.places.append(time_var)
+            self.id2node[time_var._id] = time_var
+            return time_var
         else:
             raise LookupError("SimVar " + name + ": does not exist.")
 
