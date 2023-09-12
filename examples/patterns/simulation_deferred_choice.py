@@ -34,7 +34,6 @@ task(shop, [to_scan_groceries, cassier], [to_remove, cassier], "scan_groceries",
 
 
 def remove(c, r):
-  print("removed", c)
   return [SimToken(c)]
 shop.add_event([to_remove, to_leave], [done], remove, guard=lambda c1, c2: c1==c2)
 
