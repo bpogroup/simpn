@@ -68,6 +68,9 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVarCounter" title="simpn.simulator.SimVarCounter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarCounter</span></code></a>(simvar)</p></td>
 <td><p>A simulation variable that only always contains one token.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVarTime" title="simpn.simulator.SimVarTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarTime</span></code></a>(problem)</p></td>
+<td><p>A simulation variable that contains the simulation time.</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>Functions:</strong></p>
@@ -469,6 +472,67 @@ The identifier of this SimVar is &lt;simvar_id&gt;.count, where simvar_id is the
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVarCounter.remove_token">
 <span class="sig-name descname"><span class="pre">remove_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarCounter.remove_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes a token value (once) from the SimVar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>token</strong> – the token value to remove from the SimVar.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.simulator.SimVarTime">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVarTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">problem</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>A simulation variable that contains the simulation time.
+This variable only always has a single token value, which is the simulation time.
+The identifier of this SimVar is ‘time’, which consequently is a reserved name.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVarTime.add_token" title="simpn.simulator.SimVarTime.add_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_token</span></code></a>(token[, count])</p></td>
+<td><p>Adds a token value in the SimVar.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVarTime.put" title="simpn.simulator.SimVarTime.put"><code class="xref py py-obj docutils literal notranslate"><span class="pre">put</span></code></a>(value[, time])</p></td>
+<td><p>Put a token value in the SimVar at a particular time.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVarTime.remove_token" title="simpn.simulator.SimVarTime.remove_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_token</span></code></a>(token)</p></td>
+<td><p>Removes a token value (once) from the SimVar.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimVarTime.add_token">
+<span class="sig-name descname"><span class="pre">add_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime.add_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a token value in the SimVar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>token</strong> – the token value to put in the SimVar.</p></li>
+<li><p><strong>count</strong> – the number of times to put the token value in the SimVar (defaults to 1 time).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimVarTime.put">
+<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime.put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Put a token value in the SimVar at a particular time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> – the value to put in the SimVar.</p></li>
+<li><p><strong>time</strong> – the time to make this value available at.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimVarTime.remove_token">
+<span class="sig-name descname"><span class="pre">remove_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime.remove_token" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes a token value (once) from the SimVar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
