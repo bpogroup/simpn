@@ -1,15 +1,20 @@
 from simpn.simulator import SimProblem
 
+# Instantiate a simulation problem.
 shop = SimProblem()
 
+# Define queues and other 'places' in the process.
 arrival = shop.add_var("arrival")
 waiting = shop.add_var("waiting")
-resource = shop.add_var("resource")
 busy = shop.add_var("busy")
 
-resource.put("r1")
 arrival.put(1)
 
+# Define resources.
+resource = shop.add_var("resource")
+resource.put("r1")
+
+# Define events.
 from simpn.simulator import SimToken
 from random import expovariate as exp
 
@@ -28,6 +33,13 @@ def arrive(a):
 
 shop.add_event([arrival], [arrival, waiting], arrive)
 
+# Run the simulation.
 from simpn.reporters import SimpleReporter
 
 shop.simulate(2.5, SimpleReporter())
+
+# also write down the model as a Petri net.
+# cicles are variables. squares are events.
+# variables have values at a moment in time (tokens).
+# an event takes labeled variables and produces tokens for other variables.
+# also note that here we have start and complete events.

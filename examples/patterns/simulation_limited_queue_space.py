@@ -3,18 +3,21 @@ from random import expovariate as exp
 from simpn.reporters import EventLogReporter
 from simpn.prototypes import start_event, task, end_event, intermediate_event
 
+# Instantiate a simulation problem.
 shop = SimProblem()
 
-to_check_queue = shop.add_var("to_check_queue")
+# Define queues and other 'places' in the process.
+to_check_queue = shop.add_var("to check queue")
 queue = shop.add_var("queue")
 queue_length = shop.var("queue.count")
 done = shop.add_var("done")
-to_leave = shop.add_var("to_leave")
+to_leave = shop.add_var("to leave")
 
+# Define resources.
 cassier = shop.add_var("cassier")
 cassier.put("r1")
 
-
+# Define events.
 start_event(shop, [], [to_check_queue], "start", lambda: exp(1/9))
 
 # Check the queue length
@@ -29,6 +32,7 @@ end_event(shop, [done], [], "complete")
 end_event(shop, [to_leave], [], "leave")
 
 
+# Run the simulation.
 reporter = EventLogReporter("./temp/simulation_limited_queue_space.csv")
 shop.simulate(24*60, reporter)
 reporter.close()

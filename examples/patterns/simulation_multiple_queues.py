@@ -4,22 +4,26 @@ from random import expovariate as exp, uniform as uniform
 from simpn.reporters import EventLogReporter
 from simpn.prototypes import task, start_event, end_event
 
+# Instantiate a simulation problem.
 shop = SimProblem()
 
-to_choose = shop.add_var("to_choose")
-cassier_1_queue = shop.add_var("cassier_1_queue")
-cassier_2_queue = shop.add_var("cassier_2_queue")
+# Define queues and other 'places' in the process.
+to_choose = shop.add_var("to choose")
+cassier_1_queue = shop.add_var("cassier 1 queue")
+cassier_2_queue = shop.add_var("cassier 2 queue")
 done = shop.add_var("done")
 
-cassier_1 = shop.add_var("cassier_1")
-cassier_2 = shop.add_var("cassier_2")
+# Define resources.
+cassier_1 = shop.add_var("cassier 1")
+cassier_2 = shop.add_var("cassier 2")
 
 cassier_1.put("c1")
 cassier_2.put("c2")
 
-cassier_1_queue_count = shop.var("cassier_1_queue.count")
-cassier_2_queue_count = shop.var("cassier_2_queue.count")
+cassier_1_queue_count = shop.var("cassier 1 queue.count")
+cassier_2_queue_count = shop.var("cassier 2 queue.count")
 
+# Define events.
 shop.add_event([to_choose, cassier_1_queue_count, cassier_2_queue_count], [cassier_1_queue], lambda x, c1c, c2c: [SimToken(x)], guard = lambda x, c1c, c2c: c1c < c2c, name="choose cassier 1")
 shop.add_event([to_choose, cassier_1_queue_count, cassier_2_queue_count], [cassier_2_queue], lambda x, c1c, c2c: [SimToken(x)], guard = lambda x, c1c, c2c: c1c >= c2c, name="choose cassier 2")
 
@@ -32,6 +36,7 @@ start_event(shop, [], [to_choose], "arrive", interarrival_time)
 
 end_event(shop, [done], [], "leave")
 
+# Run the simulation.
 reporter = EventLogReporter("./temp/simulation_multiple_queues.csv")
 shop.simulate(24*60, reporter)
 reporter.close()

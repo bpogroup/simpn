@@ -4,43 +4,48 @@ from random import expovariate as exp, uniform as uniform
 from simpn.reporters import EventLogReporter
 from simpn.prototypes import task, start_event, end_event
 
+# Instantiate a simulation problem.
 shop = SimProblem()
 
-to_split = shop.add_var("to_split")
-to_scan_groceries = shop.add_var("to_scan_groceries")
-to_use_atm = shop.add_var("to_use_atm")
-from_scan_groceries = shop.add_var("from_scan_groceries")
-from_use_atm = shop.add_var("from_use_atm")
-to_done = shop.add_var("to_done")
+# Define queues and other 'places' in the process.
+to_split = shop.add_var("to split")
+scan_queue = shop.add_var("scan queue")
+atm_queue = shop.add_var("atm queue")
+wait_sync_w_atm = shop.add_var("waiting for synchronization with atm")
+wait_sync_w_scan = shop.add_var("waiting for synchronization with scanning")
+to_done = shop.add_var("to done")
 
+# Define resources.
 cassier = shop.add_var("cassier")
 atm = shop.add_var("atm")
 
 cassier.put("r1")
 atm.put("a1")
 
+# Define events.
 def interarrival_time():
   return exp(1/10)
 start_event(shop, [], [to_split], "arrive", interarrival_time)
 
 
-shop.add_event([to_split], [to_scan_groceries, to_use_atm], lambda c: [SimToken(c), SimToken(c)], name="split")
+shop.add_event([to_split], [scan_queue, atm_queue], lambda c: [SimToken(c), SimToken(c)], name="split")
 
 
 def start_scan_groceries(c, r):
   return [SimToken((c, r), exp(1/9))]
-task(shop, [to_scan_groceries, cassier], [from_scan_groceries, cassier], "scan_groceries", start_scan_groceries)
+task(shop, [scan_queue, cassier], [wait_sync_atm, cassier], "scan_groceries", start_scan_groceries)
 
 def start_use_atm(c, r):
   return [SimToken((c, r), exp(1/9))]
-task(shop, [to_use_atm, atm], [from_use_atm, atm], "use_atm", start_use_atm)
+task(shop, [atm_queue, atm], [wait_sync_scan, atm], "use_atm", start_use_atm)
 
 
-shop.add_event([from_scan_groceries, from_use_atm], [to_done], lambda c1, c2: [SimToken(c1)], name="join", guard=lambda c1, c2: c1 == c2)
+shop.add_event([wait_sync_atm, wait_sync_scan], [to_done], lambda c1, c2: [SimToken(c1)], name="join", guard=lambda c1, c2: c1 == c2)
 
 
 end_event(shop, [to_done], [], "done")
 
+# Run the simulation.
 reporter = EventLogReporter("./temp/simulation_parallellism.csv")
 shop.simulate(24*60, reporter)
 reporter.close()
