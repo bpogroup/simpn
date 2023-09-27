@@ -27,10 +27,3 @@ shop.simulate(24*60, SimpleReporter())
 reporter = EventLogReporter("./temp/simulation_simple_prototypes.csv")
 shop.simulate(24*60, reporter)
 reporter.close()
-
-# Writing down start/completion events for each task is tedious.
-# For that reason we have a convenience function that does that for us (the task function).
-# All that the task function does is take the information it is provided and create start and complete events.
-# So do not think of it as a single event, but rather as something that creates two events.
-# We also introduce BPMN start and and events. These generate single events. However, they use a notation that is subsequently used
-# by the EventLogReporter to generate a log that can be mined.

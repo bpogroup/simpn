@@ -28,32 +28,23 @@ cassier.put("r1")
 # Define events.
 def start_scan_groceries(c, r):
   return [SimToken((c, r), exp(1/9))]
-
 shop.add_event([scan_queue, cassier], [busy_scan], start_scan_groceries)
 
 def complete_scan_groceries(b):
   return [SimToken(b[1]), SimToken(b[0])]
-
 shop.add_event([busy_scan], [cassier, bag_queue], complete_scan_groceries)
 
 def start_bag_groceries(c, r):
   return [SimToken((c, r), exp(1/9))]
-
 shop.add_event([bag_queue, bagger], [busy_bag], start_bag_groceries)
 
 def complete_bag_groceries(b):
   return [SimToken(b[1]), SimToken(b[0])]
-
 shop.add_event([busy_bag], [bagger, done], complete_bag_groceries)
 
 def customer_arrived(a):
   return [SimToken(a+1, exp(1/10)), SimToken('c' + str(a))]
-
 shop.add_event([arrival], [arrival, scan_queue], customer_arrived)
 
 # Run the simulation.
 shop.simulate(10, SimpleReporter())
-
-
-# Again, also write down the Petri net.
-# Also remark that some translation is required from BPMN to the Petri net. 
