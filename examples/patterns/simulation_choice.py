@@ -33,8 +33,8 @@ shop.add_event([to_choose], [chosen], choose)
 def pass_customer(c):
   return [SimToken(c)]
 
-shop.add_event([chosen], [atm_queue], pass_customer, name="choose_use_atm", guard=lambda c: c[1] < 25)
-shop.add_event([chosen], [done], pass_customer, name="choose_go_home", guard=lambda c: c[1] >= 25)
+shop.add_event([chosen], [atm_queue], pass_customer, name="choose_use_atm", guard=lambda c: c[1] <= 25)
+shop.add_event([chosen], [done], pass_customer, name="choose_go_home", guard=lambda c: c[1] > 25)
 
 def start_use_atm(c, r):
   return [SimToken((c, r), exp(1/9))]

@@ -1,8 +1,7 @@
-from simpn.simulator import SimProblem
-from simpn.simulator import SimToken
+from simpn.simulator import SimProblem, SimToken
 from random import expovariate as exp
-from simpn.reporters import EventLogReporter
-from simpn.prototypes import task, start_event, choice, end_event
+from simpn.reporters import EventLogReporter, TimeUnit
+from simpn.prototypes import task, start_event, end_event, intermediate_event
 
 # Instantiate a simulation problem.
 shop = SimProblem()
@@ -10,8 +9,9 @@ shop = SimProblem()
 # Define queues and other 'places' in the process.
 offer_qeue = shop.add_var("offer queue")
 to_choose = shop.add_var("to choose")
-waiting_response = shop.add_var("waiting for response")
+chosen = shop.add_var("chosen")
 processing_queue = shop.add_var("processing queue")
+waiting_for_response = shop.add_var("waiting for response")
 to_leave = shop.add_var("to leave")
 done = shop.add_var("done")
 
@@ -32,13 +32,15 @@ task(shop, [offer_qeue, administrator], [to_choose, administrator], "create_offe
 def choose(c):
   waiting_time = exp(1/4)
   if waiting_time < 5:
-    return [SimToken((c[0], waiting_time))]
+    return [SimToken((c[0], waiting_time), waiting_time)]
   else:
-    return [SimToken((c[0], 5))]
+    return [SimToken((c[0], 5), 5)]
 
-choice(shop, [to_choose], [processing_queue, to_leave], "choose", choose, [lambda c: c[1] < 5, lambda c: c[1] >= 5])
+shop.add_event([to_choose], [chosen], choose)
+shop.add_event([chosen], [waiting_for_response], lambda c: [SimToken(c)], name="response", guard=lambda c: c[1] < 5)
+shop.add_event([chosen], [to_leave], lambda c: [SimToken(c)], name="timeout", guard=lambda c: c[1] >= 5)
 
-shop.add_event([waiting_response], [processing_queue], lambda c: [SimToken(c, c[1])], name="wait_for_response")
+intermediate_event(shop, [waiting_for_response], [processing_queue], "wait_for_response", lambda c: [SimToken(c)])
 
 def start_process_response(c, r):
   return [SimToken((c, r), exp(1/4))]
@@ -49,6 +51,6 @@ end_event(shop, [done], [], "done")
 end_event(shop, [to_leave], [], "left")
 
 # Run the simulation.
-reporter = EventLogReporter("./temp/simulation_deferred_simple.csv")
+reporter = EventLogReporter("./temp/simulation_deferred_simple.csv", timeunit=TimeUnit.DAYS)
 shop.simulate(24*60, reporter)
 reporter.close()
