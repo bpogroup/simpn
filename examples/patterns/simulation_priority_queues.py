@@ -8,9 +8,7 @@ from simpn.reporters import EventLogReporter
 shop = SimProblem()
 
 # Define queues and other 'places' in the process.
-def priority(token):
-    return token.value[1]
-scan_queue = shop.add_var("scan queue", priority=priority)
+scan_queue = shop.add_var("scan queue", priority=lambda token: token.value[1])
 done = shop.add_var("done")
 
 # Define resources.
@@ -18,13 +16,9 @@ cassier = shop.add_var("cassier")
 cassier.put("c1")
 
 # Define events.
-def interarrival_time():
-  return exp(1/10)
-start_event(shop, [], [scan_queue], "customer_arrived", interarrival_time, behavior=lambda: [SimToken(randint(1, 2))])
+start_event(shop, [], [scan_queue], "customer_arrived", lambda: exp(1/10), behavior=lambda: [SimToken(randint(1, 2))])
 
-def start_scan_groceries(c, r):
-  return [SimToken((c, r), exp(1/9))]
-scan_groceries = task(shop, [scan_queue, cassier], [done, cassier], "scan_groceries", start_scan_groceries)
+scan_groceries = task(shop, [scan_queue, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), exp(1/9))])
 
 end_event(shop, [done], [], "done")
 
