@@ -92,50 +92,6 @@ def task(model, inflow, outflow, name, behavior, guard=None):
     return complete_event
 
 
-def choice(model, inflow, outflow, name, behavior, guards):
-    """
-    Generates a composition of SimVar and SimEvent that represents a BPMN choice.
-    Adds it to the specified model. The choice must have one incoming SimVar and multiple outgoing SimVar.
-    The incoming SimVar represents the case arriving at the choice.
-    The outgoing SimVar represent the case leaving according to the possible choices.
-    The behavior specifies how the task may change the case data.
-    There must be a list of guards, as many as there are outgoing SimVar. Each guard represents the condition according to which a
-    particular choice is made.
-
-    :param model: the SimProblem to which the choice composition must be added.
-    :param inflow: a list with one SimVar.
-    :param outflow: a list with multiple SimVar. One for each possible choice.
-    :param name: the name of the choice.
-    :param behavior: the behavior function which can modify the case data.
-    :param guards: a list with multiple guards. One for each possible choice.
-    """
-
-    # Process other variables
-    if len(inflow) != 1:
-        raise TypeError("Choice event " + name + ": must have one inflow variable.")
-    if len(outflow) < 2:
-        raise TypeError("Choice event " + name + ": must have at least two outflow variables representing the possible choices.")
-    if not callable(behavior):
-        raise TypeError("Choice event " + name + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
-    if len(inspect.signature(behavior).parameters) != 1:
-        raise TypeError("Choice event " + name + ": the behavior function must have one parameters for the inflow variable.")
-    if type(guards) is not list or len(guards) != len(outflow):
-        raise TypeError("Choice event " + name + ": there must be a list of guards; as many as there are outflow parameters.")
-    for guard in guards:
-        if not callable(guard):
-            raise TypeError("Choice event " + name + ": the guards must be functions. (Maybe you made it a function call, exclude the brackets.)")
-        if len(inspect.signature(guard).parameters) != 1:
-            raise TypeError("Choice event " + name + ": the guards must have one parameters for the inflow variable.")
-
-    chosenvar = model.add_var(name + "_chosen")
-    choose_event = model.add_event(inflow, [chosenvar], behavior, name=name)
-
-    for i in range(len(outflow)):
-        model.add_event([chosenvar], [outflow[i]], lambda c: [SimToken(c)], name="choose_" + outflow[i]._id, guard=guards[i])
-
-    return choose_event
-
-
 def intermediate_event(model, inflow, outflow, name, behavior, guard=None):
     """
     Generates a composition of SimVar and SimEvent that represents a BPMN intermediate event.

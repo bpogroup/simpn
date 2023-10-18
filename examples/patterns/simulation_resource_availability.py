@@ -24,14 +24,12 @@ start_event(shop, [], [scan_queue], "start", lambda: 1)
 task(shop, [scan_queue, cassier], [done, cassier_break_check], "scan_groceries", lambda c, r: [SimToken((c, r), 1)])
 
 # The break check is basically a choice
-# if it is more than 2 time units since the cassier last took a break, send the cassier on a break
-shop.add_event([cassier_break_check, time], [cassier_break], lambda c, time: [SimToken(c)], guard=lambda c, time: time > c[1] + 2, name="check_break")
-# if it was less than or equal to 2 time units, send the cassier back to work
-shop.add_event([cassier_break_check, time], [cassier], lambda c, time: [SimToken(c)], guard=lambda c, time: time <= c[1] + 2, name="check_no_break")
-
-# send cassiers on a break back after 2 time units
-# (since this only adds a delay, it can also be integrated with the cassier break check)
-shop.add_event([cassier_break], [cassier], lambda c: [SimToken(c, 2)], name="send_back_from_break")
+def check_break(c, time):
+    if time > c[1] + 2: # if it is more than 2 time units since the cassier last took a break, send the cassier on a break
+        return [SimToken(c, 2)]
+    else: # if it was less than or equal to 2 time units, send the cassier back to work
+        return [SimToken(c)]
+shop.add_event([cassier_break_check, time], [cassier], check_break)
 
 end_event(shop, [done], [], "complete")
 

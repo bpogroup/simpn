@@ -9,7 +9,6 @@ shop = SimProblem()
 # Define queues and other 'places' in the process.
 offer_qeue = shop.add_var("offer queue")
 to_choose = shop.add_var("to choose")
-chosen = shop.add_var("chosen")
 processing_queue = shop.add_var("processing queue")
 waiting_for_response = shop.add_var("waiting for response")
 to_leave = shop.add_var("to leave")
@@ -21,30 +20,22 @@ administrator = shop.add_var("administrator")
 administrator.put("a1")
 
 # Define events.
-def interarrival_time():
-  return exp(1/10)
-start_event(shop, [], [offer_qeue], "customer_arrived", interarrival_time)
+start_event(shop, [], [offer_qeue], "customer_arrived", lambda: exp(1/10))
 
-def start_create_offer(c, r):
-  return [SimToken((c, r), exp(1/4))]
-task(shop, [offer_qeue, administrator], [to_choose, administrator], "create_offer", start_create_offer)
+task(shop, [offer_qeue, administrator], [to_choose, administrator], "create_offer", lambda c, r: [SimToken((c, r), exp(1/4))])
 
 def choose(c):
   waiting_time = exp(1/4)
   if waiting_time < 5:
-    return [SimToken((c[0], waiting_time), waiting_time)]
+    return [SimToken((c[0], waiting_time), waiting_time), None]
   else:
-    return [SimToken((c[0], 5), 5)]
+    return [None, SimToken((c[0], 5), 5)]
 
-shop.add_event([to_choose], [chosen], choose)
-shop.add_event([chosen], [waiting_for_response], lambda c: [SimToken(c)], name="response", guard=lambda c: c[1] < 5)
-shop.add_event([chosen], [to_leave], lambda c: [SimToken(c)], name="timeout", guard=lambda c: c[1] >= 5)
+shop.add_event([to_choose], [waiting_for_response, to_leave], choose)
 
 intermediate_event(shop, [waiting_for_response], [processing_queue], "wait_for_response", lambda c: [SimToken(c)])
 
-def start_process_response(c, r):
-  return [SimToken((c, r), exp(1/4))]
-task(shop, [processing_queue, administrator], [done, administrator], "process_response", start_process_response)
+task(shop, [processing_queue, administrator], [done, administrator], "process_response", lambda c,r: [SimToken((c, r), exp(1/4))])
 
 end_event(shop, [done], [], "done")
 

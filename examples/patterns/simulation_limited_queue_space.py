@@ -21,10 +21,12 @@ cassier.put("r1")
 start_event(shop, [], [to_check_queue], "start", lambda: exp(1/9))
 
 # Check the queue length
-# If it is less than 5 customers in the queue, the customer goes into the queue
-shop.add_event([to_check_queue, queue_length], [queue], lambda x, l: [SimToken(x)], guard=lambda x, l: l < 5, name="go_to_queue")
-# If it is more than 5 customers in the queue, the customer leaves
-shop.add_event([to_check_queue, queue_length], [to_leave], lambda x, l: [SimToken(x)], guard=lambda x, l: l >= 5, name="go_to_leave")
+def check_queue_length(c, ql):
+    if ql < 5: # If it is less than 5 customers in the queue, the customer goes into the queue
+        return [SimToken(c), None]
+    else: # If it is more than 5 customers in the queue, the customer leaves
+        return [None, SimToken(c)]
+shop.add_event([to_check_queue, queue_length], [queue, to_leave], check_queue_length)
 
 task(shop, [queue, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), exp(1/9))])
 

@@ -2,7 +2,7 @@ from simpn.simulator import SimProblem
 from simpn.simulator import SimToken
 from random import expovariate as exp
 from simpn.reporters import EventLogReporter
-from simpn.prototypes import task, start_event, choice, end_event
+from simpn.prototypes import task, start_event, end_event
 
 # Instantiate a simulation problem.
 shop = SimProblem()
@@ -28,8 +28,12 @@ task(shop, [offer_queue, administrator], [to_response, administrator], "create_o
 
 shop.add_event([to_response], [to_choose], lambda c: [SimToken(c, exp(1/4))], name="wait_for_response")
 
-shop.add_event([to_choose], [simple_response_queue], lambda c: [SimToken(c)], name="choose_simple", guard=lambda c: c[1] == "simple")
-shop.add_event([to_choose], [complex_response_queue], lambda c: [SimToken(c)], name="choose_complex", guard=lambda c: c[1] == "complex")
+def choose(c):
+    if c[1] == "simple":
+        return [SimToken(c), None]
+    else:
+        return [None, SimToken(c)]
+shop.add_event([to_choose], [simple_response_queue, complex_response_queue], choose)
 
 task(shop, [simple_response_queue, administrator], [done, administrator], "process_simple_response", lambda c,r: [SimToken((c, r), exp(1/3))])
 
