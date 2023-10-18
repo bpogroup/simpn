@@ -547,15 +547,17 @@ class SimProblem:
                 raise TypeError("Event " + str(event) + ": behavior function does not generate as many values as there are output variables for values " + str(variable_assignment) + ".")
             i = 0
             for r in result:
-                if not isinstance(r, SimToken):
-                    raise TypeError("Event " + str(event) + ": does not generate a token for variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
-                if not (type(r.time) is int or type(r.time) is float):
-                    raise TypeError("Event " + str(event) + ": does not generate a numeric value for the delay of variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
+                if r is not None:
+                    if not isinstance(r, SimToken):
+                        raise TypeError("Event " + str(event) + ": does not generate a token for variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
+                    if not (type(r.time) is int or type(r.time) is float):
+                        raise TypeError("Event " + str(event) + ": does not generate a numeric value for the delay of variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
                 i += 1
 
         for i in range(len(result)):
-            token = SimToken(result[i].value, time=self.clock + result[i].time)
-            event.outgoing[i].add_token(token)
+            if result[i] is not None:
+                token = SimToken(result[i].value, time=self.clock + result[i].time)
+                event.outgoing[i].add_token(token)
 
     def simulate(self, duration, reporter=None):
         """

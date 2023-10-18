@@ -28,8 +28,12 @@ def interarrival_time():
   return exp(1/6)
 start_event(shop, [], [to_choose], "arrive", interarrival_time)
 
-shop.add_event([to_choose, cassier_1_queue_count, cassier_2_queue_count], [cassier_1_queue], lambda x, c1c, c2c: [SimToken(x)], guard = lambda x, c1c, c2c: c1c < c2c, name="choose cassier 1")
-shop.add_event([to_choose, cassier_1_queue_count, cassier_2_queue_count], [cassier_2_queue], lambda x, c1c, c2c: [SimToken(x)], guard = lambda x, c1c, c2c: c1c >= c2c, name="choose cassier 2")
+def choose(c, c1_count, c2_count):
+  if c1_count < c2_count:
+    return [SimToken(c), None]
+  else:
+    return [None, SimToken(c)]
+shop.add_event([to_choose, cassier_1_queue_count, cassier_2_queue_count], [cassier_1_queue, cassier_2_queue], choose)
 
 task(shop, [cassier_1_queue, cassier_1], [done, cassier_1], "scan_groceries_1", lambda c, r: [SimToken((c, r), exp(1/9))])
 task(shop, [cassier_2_queue, cassier_2], [done, cassier_2], "scan_groceries_2", lambda c, r: [SimToken((c, r), exp(1/9))])
