@@ -26,6 +26,7 @@ class SimVar:
         self.marking_count = dict()
         self.marking_order = SortedList(key=priority)
         self.total_count = 0
+        self.checkpoints = dict()
 
     def put(self, value, time=0):
         """
@@ -71,6 +72,21 @@ class SimVar:
 
     def __repr__(self):
         return self.__str__()
+
+    def store_checkpoint(self, name):
+        """
+        Stores a checkpoint of the SimVar marking with the given name. The checkpoint can be restored later with restore_checkpoint.
+        """
+        self.checkpoints[name] = (self.marking_count.copy(), self.marking_order.copy(), self.total_count)
+    
+    def restore_checkpoint(self, name):
+        """
+        Restores the SimVar marking from the checkpoint with the given name.
+        """
+        if name in self.checkpoints:
+            (self.marking_count, self.marking_order, self.total_count) = self.checkpoints[name]
+        else:
+            raise LookupError("No checkpoint '" + name + "' at place '" + str(self) + "'.")
 
 
 class SimVarCounter(SimVar):
@@ -265,6 +281,7 @@ class SimProblem:
         self.id2node = dict()
         self.clock = 0
         self._debugging = debugging
+        self.clock_checkpoints = dict()
 
     def __str__(self):
         result = ""
@@ -369,6 +386,24 @@ class SimProblem:
             return time_var
         else:
             raise LookupError("SimVar " + name + ": does not exist.")
+
+    def store_checkpoint(self, name):
+        """
+        Stores the state of the simulator as a checkpoint with the given name. The checkpoint can be restored later with restore_checkpoint.
+        """
+        for p in self.places:
+            p.store_checkpoint(name)
+        self.clock_checkpoints[name] = self.clock
+
+    def restore_checkpoint(self, name):
+        """
+        Restores the state of the simulator to the checkpoint with the given name.
+        """
+        if name not in self.clock_checkpoints:
+            raise LookupError("No checkpoint '" + name + "'.")
+        for p in self.places:
+            p.restore_checkpoint(name)
+        self.clock = self.clock_checkpoints[name]
 
     def add_event(self, inflow, outflow, behavior, name=None, guard=None):
         """

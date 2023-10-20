@@ -34,6 +34,10 @@ def arrive(a):
 shop.add_event([arrival], [arrival, waiting], arrive)
 
 # Run the simulation.
-from simpn.reporters import SimpleReporter
+from simpn.reporters import Reporter
 
-shop.simulate(2.5, SimpleReporter())
+class MyReporter(Reporter):
+    def callback(self, timed_binding):
+        print(timed_binding)
+
+shop.simulate(2.5, MyReporter())

@@ -64,51 +64,93 @@ class SimpleReporter(Reporter):
         print(result)
 
 
-class ProcessReporter(Reporter):
+class WarmupReporter(Reporter):
     """
-    A reporter that heavily depends on the process prototypes (task, start_event, intermediate_event, end_event) to report on what happens.
-    It assumes tasks are executed for cases that arrive via start_events and complete at end_events. It measures:
-    - the number of started cases
-    - the number of completed cases
-    - the cycle time of completed cases (the time between their start and end event)
-    - the processing time of completed cases (the time between a case's start and end during which a task was being performed)
-    - the waiting time of completed cases (the time between a case's start and end during which no task was being performed)
+    A reporter that reports on the warmup period of a simulation by computing the average cycle times over time.
+    It assumes tasks are executed for cases that arrive via start_events and complete at end_events.
     """
-
     def __init__(self):
-        self.status = dict()  # case_id -> (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change); time_last_busy_change is the time nr_busy_tasks last went from 0 to 1 or from 1 to 0
-        self.nr_started = 0
-        self.nr_completed = 0
-        self.total_wait_time = 0  # only of completed cases
-        self.total_proc_time = 0  # only of completed cases
-        self.total_cycle_time = 0  # only of completed cases
+        self.times = [0]
+        self.average_cycle_times = [0]
+
+        self.__total_times = [0]
+        self.__nr_completed_cases = 0
+        self.__case_arrivals = {}
 
     def callback(self, timed_binding):
         (binding, time, event) = timed_binding
         if event.get_id().endswith("<start_event>"):
             case_id = binding[0][1].value  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
-            self.status[case_id] = (0, time, 0, 0, time)
+            self.__case_arrivals[case_id] = time
+        elif event.get_id().endswith("<end_event>"):
+            case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
+            waiting_time = time - self.__case_arrivals[case_id]
+            total_time = self.__total_times[self.__nr_completed_cases]
+            total_time += waiting_time
+            self.__nr_completed_cases += 1
+            self.times.append(time)
+            self.__total_times.append(total_time)
+            self.average_cycle_times.append(total_time/self.__nr_completed_cases)
+
+
+class ProcessReporter(Reporter):
+    """
+    A reporter that heavily depends on the process prototypes (task, start_event, intermediate_event, end_event) to report on what happens.
+    It assumes tasks are executed for cases that arrive via start_events and complete at end_events. It measures:
+    - nr_started: the number of cases that started.
+    - nr_completed: the number of cases that completed.
+    - total_wait_time: the sum of waiting times of completed cases.
+    - total_proc_time: the sum of processing times of completed cases.
+    - total_cycle_time: the sum of cycle times of completed cases.
+    - resource_busy_times: a mapping of resource_id -> the time the resource was busy during simulation.
+    """
+
+    def __init__(self):
+        self.resource_busy_times = dict()  # mapping of resource_id -> the time the resource was busy during simulation.
+        self.nr_started = 0  # number of cases that started
+        self.nr_completed = 0  # number of cases that completed
+        self.total_wait_time = 0  # sum of waiting times of completed cases
+        self.total_proc_time = 0  # sum of processing times of completed cases
+        self.total_cycle_time = 0  # sum of cycle times of completed cases
+
+        self.__status = dict()  # case_id -> (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change); time_last_busy_change is the time nr_busy_tasks last went from 0 to 1 or from 1 to 0
+        self.__resource_start_times = dict()  # resource -> time
+        self.__last_time = 0
+
+    def callback(self, timed_binding):
+        (binding, time, event) = timed_binding
+        self.__last_time = time
+        if event.get_id().endswith("<start_event>"):
+            case_id = binding[0][1].value  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
+            self.__status[case_id] = (0, time, 0, 0, time)
             self.nr_started += 1
         elif event.get_id().endswith("<task:start>"):
             case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
-            (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.status[case_id]
+            resource_id = binding[1][1].value  # the resource_id is always [1] the second variable in the binding, the [1] token value of that.
+            self.__resource_start_times[resource_id] = time
+            (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.__status[case_id]
             if nr_busy_tasks == 0:
                 sum_wait_times += time - time_last_busy_change
                 time_last_busy_change = time
             nr_busy_tasks += 1
-            self.status[case_id] = (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change)
+            self.__status[case_id] = (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change)
         elif event.get_id().endswith("<task:complete>"):
             case_id = binding[0][1].value[0][0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
-            (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.status[case_id]
+            resource_id = binding[0][1].value[1]  # the resource_id is always [0] the first variable in the binding, the [1] token value of that, and [1] the resource_id of the value.
+            if resource_id not in self.resource_busy_times.keys():
+                self.resource_busy_times[resource_id] = 0
+            self.resource_busy_times[resource_id] += time - self.__resource_start_times[resource_id]
+            del self.__resource_start_times[resource_id]
+            (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.__status[case_id]
             if nr_busy_tasks == 1:
                 sum_proc_times += time - time_last_busy_change
                 time_last_busy_change = time
             nr_busy_tasks -= 1
-            self.status[case_id] = (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change)
+            self.__status[case_id] = (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change)
         elif event.get_id().endswith("<end_event>"):
             case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
-            (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.status[case_id]
-            del self.status[case_id]
+            (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.__status[case_id]
+            del self.__status[case_id]
             self.nr_completed += 1
             self.total_wait_time += sum_wait_times
             self.total_proc_time += sum_proc_times
@@ -121,6 +163,14 @@ class ProcessReporter(Reporter):
         print("Avg. processing time per case:", round(self.total_proc_time/self.nr_completed, 3))
         print("Avg. cycle time per case:     ", round(self.total_cycle_time/self.nr_completed, 3))
 
+        # process the resources that are currently busy
+        for resource_id in self.__resource_start_times.keys():
+            self.resource_busy_times[resource_id] += self.__last_time - self.__resource_start_times[resource_id]
+
+        self.__resource_start_times.clear()
+        
+        for resource_id in self.resource_busy_times.keys():
+            print("Resource", resource_id, "utilization:", round(self.resource_busy_times[resource_id]/self.__last_time, 2))
 
 class EventLogReporter(Reporter):
     """
