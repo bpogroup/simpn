@@ -186,8 +186,14 @@ it can happen on any of these values.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.fire" title="simpn.simulator.SimProblem.fire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fire</span></code></a>(timed_binding)</p></td>
 <td><p>Fires the specified timed binding.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.simulate" title="simpn.simulator.SimProblem.simulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulate</span></code></a>(duration[, reporter])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.restore_checkpoint" title="simpn.simulator.SimProblem.restore_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore_checkpoint</span></code></a>(name)</p></td>
+<td><p>Restores the state of the simulator to the checkpoint with the given name.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.simulate" title="simpn.simulator.SimProblem.simulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulate</span></code></a>(duration[, reporter])</p></td>
 <td><p>Executes a simulation run for the problem for the specified duration.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.store_checkpoint" title="simpn.simulator.SimProblem.store_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store_checkpoint</span></code></a>(name)</p></td>
+<td><p>Stores the state of the simulator as a checkpoint with the given name.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.tokens_combinations" title="simpn.simulator.SimProblem.tokens_combinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tokens_combinations</span></code></a>(event)</p></td>
 <td><p>Creates a list of token combinations that are available to the specified event.</p></td>
@@ -272,6 +278,12 @@ Binding is a tuple ([(place, token), (place, token), …], time, event)</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.restore_checkpoint">
+<span class="sig-name descname"><span class="pre">restore_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.restore_checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the state of the simulator to the checkpoint with the given name.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.simulate">
 <span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reporter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.simulate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Executes a simulation run for the problem for the specified duration.
@@ -284,10 +296,16 @@ each time a event happens (for a binding at a moment in simulation time).</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>duration</strong> – the duration of the simulation.</p></li>
-<li><p><strong>reporter</strong> – a class that implements a callback function, which is called each time a event happens.</p></li>
+<li><p><strong>reporter</strong> – a class that implements a callback function, which is called each time a event happens. reporter can also be a list of reporters, in which case the callback function of each reporter is called.</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.store_checkpoint">
+<span class="sig-name descname"><span class="pre">store_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.store_checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores the state of the simulator as a checkpoint with the given name. The checkpoint can be restored later with restore_checkpoint.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -378,6 +396,12 @@ with value 1 at time 0 and one with value 2 at time 0.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVar.remove_token" title="simpn.simulator.SimVar.remove_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_token</span></code></a>(token)</p></td>
 <td><p>Removes a token value (once) from the SimVar.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVar.restore_checkpoint" title="simpn.simulator.SimVar.restore_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore_checkpoint</span></code></a>(name)</p></td>
+<td><p>Restores the SimVar marking from the checkpoint with the given name.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVar.store_checkpoint" title="simpn.simulator.SimVar.store_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store_checkpoint</span></code></a>(name)</p></td>
+<td><p>Stores a checkpoint of the SimVar marking with the given name.</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py method">
@@ -417,6 +441,18 @@ with value 1 at time 0 and one with value 2 at time 0.</p></li>
 <dd class="field-odd"><p><strong>token</strong> – the token value to remove from the SimVar.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimVar.restore_checkpoint">
+<span class="sig-name descname"><span class="pre">restore_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.restore_checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the SimVar marking from the checkpoint with the given name.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimVar.store_checkpoint">
+<span class="sig-name descname"><span class="pre">store_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.store_checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores a checkpoint of the SimVar marking with the given name. The checkpoint can be restored later with restore_checkpoint.</p>
 </dd></dl>
 
 </dd></dl>

@@ -56,7 +56,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.EventLogReporter" title="simpn.reporters.EventLogReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EventLogReporter</span></code></a>(filename[, timeunit, ...])</p></td>
 <td><p>A reporter that heavily depends on the process prototypes (task, start_event, intermediate_event, end_event) to report on what happens.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter" title="simpn.reporters.ProcessReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProcessReporter</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter" title="simpn.reporters.ProcessReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProcessReporter</span></code></a>([warmup_time])</p></td>
 <td><p>A reporter that heavily depends on the process prototypes (task, start_event, intermediate_event, end_event) to report on what happens.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.Reporter" title="simpn.reporters.Reporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reporter</span></code></a>()</p></td>
@@ -65,8 +65,11 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.SimpleReporter" title="simpn.reporters.SimpleReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimpleReporter</span></code></a>()</p></td>
 <td><p>A simple reporter that just prints the occurring events to the standard output.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.TimeUnit" title="simpn.reporters.TimeUnit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TimeUnit</span></code></a>(value[, names, module, qualname, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.TimeUnit" title="simpn.reporters.TimeUnit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TimeUnit</span></code></a>(value)</p></td>
 <td><p>An enumeration for the unit in which simulation time is measured.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.WarmupReporter" title="simpn.reporters.WarmupReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WarmupReporter</span></code></a>()</p></td>
+<td><p>A reporter that reports on the warmup period of a simulation by computing the average cycle times over time.</p></td>
 </tr>
 </tbody>
 </table>
@@ -121,14 +124,15 @@ It receives a timed_binding, which is a triple (binding, time, event):
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.reporters.ProcessReporter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">ProcessReporter</span></span><a class="headerlink" href="#simpn.reporters.ProcessReporter" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">ProcessReporter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">warmup_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.ProcessReporter" title="Permalink to this definition">¶</a></dt>
 <dd><p>A reporter that heavily depends on the process prototypes (task, start_event, intermediate_event, end_event) to report on what happens.
 It assumes tasks are executed for cases that arrive via start_events and complete at end_events. It measures:
-- the number of started cases
-- the number of completed cases
-- the cycle time of completed cases (the time between their start and end event)
-- the processing time of completed cases (the time between a case’s start and end during which a task was being performed)
-- the waiting time of completed cases (the time between a case’s start and end during which no task was being performed)</p>
+- nr_started: the number of cases that started.
+- nr_completed: the number of cases that completed.
+- total_wait_time: the sum of waiting times of completed cases.
+- total_proc_time: the sum of processing times of completed cases.
+- total_cycle_time: the sum of cycle times of completed cases.
+- resource_busy_times: a mapping of resource_id -&gt; the time the resource was busy during simulation.</p>
 <p><strong>Methods:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
@@ -215,7 +219,7 @@ It receives a timed_binding, which is a triple (binding, time, event):
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.reporters.TimeUnit">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">TimeUnit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.TimeUnit" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">TimeUnit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.TimeUnit" title="Permalink to this definition">¶</a></dt>
 <dd><p>An enumeration for the unit in which simulation time is measured.</p>
 <p><strong>Attributes:</strong></p>
 <table class="autosummary longtable docutils align-default">
@@ -263,6 +267,36 @@ It receives a timed_binding, which is a triple (binding, time, event):
 <span class="sig-name descname"><span class="pre">SECONDS</span></span><a class="headerlink" href="#simpn.reporters.TimeUnit.SECONDS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Measured in seconds.</p>
 <dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.reporters.WarmupReporter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">WarmupReporter</span></span><a class="headerlink" href="#simpn.reporters.WarmupReporter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A reporter that reports on the warmup period of a simulation by computing the average cycle times over time.
+It assumes tasks are executed for cases that arrive via start_events and complete at end_events.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.WarmupReporter.callback" title="simpn.reporters.WarmupReporter.callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">callback</span></code></a>(timed_binding)</p></td>
+<td><p>A function that is invoked by a simpn.simulator.SimProblem each time a event happened.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.WarmupReporter.callback">
+<span class="sig-name descname"><span class="pre">callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.WarmupReporter.callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function that is invoked by a simpn.simulator.SimProblem each time a event happened.
+It receives a timed_binding, which is a triple (binding, time, event):
+- binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), …] of the variable values that caused the event.
+- time is the simulation time at which the event happened.
+- event: SimEvent is the event that happened.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timed_binding</strong> – the triple (binding, time, event) that described the event that happened with its variable values and the time at which it happened.</p>
+</dd>
 </dl>
 </dd></dl>
 
