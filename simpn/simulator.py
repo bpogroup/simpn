@@ -77,14 +77,18 @@ class SimVar:
         """
         Stores a checkpoint of the SimVar marking with the given name. The checkpoint can be restored later with restore_checkpoint.
         """
-        self.checkpoints[name] = (self.marking_count.copy(), self.marking_order.copy(), self.total_count)
+        self.checkpoints[name] = [token.copy() for token in self.marking_order for _ in range(self.marking_count[token])]
     
     def restore_checkpoint(self, name):
         """
         Restores the SimVar marking from the checkpoint with the given name.
         """
         if name in self.checkpoints:
-            (self.marking_count, self.marking_order, self.total_count) = self.checkpoints[name]
+            self.marking_count.clear()
+            self.marking_order.clear()
+            self.total_count = 0
+            for token in self.checkpoints[name]:
+                self.add_token(token)
         else:
             raise LookupError("No checkpoint '" + name + "' at place '" + str(self) + "'.")
 
@@ -262,6 +266,9 @@ class SimToken:
 
     def __repr__(self):
         return self.__str__()
+    
+    def copy(self):
+        return SimToken(self.value, self.time)
 
 
 class SimProblem:
