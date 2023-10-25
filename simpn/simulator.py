@@ -604,7 +604,7 @@ class SimProblem:
         each time a event happens (for a binding at a moment in simulation time).
 
         :param duration: the duration of the simulation.
-        :param reporter: a class that implements a callback function, which is called each time a event happens.
+        :param reporter: a class that implements a callback function, which is called each time a event happens. reporter can also be a list of reporters, in which case the callback function of each reporter is called.
         """
         active_model = True
         while self.clock <= duration and active_model:
@@ -613,7 +613,11 @@ class SimProblem:
                 timed_binding = bindings[0]
                 self.fire(timed_binding)
                 if reporter is not None:
-                    reporter.callback(timed_binding)
+                    if type(reporter) == list:
+                        for r in reporter:
+                            r.callback(timed_binding)
+                    else:
+                        reporter.callback(timed_binding)
             else:
                 active_model = False
 

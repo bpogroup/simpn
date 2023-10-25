@@ -105,7 +105,7 @@ class ProcessReporter(Reporter):
     - resource_busy_times: a mapping of resource_id -> the time the resource was busy during simulation.
     """
 
-    def __init__(self):
+    def __init__(self, warmup_time=0):
         self.resource_busy_times = dict()  # mapping of resource_id -> the time the resource was busy during simulation.
         self.nr_started = 0  # number of cases that started
         self.nr_completed = 0  # number of cases that completed
@@ -117,13 +117,16 @@ class ProcessReporter(Reporter):
         self.__resource_start_times = dict()  # resource -> time
         self.__last_time = 0
 
+        self.warmup_time = warmup_time
+
     def callback(self, timed_binding):
         (binding, time, event) = timed_binding
         self.__last_time = time
         if event.get_id().endswith("<start_event>"):
             case_id = binding[0][1].value  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             self.__status[case_id] = (0, time, 0, 0, time)
-            self.nr_started += 1
+            if time > self.warmup_time:
+                self.nr_started += 1
         elif event.get_id().endswith("<task:start>"):
             case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             resource_id = binding[1][1].value  # the resource_id is always [1] the second variable in the binding, the [1] token value of that.
@@ -137,9 +140,13 @@ class ProcessReporter(Reporter):
         elif event.get_id().endswith("<task:complete>"):
             case_id = binding[0][1].value[0][0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             resource_id = binding[0][1].value[1]  # the resource_id is always [0] the first variable in the binding, the [1] token value of that, and [1] the resource_id of the value.
-            if resource_id not in self.resource_busy_times.keys():
-                self.resource_busy_times[resource_id] = 0
-            self.resource_busy_times[resource_id] += time - self.__resource_start_times[resource_id]
+            if time > self.warmup_time:
+                if resource_id not in self.resource_busy_times.keys():
+                    self.resource_busy_times[resource_id] = 0
+                if self.__resource_start_times[resource_id] < self.warmup_time:
+                    self.resource_busy_times[resource_id] += time - self.warmup_time
+                else:
+                    self.resource_busy_times[resource_id] += time - self.__resource_start_times[resource_id]
             del self.__resource_start_times[resource_id]
             (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.__status[case_id]
             if nr_busy_tasks == 1:
@@ -151,10 +158,11 @@ class ProcessReporter(Reporter):
             case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.__status[case_id]
             del self.__status[case_id]
-            self.nr_completed += 1
-            self.total_wait_time += sum_wait_times
-            self.total_proc_time += sum_proc_times
-            self.total_cycle_time += time - arrival_time
+            if arrival_time > self.warmup_time:
+                self.nr_completed += 1
+                self.total_wait_time += sum_wait_times
+                self.total_proc_time += sum_proc_times
+                self.total_cycle_time += time - arrival_time
 
     def print_result(self):
         print("Nr. cases started:            ", self.nr_started)
@@ -170,7 +178,7 @@ class ProcessReporter(Reporter):
         self.__resource_start_times.clear()
         
         for resource_id in self.resource_busy_times.keys():
-            print("Resource", resource_id, "utilization:", round(self.resource_busy_times[resource_id]/self.__last_time, 2))
+            print("Resource", resource_id, "utilization:", round(self.resource_busy_times[resource_id]/(self.__last_time - self.warmup_time), 2))
 
 class EventLogReporter(Reporter):
     """
