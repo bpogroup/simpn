@@ -67,6 +67,9 @@ class SimVar:
             del self.marking_count[token]
             self.marking_order.remove(token)
 
+    def get_id(self):
+        return self._id
+    
     def __str__(self):
         return self._id
 
