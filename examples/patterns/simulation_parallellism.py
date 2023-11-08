@@ -33,14 +33,14 @@ shop.add_event([to_split], [scan_queue, atm_queue], lambda c: [SimToken(c), SimT
 
 def start_scan_groceries(c, r):
   return [SimToken((c, r), exp(1/9))]
-task(shop, [scan_queue, cassier], [wait_sync_atm, cassier], "scan_groceries", start_scan_groceries)
+task(shop, [scan_queue, cassier], [wait_sync_w_atm, cassier], "scan_groceries", start_scan_groceries)
 
 def start_use_atm(c, r):
   return [SimToken((c, r), exp(1/9))]
-task(shop, [atm_queue, atm], [wait_sync_scan, atm], "use_atm", start_use_atm)
+task(shop, [atm_queue, atm], [wait_sync_w_scan, atm], "use_atm", start_use_atm)
 
 
-shop.add_event([wait_sync_atm, wait_sync_scan], [to_done], lambda c1, c2: [SimToken(c1)], name="join", guard=lambda c1, c2: c1 == c2)
+shop.add_event([wait_sync_w_atm, wait_sync_w_scan], [to_done], lambda c1, c2: [SimToken(c1)], name="join", guard=lambda c1, c2: c1 == c2)
 
 
 end_event(shop, [to_done], [], "done")
