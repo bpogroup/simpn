@@ -14,7 +14,7 @@ WHITE = (255, 255, 255)
 # sizes
 NODE_WIDTH, NODE_HEIGHT = 50, 50
 NODE_SPACING = 100
-GRID_SPACING = 100
+GRID_SPACING = 50
 LINE_WIDTH = 2
 ARROW_WIDTH, ARROW_HEIGHT = 12, 10
 TEXT_SIZE = 16
@@ -44,6 +44,24 @@ class Edge:
         self._end = end
 
     def draw(self, screen):
+        start_node_xy = self.get_start_node().get_pos()
+        end_node_xy = self.get_end_node().get_pos()
+        if start_node_xy[1] - NODE_HEIGHT/2 > end_node_xy[1] + NODE_HEIGHT/2:
+            self.set_start_hook(Hook.TOP)
+        elif start_node_xy[1] + NODE_HEIGHT/2 < end_node_xy[1] - NODE_HEIGHT/2:
+            self.set_start_hook(Hook.BOTTOM)
+        elif start_node_xy[0] - NODE_WIDTH/2 > end_node_xy[0] + NODE_WIDTH/2:
+            self.set_start_hook(Hook.LEFT)
+        else:
+            self.set_start_hook(Hook.RIGHT)
+        if end_node_xy[1] - NODE_HEIGHT/2 > start_node_xy[1] + NODE_HEIGHT/2:
+            self.set_end_hook(Hook.TOP)
+        elif end_node_xy[1] + NODE_HEIGHT/2 < start_node_xy[1] - NODE_HEIGHT/2:
+            self.set_end_hook(Hook.BOTTOM)
+        elif end_node_xy[0] - NODE_WIDTH/2 > start_node_xy[0] + NODE_WIDTH/2:
+            self.set_end_hook(Hook.LEFT)
+        else:
+            self.set_end_hook(Hook.RIGHT)
         start = pygame.Vector2(self._start[0].hook(self._start[1]))
         end = pygame.Vector2(self._end[0].hook(self._end[1]))
         arrow = start - end
@@ -85,12 +103,12 @@ class Edge:
     def get_shape(self):
         return Shape.EDGE
 
-    def get_start(self):
-        return self._start
+    def get_start_node(self):
+        return self._start[0]
     
-    def get_end(self):
-        return self._end
-    
+    def get_end_node(self):
+        return self._end[0]
+
     def set_start_hook(self, hook):
         self._start = (self._start[0], hook)
     
@@ -124,7 +142,6 @@ class Node:
         text_line = 0
         for l in self._text:
             label = font.render(l, True, TUE_RED)
-            text_height = int(label.get_height()*len(self._text))
             text_x_pos = self._pos[0] - int(label.get_width()/2)
             text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH + int(label.get_height()*text_line)
             screen.blit(label, (text_x_pos, text_y_pos))
@@ -155,6 +172,7 @@ class Model:
         self._problem = sim_problem
         self._nodes = dict()
         self._edges = []
+        self._selected_nodes = None
         for var in self._problem.places:
             self._nodes[var.get_id()] = Node(Shape.PLACE, var.get_id(), [var.get_id()], (0, 0))
         for event in self._problem.events:
@@ -167,6 +185,8 @@ class Model:
             
     def draw(self, screen):
         screen.fill(TUE_GREY)
+        if self._selected_nodes is not None:
+            self.drag()
         for shape in self._nodes.values():
             shape.draw(screen)
         for shape in self._edges:
@@ -179,7 +199,7 @@ class Model:
         for node in self._nodes.values():
             graph.add_vertex(node.get_id())
         for edge in self._edges:            
-            graph.add_edge(edge.get_start()[0].get_id(), edge.get_end()[0].get_id())
+            graph.add_edge(edge.get_start_node().get_id(), edge.get_end_node().get_id())
         layout = graph.layout_sugiyama()
         layout.rotate(-90)
         layout.scale(NODE_SPACING)
@@ -189,47 +209,55 @@ class Model:
         i = 0
         for v in graph.vs:
             xy = layout[i]
-            xy  = (int(xy[0]/GRID_SPACING)*GRID_SPACING, int(xy[1]/GRID_SPACING)*GRID_SPACING)
+            xy  = (round(xy[0]/GRID_SPACING)*GRID_SPACING, round(xy[1]/GRID_SPACING)*GRID_SPACING)
             self._nodes[v["name"]].set_pos(xy)
             i += 1
-        for edge in self._edges:
-            start = edge.get_start()
-            end = edge.get_end()
-            start_node_xy = start[0].get_pos()
-            end_node_xy = end[0].get_pos()
-            if start_node_xy[1] - NODE_HEIGHT/2 > end_node_xy[1] + NODE_HEIGHT/2:
-                edge.set_start_hook(Hook.TOP)
-            elif start_node_xy[1] + NODE_HEIGHT/2 < end_node_xy[1] - NODE_HEIGHT/2:
-                edge.set_start_hook(Hook.BOTTOM)
-            elif start_node_xy[0] - NODE_WIDTH/2 > end_node_xy[0] + NODE_WIDTH/2:
-                edge.set_start_hook(Hook.LEFT)
-            else:
-                edge.set_start_hook(Hook.RIGHT)
-            if end_node_xy[1] - NODE_HEIGHT/2 > start_node_xy[1] + NODE_HEIGHT/2:
-                edge.set_end_hook(Hook.TOP)
-            elif end_node_xy[1] + NODE_HEIGHT/2 < start_node_xy[1] - NODE_HEIGHT/2:
-                edge.set_end_hook(Hook.BOTTOM)
-            elif end_node_xy[0] - NODE_WIDTH/2 > start_node_xy[0] + NODE_WIDTH/2:
-                edge.set_end_hook(Hook.LEFT)
-            else:
-                edge.set_end_hook(Hook.RIGHT)
+
+    def get_node_at(self, pos):
+        for node in self._nodes.values():
+            if node.get_pos()[0] - NODE_WIDTH/2 <= pos[0] <= node.get_pos()[0] + NODE_WIDTH/2 and node.get_pos()[1] - NODE_HEIGHT/2 <= pos[1] <= node.get_pos()[1] + NODE_HEIGHT/2:
+                return node
+        return None
+
+    def drag(self, snap=False):
+        """Drag the node to the new position. The old and the new position are mouse positions."""
+        nodes = self._selected_nodes[0]
+        org_pos = self._selected_nodes[1]
+        new_pos = pygame.mouse.get_pos()
+        x_delta = new_pos[0] - org_pos[0]
+        y_delta = new_pos[1] - org_pos[1]
+        for node in nodes:
+            new_x = node.get_pos()[0] + x_delta
+            new_y = node.get_pos()[1] + y_delta
+            if snap:
+                new_x = round(new_x/GRID_SPACING)*GRID_SPACING
+                new_y = round(new_y/GRID_SPACING)*GRID_SPACING
+            node.set_pos((new_x, new_y))
+        self._selected_nodes = nodes, new_pos
 
     def run(self):
         pygame.init()
         pygame.font.init()
+        pygame.display.set_caption('Petri Net Visualisation')
+
         clock = pygame.time.Clock()
 
-        screen = pygame.display.set_mode(self._size)
+        screen = pygame.display.set_mode(self._size, pygame.RESIZABLE)
         
         running = True
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    pass
-                if event.type == pygame.MOUSEBUTTONUP:
-                    pass
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    node = self.get_node_at(event.pos)
+                    if node is not None:
+                        self._selected_nodes = [node], event.pos
+                    else:
+                        self._selected_nodes = self._nodes.values(), event.pos
+                elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self._selected_nodes is not None:
+                    self.drag(snap=True)
+                    self._selected_nodes = None
             try:
                 self.draw(screen)
             except:
