@@ -3,7 +3,7 @@ import pygame
 import traceback
 from enum import Enum, auto
 
-SIZE = 1280, 720
+MAX_SIZE = 1920, 1080
 # colors
 TUE_RED = (200, 25, 25)
 TUE_LIGHTRED = (249, 204, 204)
@@ -126,7 +126,7 @@ class Node:
         self._half_width = NODE_WIDTH / 2
         self._width = NODE_WIDTH
         self._height = NODE_HEIGHT
-        self._size = SIZE
+        self._size = MAX_SIZE
         
     def get_shape(self):
         return self._shape
@@ -168,7 +168,7 @@ class Node:
 
 
 class Model:
-    def __init__(self, sim_problem):
+    def __init__(self, sim_problem, layout_file=None):
         self._problem = sim_problem
         self._nodes = dict()
         self._edges = []
@@ -182,18 +182,20 @@ class Model:
                 self._edges.append(Edge(start=(self._nodes[incoming.get_id()], Hook.RIGHT), end=(event_shape, Hook.LEFT)))
             for outgoing in event.outgoing:
                 self._edges.append(Edge(start=(event_shape, Hook.RIGHT), end=(self._nodes[outgoing.get_id()], Hook.LEFT)))
+        if layout_file is not None:
+            self.__load_layout(layout_file)
+        else:
+            self.__layout()
             
     def draw(self, screen):
         screen.fill(TUE_GREY)
-        if self._selected_nodes is not None:
-            self.drag()
         for shape in self._nodes.values():
             shape.draw(screen)
         for shape in self._edges:
             shape.draw(screen)
         pygame.display.flip()
     
-    def layout(self):
+    def __layout(self):
         graph = igraph.Graph()
         graph.to_directed()
         for node in self._nodes.values():
@@ -205,13 +207,29 @@ class Model:
         layout.scale(NODE_SPACING)
         boundaries = layout.boundaries(border=NODE_WIDTH)
         layout.translate(-boundaries[0][0], -boundaries[0][1])
-        self._size = layout.boundaries(border=NODE_WIDTH)[1]
+        canvas_size = layout.boundaries(border=NODE_WIDTH)[1]
+        self._size = (min(MAX_SIZE[0], canvas_size[0]), min(MAX_SIZE[1], canvas_size[1]))
         i = 0
         for v in graph.vs:
             xy = layout[i]
             xy  = (round(xy[0]/GRID_SPACING)*GRID_SPACING, round(xy[1]/GRID_SPACING)*GRID_SPACING)
             self._nodes[v["name"]].set_pos(xy)
             i += 1
+
+    def save_layout(self, filename):
+        with open(filename, "w") as f:
+            f.write(f"{int(self._size[0])},{int(self._size[1])}\n")
+            for node in self._nodes.values():
+                if "," in node.get_id() or "\n" in node.get_id():
+                    raise Exception("Node " + node.get_id() + ": Saving the layout cannot work if the node id contains a comma or hard return.")
+                f.write(f"{node.get_id()},{node.get_pos()[0]},{node.get_pos()[1]}\n")
+    
+    def __load_layout(self, filename):
+        with open(filename, "r") as f:
+            self._size = tuple(map(int, f.readline().strip().split(",")))
+            for line in f:
+                id, x, y = line.strip().split(",")
+                self._nodes[id].set_pos((int(x), int(y)))
 
     def get_node_at(self, pos):
         for node in self._nodes.values():
@@ -258,6 +276,10 @@ class Model:
                 elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self._selected_nodes is not None:
                     self.drag(snap=True)
                     self._selected_nodes = None
+                elif event.type == pygame.MOUSEMOTION and self._selected_nodes is not None:
+                    self.drag()
+                elif event.type == pygame.VIDEORESIZE:
+                    self._size = event.size
             try:
                 self.draw(screen)
             except:
@@ -315,6 +337,6 @@ shop.add_event([wait_sync_w_atm, wait_sync_w_scan], [to_done], lambda c1, c2: [S
 end_event(shop, [to_done], [], "done")
 
 
-m = Model(shop)
-m.layout()
+m = Model(shop, "./temp/layout.txt")
 m.run()
+m.save_layout("./temp/layout.txt")
