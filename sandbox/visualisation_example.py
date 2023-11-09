@@ -81,7 +81,7 @@ class Edge:
             head_verts[i] += translation
             head_verts[i] += start
 
-        pygame.draw.polygon(screen, TUE_RED, head_verts)
+        pygame.draw.polygon(screen, TUE_BLUE, head_verts)
 
         # Stop weird shapes when the arrow is shorter than arrow head
         if arrow.length() >= ARROW_HEIGHT:
@@ -98,7 +98,7 @@ class Edge:
                 body_verts[i] += translation
                 body_verts[i] += start
 
-            pygame.draw.polygon(screen, TUE_RED, body_verts)
+            pygame.draw.polygon(screen, TUE_BLUE, body_verts)
 
     def get_shape(self):
         return Shape.EDGE
@@ -117,7 +117,7 @@ class Edge:
 
 
 class Node:
-    def __init__(self, shape, id, text, pos):
+    def __init__(self, shape, id, text, pos=(0, 0)):
         self._shape = shape
         self._id = id
         self._text = text
@@ -133,15 +133,19 @@ class Node:
     
     def draw(self, screen):
         if self._shape == Shape.PLACE:
-            pygame.draw.circle(screen, TUE_LIGHTRED, (self._pos[0], self._pos[1]), NODE_WIDTH/2)
-            pygame.draw.circle(screen, TUE_RED, (self._pos[0], self._pos[1]), NODE_WIDTH/2, LINE_WIDTH)    
+            pygame.draw.circle(screen, TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), NODE_WIDTH/2)
+            pygame.draw.circle(screen, TUE_BLUE, (self._pos[0], self._pos[1]), NODE_WIDTH/2, LINE_WIDTH)    
         elif self._shape == Shape.TRANSTION:
-            pygame.draw.rect(screen, TUE_LIGHTRED, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, NODE_WIDTH, NODE_HEIGHT))
-            pygame.draw.rect(screen, TUE_RED, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, NODE_WIDTH, NODE_HEIGHT), LINE_WIDTH)
-        font = pygame.font.SysFont('Calibri', TEXT_SIZE)        
+            pygame.draw.rect(screen, TUE_LIGHTBLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, NODE_WIDTH, NODE_HEIGHT))
+            pygame.draw.rect(screen, TUE_BLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, NODE_WIDTH, NODE_HEIGHT), LINE_WIDTH)
+        font = pygame.font.SysFont('Calibri', TEXT_SIZE)
+        bold_font = pygame.font.SysFont('Calibri', TEXT_SIZE, bold=True)
         text_line = 0
-        for l in self._text:
-            label = font.render(l, True, TUE_RED)
+        for (c, b, l) in self._text:
+            if b:
+                label = bold_font.render(l, True, c)
+            else:
+                label = font.render(l, True, c)
             text_x_pos = self._pos[0] - int(label.get_width()/2)
             text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH + int(label.get_height()*text_line)
             screen.blit(label, (text_x_pos, text_y_pos))
@@ -165,18 +169,21 @@ class Node:
     
     def get_id(self):
         return self._id
+    
+    def set_text(self, text):
+        self._text = text
 
 
-class Model:
+class Visualisation:
     def __init__(self, sim_problem, layout_file=None):
         self._problem = sim_problem
         self._nodes = dict()
         self._edges = []
         self._selected_nodes = None
         for var in self._problem.places:
-            self._nodes[var.get_id()] = Node(Shape.PLACE, var.get_id(), [var.get_id()], (0, 0))
+            self._nodes[var.get_id()] = Node(Shape.PLACE, var.get_id(), [(TUE_BLUE, False, var.get_id()), ""])
         for event in self._problem.events:
-            event_shape = Node(Shape.TRANSTION, event.get_id(), [event.get_id()], (0, 0))
+            event_shape = Node(Shape.TRANSTION, event.get_id(), [(TUE_BLUE, False, event.get_id())])
             self._nodes[event.get_id()] = event_shape
             for incoming in event.incoming:
                 self._edges.append(Edge(start=(self._nodes[incoming.get_id()], Hook.RIGHT), end=(event_shape, Hook.LEFT)))
@@ -186,7 +193,19 @@ class Model:
             self.__load_layout(layout_file)
         else:
             self.__layout()
-            
+        self.set_token_values()
+    
+    def set_token_values(self):
+        for p in self._problem.places:
+            mstr = ""
+            ti = 0
+            for token in p.marking_order:
+                mstr += str(p.marking_count[token]) + "`" + str(token.value) + "@" + str(round(token.time, 2)) + "`"
+                if ti < len(p.marking_order) - 1:
+                    mstr += "++"
+                ti += 1
+            self._nodes[p.get_id()].set_text([(TUE_BLUE, False, p.get_id()), (TUE_RED, True, mstr)])
+
     def draw(self, screen):
         screen.fill(TUE_GREY)
         for shape in self._nodes.values():
@@ -280,6 +299,10 @@ class Model:
                     self.drag()
                 elif event.type == pygame.VIDEORESIZE:
                     self._size = event.size
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        self._problem.step()
+                        self.set_token_values()
             try:
                 self.draw(screen)
             except:
@@ -337,6 +360,6 @@ shop.add_event([wait_sync_w_atm, wait_sync_w_scan], [to_done], lambda c1, c2: [S
 end_event(shop, [to_done], [], "done")
 
 
-m = Model(shop, "./temp/layout.txt")
+m = Visualisation(shop, "./temp/layout.txt")
 m.run()
 m.save_layout("./temp/layout.txt")

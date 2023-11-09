@@ -604,6 +604,19 @@ class SimProblem:
                 token = SimToken(result[i].value, time=self.clock + result[i].time)
                 event.outgoing[i].add_token(token)
 
+    def step(self):
+        """
+        Executes a single step of the simulation.
+        If multiple events can happen, one is selected at random.
+        Returns the binding that happened, or None if no event could happen.
+        """
+        bindings = self.bindings()
+        if len(bindings) > 0:
+            timed_binding = bindings[0]
+            self.fire(timed_binding)
+            return timed_binding
+        return None
+
     def simulate(self, duration, reporter=None):
         """
         Executes a simulation run for the problem for the specified duration.
