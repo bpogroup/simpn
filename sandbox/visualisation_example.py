@@ -217,7 +217,8 @@ class Model:
     def run(self):
         pygame.init()
         pygame.font.init()
-        
+        clock = pygame.time.Clock()
+
         screen = pygame.display.set_mode(self._size)
         
         running = True
@@ -225,12 +226,17 @@ class Model:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    pass
+                if event.type == pygame.MOUSEBUTTONUP:
+                    pass
             try:
                 self.draw(screen)
             except:
                 traceback.print_exc()
                 running = False
-            
+            clock.tick(60)
+
         pygame.quit()
 
         
