@@ -20,7 +20,7 @@ You must first install the dependencies as follows.
 
 .. code-block::
 
-    python -m pip install sortedcontainers==2.4.0
+    python -m pip install sortedcontainers==2.4.0 pygame==2.5.2 igraph==0.11.2
 
 Next, you can install the package itself.
 
@@ -168,3 +168,31 @@ For completeness, the full code of the example is:
     from simpn.reporters import SimpleReporter
 
     shop.simulate(10, SimpleReporter())
+
+Visualizing the Model
+=====================
+
+To help check whether the model is correct, it is possible to visualize it. To this end, there is a Visualisation class.
+You can simply create an instance of this class and call the `show` method to show the model as follows.
+
+.. code-block:: python
+
+    from simpn.visualisation import Visualisation
+
+    v = Visualisation(shop)
+    v.show()
+
+The model will now be shown as a Petri net in a separate window.
+The newly opened window will block further execution of the program until it is closed.
+You can interact with the model in the newly opened window. Pressing the space bar will advance the simulation by one step.
+You can also change the layout of the model by dragging its elements around.
+After the model window is closed, you can save the layout of the model to a file, so that you can open it later.
+Use the method `save_layout` to save the model to do so.
+You can load the layout of the model from the file later, by passing the saved layout as a parameter to the constructor.
+If the layout file does not exist, the model will be shown with an automatically generated layout.
+
+.. code-block:: python
+
+    v = Visualisation(shop, "layout.txt")
+    v.show()
+    v.save_layout("layout.txt")

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "simpn"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
   { name="Remco Dijkman", email="r.m.dijkman@tue.nl" },
 ]
@@ -18,7 +18,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "sortedcontainers==2.4.0"
+    "sortedcontainers==2.4.0",
+    "pygame==2.5.2",
+    "igraph==0.11.2"
 ]
 
 [tool.hatch.build]
@@ -27,6 +29,7 @@ exclude = [
     "/examples",
     "/sandbox",
     "/tests",
+    "/temp",
     "/TODO.rst",
     "/.*",
     "/requirements.txt"

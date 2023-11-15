@@ -192,13 +192,16 @@ it can happen on any of these values.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.simulate" title="simpn.simulator.SimProblem.simulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulate</span></code></a>(duration[, reporter])</p></td>
 <td><p>Executes a simulation run for the problem for the specified duration.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.store_checkpoint" title="simpn.simulator.SimProblem.store_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store_checkpoint</span></code></a>(name)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.step" title="simpn.simulator.SimProblem.step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">step</span></code></a>()</p></td>
+<td><p>Executes a single step of the simulation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.store_checkpoint" title="simpn.simulator.SimProblem.store_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store_checkpoint</span></code></a>(name)</p></td>
 <td><p>Stores the state of the simulator as a checkpoint with the given name.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.tokens_combinations" title="simpn.simulator.SimProblem.tokens_combinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tokens_combinations</span></code></a>(event)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.tokens_combinations" title="simpn.simulator.SimProblem.tokens_combinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tokens_combinations</span></code></a>(event)</p></td>
 <td><p>Creates a list of token combinations that are available to the specified event.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.var" title="simpn.simulator.SimProblem.var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">var</span></code></a>(name)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.var" title="simpn.simulator.SimProblem.var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">var</span></code></a>(name)</p></td>
 <td><p>Returns the SimVar with the given name.</p></td>
 </tr>
 </tbody>
@@ -300,6 +303,14 @@ each time a event happens (for a binding at a moment in simulation time).</p>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes a single step of the simulation.
+If multiple events can happen, one is selected at random.
+Returns the binding that happened, or None if no event could happen.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -617,6 +628,7 @@ The name of the SimEvent will be the name of the Python function.</p>
 <li class="toctree-l1"><a class="reference internal" href="howto.html">SimPN</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#installation">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#a-basic-tutorial">A Basic Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html#visualizing-the-model">Visualizing the Model</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="api.html">API Documentation</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Simulator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reporters.html">Reporters</a></li>
