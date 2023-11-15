@@ -229,8 +229,17 @@ class Visualisation:
             shape.draw(screen)
         for shape in self._edges:
             shape.draw(screen)
+        self.__draw_buttons(screen)
         pygame.display.flip()
     
+    def __draw_buttons(self, screen):
+        controls = pygame.Surface((31, 31), pygame.SRCALPHA, 32)
+        controls = controls.convert_alpha()
+        controls.set_alpha(128)
+        pygame.draw.polygon(controls, TUE_RED, [(0, 0), (0, 30), (20, 15)])
+        pygame.draw.polygon(controls, TUE_RED, [(20, 0), (20, 30), (25, 30), (25, 0)])
+        screen.blit(controls, (self._size[0]-100,self._size[1]-50))
+
     def __layout(self):
         graph = igraph.Graph()
         graph.to_directed()
