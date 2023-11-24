@@ -188,10 +188,11 @@ class Visualisation:
     - show(self): shows the visualisation
     """
     def __init__(self, sim_problem, layout_file=None):
+        self.__running = False
         self._problem = sim_problem
         self._nodes = dict()
         self._edges = []
-        self._selected_nodes = None
+        self._selected_nodes = None        
         for var in self._problem.places:
             self._nodes[var.get_id()] = Node(Shape.PLACE, var.get_id(), [(TUE_BLUE, False, var.get_id()), ""])
         for event in self._problem.events:
@@ -303,6 +304,27 @@ class Visualisation:
             node.set_pos((new_x, new_y))
         self._selected_nodes = nodes, new_pos
 
+    def __handle_event(self, event):
+        if event.type == pygame.QUIT:
+            self.__running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            node = self.__get_node_at(event.pos)
+            if node is not None:
+                self._selected_nodes = [node], event.pos
+            else:
+                self._selected_nodes = self._nodes.values(), event.pos
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self._selected_nodes is not None:
+            self.__drag(snap=True)
+            self._selected_nodes = None
+        elif event.type == pygame.MOUSEMOTION and self._selected_nodes is not None:
+            self.__drag()
+        elif event.type == pygame.VIDEORESIZE:
+            self._size = event.size
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                self._problem.step()
+                self.__set_token_values()
+
     def show(self):
             """
             Displays the Petri net visualisation in a window.
@@ -320,33 +342,15 @@ class Visualisation:
 
             screen = pygame.display.set_mode(self._size, pygame.RESIZABLE)
             
-            running = True
-            while running:
+            self.__running = True
+            while self.__running:
                 for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        running = False
-                    elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        node = self.__get_node_at(event.pos)
-                        if node is not None:
-                            self._selected_nodes = [node], event.pos
-                        else:
-                            self._selected_nodes = self._nodes.values(), event.pos
-                    elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self._selected_nodes is not None:
-                        self.__drag(snap=True)
-                        self._selected_nodes = None
-                    elif event.type == pygame.MOUSEMOTION and self._selected_nodes is not None:
-                        self.__drag()
-                    elif event.type == pygame.VIDEORESIZE:
-                        self._size = event.size
-                    elif event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_SPACE:
-                            self._problem.step()
-                            self.__set_token_values()
+                    self.__handle_event(event)
                 try:
                     self.__draw(screen)
                 except:
                     print("Error while drawing the visualisation.")
-                    running = False
+                    self.__running = False
                 clock.tick(60)
 
             pygame.quit()
