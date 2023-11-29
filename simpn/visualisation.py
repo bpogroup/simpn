@@ -175,6 +175,22 @@ class Node:
         self._text = text
 
 
+class Button(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface((31, 31), pygame.SRCALPHA, 32)
+        self.image = self.image.convert_alpha()
+        self.image.set_alpha(128)
+        self.rect = self.image.get_rect()
+
+    def set_pos(self, x, y):
+        self.rect.x = x
+        self.rect.y = y
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+    
+
 class Visualisation:
     """
     A class for visualizing the provided simulation problem as a Petri net.
@@ -188,11 +204,16 @@ class Visualisation:
     - show(self): shows the visualisation
     """
     def __init__(self, sim_problem, layout_file=None):
+        pygame.init()
+        pygame.font.init()
+        pygame.display.set_caption('Petri Net Visualisation')
+        
         self.__running = False
         self._problem = sim_problem
         self._nodes = dict()
         self._edges = []
         self._selected_nodes = None        
+        
         for var in self._problem.places:
             self._nodes[var.get_id()] = Node(Shape.PLACE, var.get_id(), [(TUE_BLUE, False, var.get_id()), ""])
         for event in self._problem.events:
@@ -210,8 +231,11 @@ class Visualisation:
             except FileNotFoundError as e:
                 print("WARNING: could not load the layout because of the exception below.\nauto-layout will be used.\n", e)
         if not layout_loaded:
-            self.__layout()
+            self.__layout()        
         self.__set_token_values()
+
+        self.__screen = pygame.display.set_mode(self._size, pygame.RESIZABLE)
+        self._buttons = self.__init_buttons()
     
     def __set_token_values(self):
         for p in self._problem.places:
@@ -224,22 +248,38 @@ class Visualisation:
                 ti += 1
             self._nodes[p.get_id()].set_text([(TUE_BLUE, False, p.get_id()), (TUE_RED, True, mstr)])
 
-    def __draw(self, screen):
-        screen.fill(TUE_GREY)
+    def __draw(self):
+        self.__screen.fill(TUE_GREY)
         for shape in self._nodes.values():
-            shape.draw(screen)
+            shape.draw(self.__screen)
         for shape in self._edges:
-            shape.draw(screen)
-        self.__draw_buttons(screen)
+            shape.draw(self.__screen)
+        self.__draw_buttons()
         pygame.display.flip()
+
+    def action_step(self):
+        self._problem.step()
+        self.__set_token_values()
     
-    def __draw_buttons(self, screen):
-        controls = pygame.Surface((31, 31), pygame.SRCALPHA, 32)
-        controls = controls.convert_alpha()
-        controls.set_alpha(128)
-        pygame.draw.polygon(controls, TUE_RED, [(0, 0), (0, 30), (20, 15)])
-        pygame.draw.polygon(controls, TUE_RED, [(20, 0), (20, 30), (25, 30), (25, 0)])
-        screen.blit(controls, (self._size[0]-100,self._size[1]-50))
+    def __init_buttons(self):
+        btn_step = Button()        
+        pygame.draw.polygon(btn_step.image, TUE_RED, [(0, 0), (0, 30), (20, 15)])
+        pygame.draw.polygon(btn_step.image, TUE_RED, [(20, 0), (20, 30), (25, 30), (25, 0)])
+        btn_step.set_pos(self._size[0]-100, self._size[1]-50)
+        btn_step.action = self.action_step
+
+        return [btn_step]
+
+    def __draw_buttons(self):
+        for btn in self._buttons:
+            btn.draw(self.__screen)
+
+    def __click_button_at(self, pos):
+        for btn in self._buttons:
+            if btn.rect.collidepoint(pos):
+                btn.action()
+                return True
+        return False
 
     def __layout(self):
         graph = igraph.Graph()
@@ -308,11 +348,13 @@ class Visualisation:
         if event.type == pygame.QUIT:
             self.__running = False
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            node = self.__get_node_at(event.pos)
-            if node is not None:
-                self._selected_nodes = [node], event.pos
-            else:
-                self._selected_nodes = self._nodes.values(), event.pos
+            button_clicked = self.__click_button_at(event.pos)
+            if not button_clicked:
+                node = self.__get_node_at(event.pos)
+                if node is not None:
+                    self._selected_nodes = [node], event.pos
+                else:
+                    self._selected_nodes = self._nodes.values(), event.pos
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self._selected_nodes is not None:
             self.__drag(snap=True)
             self._selected_nodes = None
@@ -334,23 +376,17 @@ class Visualisation:
             The spacebar can be used to step through the Petri net problem.
             The mouse can be used to drag nodes around.
             """
-            pygame.init()
-            pygame.font.init()
-            pygame.display.set_caption('Petri Net Visualisation')
-
             clock = pygame.time.Clock()
-
-            screen = pygame.display.set_mode(self._size, pygame.RESIZABLE)
             
             self.__running = True
             while self.__running:
                 for event in pygame.event.get():
                     self.__handle_event(event)
                 try:
-                    self.__draw(screen)
+                    self.__draw()
                 except:
                     print("Error while drawing the visualisation.")
                     self.__running = False
-                clock.tick(60)
+                clock.tick(30)
 
             pygame.quit()
