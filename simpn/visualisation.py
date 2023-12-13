@@ -1,4 +1,6 @@
 import igraph
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from enum import Enum, auto
 
@@ -262,13 +264,15 @@ class Visualisation:
         self.__set_token_values()
     
     def __init_buttons(self):
-        btn_step = Button()        
-        pygame.draw.polygon(btn_step.image, TUE_RED, [(0, 0), (0, 30), (20, 15)])
-        pygame.draw.polygon(btn_step.image, TUE_RED, [(20, 0), (20, 30), (25, 30), (25, 0)])
-        btn_step.set_pos(self._size[0]-100, self._size[1]-50)
-        btn_step.action = self.action_step
+        # No buttons for now.
+        # btn_step = Button()        
+        # pygame.draw.polygon(btn_step.image, TUE_RED, [(0, 0), (0, 30), (20, 15)])
+        # pygame.draw.polygon(btn_step.image, TUE_RED, [(20, 0), (20, 30), (25, 30), (25, 0)])
+        # btn_step.set_pos(self._size[0]-100, self._size[1]-50)
+        # btn_step.action = self.action_step
 
-        return [btn_step]
+        # return [btn_step]
+        return []
 
     def __draw_buttons(self):
         for btn in self._buttons:
