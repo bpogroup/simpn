@@ -8,14 +8,8 @@ class SimVar:
     A simulation variable can have multiple values. These values are available at particular times.
     For example, a variable van have the value 1 at time 0 (denoted as 1@0) and also 2@0.
     These values are also called tokens. Multiple tokens are called a marking of the variable.
-    The marking is represented as:
-
-     - a dictionary marking_count of tokens -> the number of each token.
-       For example, {1@0: 1, 2@0: 1} represents the situation above, in which there is one token
-       with value 1 at time 0 and one with value 2 at time 0.
-     - a sorted list marking_order of tokens, which keeps tokens in the order of their timestamp.
-
-     The functions put and remove, put and remove tokens in such a way that the marking_count and marking_order are maintained.
+    The marking is represented as a sorted list, which keeps tokens in the order of their priority, by default this is their timestamp.
+    The functions put and remove, put and remove tokens in such a way that the order is maintained.
 
     :param _id: the identifier of the SimVar.
     :param priority: a function that takes a token as input and returns a value that is used to sort the tokens in the order in which they will be processed (lower values first). The default is processing in the order of the time of the token.
@@ -23,9 +17,7 @@ class SimVar:
 
     def __init__(self, _id, priority=lambda token: token.time):
         self._id = _id
-        self.marking_count = dict()
-        self.marking_order = SortedList(key=priority)
-        self.total_count = 0
+        self.marking = SortedList(key=priority)
         self.checkpoints = dict()
 
     def put(self, value, time=0):
@@ -45,12 +37,7 @@ class SimVar:
         :param token: the token value to put in the SimVar.
         :param count: the number of times to put the token value in the SimVar (defaults to 1 time).
         """
-        if token not in self.marking_count:
-            self.marking_count[token] = count
-            self.marking_order.add(token)
-        else:
-            self.marking_count[token] += count
-        self.total_count += count
+        self.marking.add(token)
 
     def remove_token(self, token):
         """
@@ -58,15 +45,11 @@ class SimVar:
 
         :param token: the token value to remove from the SimVar.
         """
-        if token in self.marking_count:
-            self.marking_count[token] -= 1
-            self.total_count -= 1
+        if token in self.marking:
+            self.marking.remove(token)
         else:
-            raise LookupError("No token '" + token + "' at place '" + str(self) + "'.")
-        if self.marking_count[token] == 0:
-            del self.marking_count[token]
-            self.marking_order.remove(token)
-
+            raise LookupError("No token '" + token + "' at place '" + str(self) + "'.")          
+    
     def get_id(self):
         return self._id
     
@@ -80,16 +63,14 @@ class SimVar:
         """
         Stores a checkpoint of the SimVar marking with the given name. The checkpoint can be restored later with restore_checkpoint.
         """
-        self.checkpoints[name] = [token.copy() for token in self.marking_order for _ in range(self.marking_count[token])]
+        self.checkpoints[name] = [token.copy() for token in self.marking]
     
     def restore_checkpoint(self, name):
         """
         Restores the SimVar marking from the checkpoint with the given name.
         """
         if name in self.checkpoints:
-            self.marking_count.clear()
-            self.marking_order.clear()
-            self.total_count = 0
+            self.marking.clear()
             for token in self.checkpoints[name]:
                 self.add_token(token)
         else:
@@ -109,13 +90,8 @@ class SimVarCounter(SimVar):
         self.simvar = simvar
 
     @property
-    def marking_count(self):
-        token = SimToken(self.simvar.total_count)
-        return {token: 1}
-
-    @property
-    def marking_order(self):
-        token = SimToken(self.simvar.total_count)
+    def marking(self):
+        token = SimToken(len(self.simvar.marking))
         return SortedList([token])
 
     def put(self, value, time=0):
@@ -147,12 +123,7 @@ class SimVarTime(SimVar):
         self.problem = problem
 
     @property
-    def marking_count(self):
-        token = SimToken(self.problem.clock)
-        return {token: 1}
-
-    @property
-    def marking_order(self):
+    def marking(self):
         token = SimToken(self.problem.clock)
         return SortedList([token])
 
@@ -324,15 +295,15 @@ class SimProblem:
         result += "}\n"
         markings = []
         for p in self.places:
-            if len(p.marking_order) > 0:
-                mstr = str(p) + ":"
+            if len(p.marking) > 0:
+                mstr = str(p) + ":["
                 ti = 0
-                for token in p.marking_order:
-                    mstr += str(p.marking_count[token]) + "`" + str(token) + "`"
-                    if ti < len(p.marking_order) - 1:
-                        mstr += "++"
+                for token in p.marking:
+                    mstr += str(token)
+                    if ti < len(p.marking) - 1:
+                        mstr += ", "
                     ti += 1
-                markings.append(mstr)
+                markings.append(mstr + "]")
         result += "M={"
         for i in range(len(markings)):
             result += markings[i]
@@ -488,7 +459,7 @@ class SimProblem:
         bindings = [[]]
         for place in event.incoming:
             new_bindings = []
-            for token in place.marking_order:  # get set of colors in incoming place
+            for token in place.marking:  # get set of colors in incoming place
                 for binding in bindings:
                     new_binding = binding.copy()
                     new_binding.append((place, token))

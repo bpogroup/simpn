@@ -23,15 +23,13 @@ class TestBasics(unittest.TestCase):
         a.put("a")
         b.put(1)
 
-        self.assertEqual(len(a.marking_count), 3, "added 3 token types to a")
-        self.assertEqual(len(a.marking_order), 3, "added 3 token types to a")
-        self.assertEqual(a.marking_order[2], SimToken(1, 1), "last token is 1@1")
-        self.assertEqual(a.marking_count[SimToken(1, 1)], 1, "added 1 token with value 1 at time 1 to a")
-        self.assertEqual(a.marking_count[SimToken(1, 0)], 1, "added 1 token with value 1 at time 0 to a")
-        self.assertEqual(a.marking_count[SimToken("a", 0)], 2, "added 1 token with value a at time 0 to a")
-        self.assertEqual(len(b.marking_count), 1, "added 1 token types to b")
-        self.assertEqual(len(b.marking_order), 1, "added 1 token types to b")
-        self.assertEqual(b.marking_order[0], SimToken(1), "token is 1@0")
+        self.assertEqual(len(a.marking), 4, "added 4 tokens to a")
+        self.assertEqual(a.marking[3], SimToken(1, 1), "last token is 1@1")
+        self.assertEqual(a.marking.count(SimToken(1, 1)), 1, "added 1 token with value 1 at time 1 to a")
+        self.assertEqual(a.marking.count(SimToken(1, 0)), 1, "added 1 token with value 1 at time 0 to a")
+        self.assertEqual(a.marking.count(SimToken("a", 0)), 2, "added 1 token with value a at time 0 to a")
+        self.assertEqual(len(b.marking), 1, "added 1 token to b")
+        self.assertEqual(b.marking, [SimToken(1)], "token is 1@0")
 
     def test_remove(self):
         test_problem = SimProblem()
@@ -45,14 +43,13 @@ class TestBasics(unittest.TestCase):
         a.remove_token(SimToken(1, 1))
         a.remove_token(SimToken("a"))
 
-        self.assertEqual(len(a.marking_count), 4, "4 token types left on a")
-        self.assertEqual(len(a.marking_order), 4, "4 token types left on a")
-        self.assertEqual(a.marking_order[3], SimToken(1, 2), "last token is 1@2")
-        self.assertEqual(a.marking_order[2], SimToken("a", 1), "before-last token is a@1")
-        self.assertEqual(a.marking_count[SimToken(1, 0)], 1, "1 token with value 1 at time 0")
-        self.assertEqual(a.marking_count[SimToken(1, 2)], 1, "1 token with value 1 at time 2")
-        self.assertEqual(a.marking_count[SimToken("a", 0)], 1, "1 token with value a at time 0")
-        self.assertEqual(a.marking_count[SimToken("a", 1)], 1, "1 token with value a at time 1")
+        self.assertEqual(len(a.marking), 4, "4 tokens left on a")
+        self.assertEqual(a.marking[3], SimToken(1, 2), "last token is 1@2")
+        self.assertEqual(a.marking[2], SimToken("a", 1), "before-last token is a@1")
+        self.assertEqual(a.marking.count(SimToken(1, 0)), 1, "1 token with value 1 at time 0")
+        self.assertEqual(a.marking.count(SimToken(1, 2)), 1, "1 token with value 1 at time 2")
+        self.assertEqual(a.marking.count(SimToken("a", 0)), 1, "1 token with value a at time 0")
+        self.assertEqual(a.marking.count(SimToken("a", 1)), 1, "1 token with value a at time 1")
 
     def test_add_stransition(self):
         def test_behavior(d, e):
@@ -150,9 +147,9 @@ class TestBasics(unittest.TestCase):
         ta = test_problem.add_event([a, b], [e], lambda c, d: [SimToken(c + d)], name="ta")
         self.assertEqual(test_problem.bindings(), [([(a, SimToken(1, 1)), (b, SimToken(2, 1))], 1, ta)], "correct token combinations")
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEqual(len(a.marking_count), 0, "fire consumes tokens")
-        self.assertEqual(len(b.marking_count), 0, "fire consumes tokens")
-        self.assertEqual(e.marking_count[SimToken(3, 1)], 1, "fire produces token")
+        self.assertEqual(len(a.marking), 0, "fire consumes tokens")
+        self.assertEqual(len(b.marking), 0, "fire consumes tokens")
+        self.assertEqual(e.marking.count(SimToken(3, 1)), 1, "fire produces token")
 
     def test_fire_delay_function(self):
         test_problem = SimProblem()
@@ -163,7 +160,7 @@ class TestBasics(unittest.TestCase):
         e = test_problem.add_var("e")
         test_problem.add_event([a, b], [e], lambda c, d: [SimToken(c + d, 1)], name="ta")
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEqual(e.marking_count[SimToken(3, 2)], 1, "fire produces token with delay")
+        self.assertEqual(e.marking.count(SimToken(3, 2)), 1, "fire produces token with delay")
 
     def test_fire_delay_list(self):
         test_problem = SimProblem()
@@ -174,7 +171,7 @@ class TestBasics(unittest.TestCase):
         e = test_problem.add_var("e")
         test_problem.add_event([a, b], [e], lambda c, d: [SimToken(c + d, 2)], name="ta")
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEqual(e.marking_count[SimToken(3, 3)], 1, "fire produces token with delay")
+        self.assertEqual(e.marking.count(SimToken(3, 3)), 1, "fire produces token with delay")
 
     def test_binding_order(self):
         test_problem = SimProblem()
@@ -240,10 +237,7 @@ class TestSimVarCounter(unittest.TestCase):
         a = test_problem.add_var("a")
         a.put(1)
         counter = test_problem.var("a.count")
-        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
-        self.assertEquals(counter.marking_count[SimToken(1)], 1, "There is one token of value 1")
-        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
-        self.assertEquals(counter.marking_order[0], SimToken(1), "There is one token of value 1")
+        self.assertEquals(counter.marking, [SimToken(1)], "There is one token with value 1")
 
     def test_simvarcounter_add_token_2(self):
         # tests if putting identical token increases the counter
@@ -252,10 +246,7 @@ class TestSimVarCounter(unittest.TestCase):
         a.put(1)
         a.put(1)
         counter = test_problem.var("a.count")
-        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
-        self.assertEquals(counter.marking_count[SimToken(2)], 1, "There is one token of value 2")
-        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
-        self.assertEquals(counter.marking_order[0], SimToken(2), "There is one token of value 2")
+        self.assertEquals(counter.marking, [SimToken(2)], "There is one token with value 2")
 
     def test_simvarcounter_add_token_3(self):
         # tests if putting different tokens increases the counter
@@ -265,10 +256,7 @@ class TestSimVarCounter(unittest.TestCase):
         a.put(1)
         a.put(2)
         counter = test_problem.var("a.count")
-        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
-        self.assertEquals(counter.marking_count[SimToken(3)], 1, "There is one token of value 3")
-        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
-        self.assertEquals(counter.marking_order[0], SimToken(3), "There is one token of value 3")
+        self.assertEquals(counter.marking, [SimToken(3)], "There is one token with value 3")
 
     def test_simvarcounter_remove_token(self):
         # tests if removing a token of which there is 1 decreases the counter
@@ -279,10 +267,7 @@ class TestSimVarCounter(unittest.TestCase):
         a.put(2)
         counter = test_problem.var("a.count")
         a.remove_token(SimToken(2))
-        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
-        self.assertEquals(counter.marking_count[SimToken(2)], 1, "There is one token of value 2")
-        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
-        self.assertEquals(counter.marking_order[0], SimToken(2), "There is one token of value 2")
+        self.assertEquals(counter.marking, [SimToken(2)], "There is one token with value 2")
 
     def test_simvarcounter_add_remove_token_2(self):
         # tests if removing a token of which there are 2 decreases the counter
@@ -293,10 +278,7 @@ class TestSimVarCounter(unittest.TestCase):
         a.put(2)
         counter = test_problem.var("a.count")
         a.remove_token(SimToken(1))
-        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
-        self.assertEquals(counter.marking_count[SimToken(2)], 1, "There is one token of value 2")
-        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
-        self.assertEquals(counter.marking_order[0], SimToken(2), "There is one token of value 2")
+        self.assertEquals(counter.marking, [SimToken(2)], "There is one token with value 2")
 
     def test_simvarcounter_add_remove_through_firing(self):
         test_problem = SimProblem()
@@ -309,38 +291,23 @@ class TestSimVarCounter(unittest.TestCase):
 
         to_add.put(1)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
-        self.assertEquals(counter.marking_count[SimToken(1)], 1, "There is one token of value 1")
-        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
-        self.assertEquals(counter.marking_order[0], SimToken(1), "There is one token of value 1")
+        self.assertEquals(counter.marking, [SimToken(1)], "There is one token with value 1")
 
         to_add.put(1)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
-        self.assertEquals(counter.marking_count[SimToken(2)], 1, "There is one token of value 2")
-        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
-        self.assertEquals(counter.marking_order[0], SimToken(2), "There is one token of value 2")
+        self.assertEquals(counter.marking, [SimToken(2)], "There is one token with value 2")
 
         to_add.put(2)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
-        self.assertEquals(counter.marking_count[SimToken(3)], 1, "There is one token of value 2")
-        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
-        self.assertEquals(counter.marking_order[0], SimToken(3), "There is one token of value 2")
+        self.assertEquals(counter.marking, [SimToken(3)], "There is one token with value 3")
 
         to_remove.put(2)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
-        self.assertEquals(counter.marking_count[SimToken(2)], 1, "There is one token of value 2")
-        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
-        self.assertEquals(counter.marking_order[0], SimToken(2), "There is one token of value 2")
+        self.assertEquals(counter.marking, [SimToken(2)], "There is one token with value 2")
 
         to_remove.put(1)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(len(counter.marking_count), 1, "There is one token value")
-        self.assertEquals(counter.marking_count[SimToken(1)], 1, "There is one token of value 2")
-        self.assertEquals(len(counter.marking_order), 1, "There is one token value")
-        self.assertEquals(counter.marking_order[0], SimToken(1), "There is one token of value 2")
+        self.assertEquals(counter.marking, [SimToken(1)], "There is one token with value 1")
 
 
 class TestTimeVariable(unittest.TestCase):
@@ -350,10 +317,7 @@ class TestTimeVariable(unittest.TestCase):
 
         time_var = test_problem.var("time")
 
-        self.assertEquals(len(time_var.marking_count), 1, "There is one token value")
-        self.assertEquals(time_var.marking_count[SimToken(0)], 1, "There is one token of value 0")
-        self.assertEquals(len(time_var.marking_order), 1, "There is one token value")
-        self.assertEquals(time_var.marking_order[0], SimToken(0), "There is one token of value 0")
+        self.assertEquals(time_var.marking, [SimToken(0)], "There is one token with value 0")
 
     def test_updating(self):
         # tests if firing updates the time
@@ -365,10 +329,7 @@ class TestTimeVariable(unittest.TestCase):
 
         time_var = test_problem.var("time")
 
-        self.assertEquals(len(time_var.marking_count), 1, "There is one token value")
-        self.assertEquals(time_var.marking_count[SimToken(2)], 1, "There is one token of value 0")
-        self.assertEquals(len(time_var.marking_order), 1, "There is one token value")
-        self.assertEquals(time_var.marking_order[0], SimToken(2), "There is one token of value 0")
+        self.assertEquals(time_var.marking, [SimToken(2)], "There is one token with value 2")
 
 
 class TestPriorities(unittest.TestCase):
@@ -399,9 +360,9 @@ class TestPriorities(unittest.TestCase):
 
             # we check if the tokens in the queues always have time <= the global clock
             # this is an important assumption for the correctness of the simulation
-            for token in task1_queue.marking_order:
+            for token in task1_queue.marking:
                 self.assertLessEqual(token.time, test_problem.clock, "tokens in the queues always have time <= the global clock")
-            for token in task2_queue.marking_order:
+            for token in task2_queue.marking:
                 self.assertLessEqual(token.time, test_problem.clock, "tokens in the queues always have time <= the global clock")
 
             # we check if the jobs are completed in the order of their arrival
@@ -446,13 +407,13 @@ class TestPriorities(unittest.TestCase):
             if event._id == "task1<task:start>":
                 start1_count += 1
                 prio = binding[0][1].value[1]
-                for token in task1_queue.marking_order:
+                for token in task1_queue.marking:
                     self.assertGreaterEqual(token.value[1], prio, "tokens with higher priority must always start first")
 
             if event._id == "task2<task:start>":
                 start2_count += 2
                 prio = binding[0][1].value[1]
-                for token in task2_queue.marking_order:
+                for token in task2_queue.marking:
                     self.assertGreaterEqual(token.value[1], prio, "tokens with higher priority must always start first")
 
         self.assertGreater(start1_count, 10, "there are at least 10 starts of task 1")

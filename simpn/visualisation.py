@@ -241,13 +241,14 @@ class Visualisation:
     
     def __set_token_values(self):
         for p in self._problem.places:
-            mstr = ""
+            mstr = "["
             ti = 0
-            for token in p.marking_order:
-                mstr += str(p.marking_count[token]) + "`" + str(token.value) + "@" + str(round(token.time, 2)) + "`"
-                if ti < len(p.marking_order) - 1:
-                    mstr += "++"
+            for token in p.marking:
+                mstr += str(token.value) + "@" + str(round(token.time, 2))
+                if ti < len(p.marking) - 1:
+                    mstr += ", "
                 ti += 1
+            mstr += "]"
             self._nodes[p.get_id()].set_text([(TUE_BLUE, False, p.get_id()), (TUE_RED, True, mstr)])
 
     def __draw(self):
