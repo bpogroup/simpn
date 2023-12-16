@@ -222,9 +222,15 @@ class Visualisation:
             event_shape = Node(Shape.TRANSTION, event.get_id(), [(TUE_BLUE, False, event.get_id())])
             self._nodes[event.get_id()] = event_shape
             for incoming in event.incoming:
-                self._edges.append(Edge(start=(self._nodes[incoming.get_id()], Hook.RIGHT), end=(event_shape, Hook.LEFT)))
+                node_id = incoming.get_id()
+                if node_id.endswith(".queue"):
+                    node_id = node_id[:-len(".queue")]
+                self._edges.append(Edge(start=(self._nodes[node_id], Hook.RIGHT), end=(event_shape, Hook.LEFT)))
             for outgoing in event.outgoing:
-                self._edges.append(Edge(start=(event_shape, Hook.RIGHT), end=(self._nodes[outgoing.get_id()], Hook.LEFT)))
+                node_id = outgoing.get_id()
+                if node_id.endswith(".queue"):
+                    node_id = node_id[:-len(".queue")]
+                self._edges.append(Edge(start=(event_shape, Hook.RIGHT), end=(self._nodes[node_id], Hook.LEFT)))
         layout_loaded = False
         if layout_file is not None:
             try:

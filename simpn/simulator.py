@@ -19,6 +19,8 @@ class SimVar:
         self._id = _id
         self.marking = SortedList(key=priority)
         self.checkpoints = dict()
+        self._time = 0  # the time at which the last token is available
+        self.queue = SimVarQueue(self)
 
     def put(self, value, time=0):
         """
@@ -29,6 +31,8 @@ class SimVar:
         """
         token = SimToken(value, time)
         self.add_token(token)
+        if time > self._time:
+            self._time = time
 
     def add_token(self, token, count=1):
         """
@@ -38,6 +42,8 @@ class SimVar:
         :param count: the number of times to put the token value in the SimVar (defaults to 1 time).
         """
         self.marking.add(token)
+        if token.time > self._time:
+            self._time = token.time
 
     def remove_token(self, token):
         """
@@ -49,6 +55,8 @@ class SimVar:
             self.marking.remove(token)
         else:
             raise LookupError("No token '" + token + "' at place '" + str(self) + "'.")          
+        if token.time >= self._time:
+            self._time = max([t.time for t in self.marking] + [0])
     
     def get_id(self):
         return self._id
@@ -70,6 +78,7 @@ class SimVar:
         Restores the SimVar marking from the checkpoint with the given name.
         """
         if name in self.checkpoints:
+            self._time = 0
             self.marking.clear()
             for token in self.checkpoints[name]:
                 self.add_token(token)
@@ -77,38 +86,52 @@ class SimVar:
             raise LookupError("No checkpoint '" + name + "' at place '" + str(self) + "'.")
 
 
-class SimVarCounter(SimVar):
+class SimVarQueue(SimVar):
     """
-    A simulation variable that only always contains one token.
-    This token has an integer value that represents the number of tokens in the SimVar that it counts.
-    The identifier of this SimVar is <simvar_id>.count, where simvar_id is the _id of the SimVar that it counts.
+    A simulation variable that contains the queue of tokens from another SimVar.
+    The identifier of this SimVar is <simvar_id>.queue, where simvar_id is the _id of the SimVar of which it contains the queue.
+    Regular SimVar have a queue property that refers to their SimVarQueue variable.
     """
-    COUNT_SUFFIX = ".count"
+    QUEUE_SUFFIX = ".queue"
     
     def __init__(self, simvar):
-        self._id = simvar._id + SimVarCounter.COUNT_SUFFIX
+        self._id = simvar._id + SimVarQueue.QUEUE_SUFFIX
         self.simvar = simvar
 
     @property
     def marking(self):
-        token = SimToken(len(self.simvar.marking))
-        return SortedList([token])
+        token = SimToken(self.simvar.marking, self.simvar._time)
+        return [token]
 
     def put(self, value, time=0):
         pass
 
     def add_token(self, token, count=1):
-        pass
+        # adding a queue token means adding an entire queue.
+        if count != 1:
+            raise TypeError(self._id + ": the queue is placed back multiple times (count != 1). However, there can only be one queue.")
+        # we check if the token is a list of tokens (i.e. a queue) and if so, we add all tokens in the queue.
+        try:
+            for t in token:
+                if not isinstance(t, SimToken):
+                    raise TypeError(self._id + ": something went wrong placing the queue back with value " + str(token) + ". Element " + str(t) + " does not appear to be a token, but the queue must be a list of tokens.")
+                self.simvar.add_token(t)
+        except:
+            raise TypeError(self._id + ": something went wrong placing the queue back with value " + str(token) + ".")
 
     def remove_token(self, token):
-        pass
+        # removing a queue token means removing the queue.
+        # However, the queue object should remain intact, because that is the same object that is passed as a token.
+        # Therefore, we set the marking to a new empty list.
+        self.simvar.marking = SortedList(key=self.simvar.marking.key)
+        self.simvar._time = 0
 
     def __str__(self):
         return self._id
 
     def __repr__(self):
-        return self.__str__()
-
+        return self.__str__()	
+    
 
 class SimVarTime(SimVar):
     """
@@ -323,8 +346,8 @@ class SimProblem:
         # Check name
         if name in self.id2node:
             raise TypeError("Node with name " + name + " already exists. Names must be unique.")
-        if name.endswith(SimVarCounter.COUNT_SUFFIX):
-            raise TypeError("Cannot create SimVar with name " + name + ". Names ending with " + SimVarCounter.COUNT_SUFFIX + " are reserved for SimVar counters. If you just want to get the counter variable, use the .var() method instead.")
+        if name.endswith(SimVarQueue.QUEUE_SUFFIX):
+            raise TypeError("Cannot create SimVar with name " + name + ". Names ending with " + SimVarQueue.QUEUE_SUFFIX + " are reserved for SimVar queues. They are automatically generated.")
         if name == SimVarTime.TIME_ID:
             raise TypeError("Cannot create SimVar with name " + name + ". " + SimVarTime.TIME_ID + " is reserved for the time variable. If you just want to get the time variable, use the .var() method instead.")
 
@@ -339,7 +362,6 @@ class SimProblem:
         """
         Returns the SimVar with the given name.
         Raises an error if no such SimVar exists.
-        If the name is a SimVar counter name and it does not yet exist, it is created.
 
         :param name: the name of the SimVar.
         :return: the SimVar with the given name or an Error.
@@ -349,16 +371,6 @@ class SimProblem:
                 return self.id2node[name]
             else:
                 raise TypeError(name + " is not a SimVar.")
-        elif name.endswith(SimVarCounter.COUNT_SUFFIX) and name[:-len(SimVarCounter.COUNT_SUFFIX)] in self.id2node:
-            simvar = self.id2node[name[:-len(SimVarCounter.COUNT_SUFFIX)]]
-            if isinstance(simvar, SimVar):
-                # Generate and add SimVarCount for the SimVar        
-                counter = SimVarCounter(simvar)
-                self.places.append(counter)
-                self.id2node[counter._id] = counter
-                return counter                
-            else:
-                raise TypeError("Cannot create SimVar counter " + name + ". " + name[:-len(SimVarCounter.COUNT_SUFFIX)] + " is not a SimVar.")
         elif name == SimVarTime.TIME_ID:
             # Generate and add SimVarTime
             time_var = SimVarTime(self)
@@ -564,16 +576,23 @@ class SimProblem:
             i = 0
             for r in result:
                 if r is not None:
-                    if not isinstance(r, SimToken):
-                        raise TypeError("Event " + str(event) + ": does not generate a token for variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
-                    if not (type(r.time) is int or type(r.time) is float):
-                        raise TypeError("Event " + str(event) + ": does not generate a numeric value for the delay of variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
+                    if isinstance(event.outgoing[i], SimVarQueue):
+                        if not isinstance(r, list):
+                            raise TypeError("Event " + str(event) + ": does not generate a queue for variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
+                    else:
+                        if not isinstance(r, SimToken):
+                            raise TypeError("Event " + str(event) + ": does not generate a token for variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
+                        if not (type(r.time) is int or type(r.time) is float):
+                            raise TypeError("Event " + str(event) + ": does not generate a numeric value for the delay of variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
                 i += 1
 
         for i in range(len(result)):
             if result[i] is not None:
-                token = SimToken(result[i].value, time=self.clock + result[i].time)
-                event.outgoing[i].add_token(token)
+                if isinstance(event.outgoing[i], SimVarQueue):
+                    event.outgoing[i].add_token(result[i])
+                else:
+                    token = SimToken(result[i].value, time=self.clock + result[i].time)
+                    event.outgoing[i].add_token(token)
 
     def step(self):
         """
