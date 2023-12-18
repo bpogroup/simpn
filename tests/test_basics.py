@@ -158,7 +158,7 @@ class TestBasics(unittest.TestCase):
         b = test_problem.add_var("b")
         b.put(2, 1)
         e = test_problem.add_var("e")
-        test_problem.add_event([a, b], [e], lambda c, d: [SimToken(c + d, 1)], name="ta")
+        test_problem.add_event([a, b], [e], lambda c, d: [SimToken(c + d, delay=1)], name="ta")
         test_problem.fire(test_problem.bindings()[0])
         self.assertEqual(e.marking.count(SimToken(3, 2)), 1, "fire produces token with delay")
 
@@ -169,7 +169,7 @@ class TestBasics(unittest.TestCase):
         b = test_problem.add_var("b")
         b.put(2, 1)
         e = test_problem.add_var("e")
-        test_problem.add_event([a, b], [e], lambda c, d: [SimToken(c + d, 2)], name="ta")
+        test_problem.add_event([a, b], [e], lambda c, d: [SimToken(c + d, delay=2)], name="ta")
         test_problem.fire(test_problem.bindings()[0])
         self.assertEqual(e.marking.count(SimToken(3, 3)), 1, "fire produces token with delay")
 
@@ -320,7 +320,6 @@ class TestSimVarQueue(unittest.TestCase):
         # a queue manipulation event gets a queue.
         # the first token in the queue is put in the result variable.
         # Note that we should only put the value of the token back, not the time, because that will be interpreted as a delay.
-        # TODO: ideally then, we split the token time and delay, so we cannot accidentally delay a token.
         test_problem.add_event([a.queue], [result], name="get_queue", behavior=lambda q: [SimToken(q[0].value)])
         test_problem.fire(test_problem.bindings()[0])
         # the transition fires at the time of the queue, which is the time of the last token
@@ -390,9 +389,9 @@ class TestPriorities(unittest.TestCase):
 
         start_event(test_problem, [], [task1_queue], "", 1)
 
-        task(test_problem, [task2_queue, resource], [done, resource], "task2", lambda c, r: [SimToken((c, r), 1.25)])
+        task(test_problem, [task2_queue, resource], [done, resource], "task2", lambda c, r: [SimToken((c, r), delay=1.25)])
 
-        task(test_problem, [task1_queue, resource], [task2_queue, resource], "task1", lambda c, r: [SimToken((c, r), 1.25)])
+        task(test_problem, [task1_queue, resource], [task2_queue, resource], "task1", lambda c, r: [SimToken((c, r), delay=1.25)])
 
         last_completion = None
         completion_count = 0
@@ -435,9 +434,9 @@ class TestPriorities(unittest.TestCase):
 
         start_event(test_problem, [], [task1_queue], "", 1, behavior=lambda: [SimToken(randint(1, 2))])
 
-        task(test_problem, [task2_queue, resource], [done, resource], "task2", lambda c, r: [SimToken((c, r), 2)])
+        task(test_problem, [task2_queue, resource], [done, resource], "task2", lambda c, r: [SimToken((c, r), delay=2)])
 
-        task(test_problem, [task1_queue, resource], [task2_queue, resource], "task1", lambda c, r: [SimToken((c, r), 2)])
+        task(test_problem, [task1_queue, resource], [task2_queue, resource], "task1", lambda c, r: [SimToken((c, r), delay=2)])
 
         start1_count = 0
         start2_count = 0

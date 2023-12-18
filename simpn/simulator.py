@@ -236,15 +236,18 @@ class SimEvent:
 class SimToken:
     """
     A token SimToken, which is a possible value of a SimVar. A token has a value and the time at which this value is available in a SimVar.
-    When the SimToken is used as the return value of a behavior, the time represents the delay with which the value with be available rather than the time.
-    The value will then be available at current_time + time.
+    When the SimToken is used as the return value of an event behavior, the delay can be used. This represents the delay with which the value will be available.
+    The value will then be available at <time of event> + <delay>.
 
     :param value: the value of the token.
-    :param time: the time at which the value is available. When used as the return of a event behavior, the value represents the delay. The token will then be available as current_time + time.
+    :param time: the time at which the value is available. 
+    :param delay: should only be used when returning the token from an event behavior. The value represents the delay. The token will then be available as <time of event> + <delay>.
+
     """
-    def __init__(self, value, time=0):
+    def __init__(self, value, time=0, delay=0):
         self.value = value
         self.time = time
+        self.delay = delay
 
     def __eq__(self, token):
         return self.value == token.value and self.time == token.time
@@ -582,8 +585,10 @@ class SimProblem:
                     else:
                         if not isinstance(r, SimToken):
                             raise TypeError("Event " + str(event) + ": does not generate a token for variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
-                        if not (type(r.time) is int or type(r.time) is float):
+                        if not (type(r.delay) is int or type(r.delay) is float):
                             raise TypeError("Event " + str(event) + ": does not generate a numeric value for the delay of variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
+                        if not (type(r.time) is int or type(r.time) is float):
+                            raise TypeError("Event " + str(event) + ": does not generate a numeric value for the time of variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
                 i += 1
 
         for i in range(len(result)):
@@ -591,7 +596,9 @@ class SimProblem:
                 if isinstance(event.outgoing[i], SimVarQueue):
                     event.outgoing[i].add_token(result[i])
                 else:
-                    token = SimToken(result[i].value, time=self.clock + result[i].time)
+                    if result[i].time > 0 and result[i].delay == 0:
+                        raise TypeError("Deprecated functionality: Event " + str(event) + ": generates a token with a delay of 0, but a time > 0, for variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ". It seems you are using the time of the token to represent the delay.")
+                    token = SimToken(result[i].value, time=self.clock + result[i].delay)
                     event.outgoing[i].add_token(token)
 
     def step(self):
