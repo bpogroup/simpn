@@ -83,7 +83,7 @@ input and produces (values of) state variables as output.
 .. code-block:: python
 
     def process(customer, resource):
-        return [SimToken(resource, 0.75)]
+        return [SimToken(resource, delay=0.75)]
 
     shop.add_event([customers, resources], [resources], process)
 
@@ -108,9 +108,9 @@ Accordingly, we must produce a list of values as output, even if there is only o
 Second, the function does not return the `resource`, but returns a `SimToken` containing the resource.
 That is because in simulation, values have a time from which they are available. A value with a time
 is called a *token*. This represents that the value is only available at, or after, the specified time.
-In this case, the resource value is made available after 0.75. You can consider this the time it takes the resource to
+In this case, the resource value is made available after a delay of 0.75. You can consider this the time it takes the resource to
 process the customer. Since it takes 0.75 to process a customer, the resource is only made available
-again after 0.75. In the meantime no new `process` events can happen, because a value from `resources`,
+again after a delay of 0.75. In the meantime no new `process` events can happen, because a value from `resources`,
 which is needed as input for such an event, is not available.
 
 Putting it all together
@@ -156,7 +156,7 @@ For completeness, the full code of the example is:
     customers = shop.add_var("customers")
 
     def process(customer, resource):
-        return [SimToken(resource, 0.75)]
+        return [SimToken(resource, delay=0.75)]
 
     shop.add_event([customers, resources], [resources], process)
 

@@ -105,7 +105,7 @@ We define simulation events as Python functions that take a system state and ret
 Remember that the system state is defined in terms of variables, so an event function takes (values of) state variables as
 input and produces (values of) state variables as output.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="n">customer</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">SimToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">SimToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)]</span>
 
 <span class="n">shop</span><span class="o">.</span><span class="n">add_event</span><span class="p">([</span><span class="n">customers</span><span class="p">,</span> <span class="n">resources</span><span class="p">],</span> <span class="p">[</span><span class="n">resources</span><span class="p">],</span> <span class="n">process</span><span class="p">)</span>
 </pre></div>
@@ -128,9 +128,9 @@ Accordingly, we must produce a list of values as output, even if there is only o
 <p>Second, the function does not return the <cite>resource</cite>, but returns a <cite>SimToken</cite> containing the resource.
 That is because in simulation, values have a time from which they are available. A value with a time
 is called a <em>token</em>. This represents that the value is only available at, or after, the specified time.
-In this case, the resource value is made available after 0.75. You can consider this the time it takes the resource to
+In this case, the resource value is made available after a delay of 0.75. You can consider this the time it takes the resource to
 process the customer. Since it takes 0.75 to process a customer, the resource is only made available
-again after 0.75. In the meantime no new <cite>process</cite> events can happen, because a value from <cite>resources</cite>,
+again after a delay of 0.75. In the meantime no new <cite>process</cite> events can happen, because a value from <cite>resources</cite>,
 which is needed as input for such an event, is not available.</p>
 </section>
 <section id="putting-it-all-together">
@@ -168,7 +168,7 @@ in the variable <cite>resources</cite> again after 0.75. Accordingly, processing
 <span class="n">customers</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">&quot;customers&quot;</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="n">customer</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">SimToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">SimToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)]</span>
 
 <span class="n">shop</span><span class="o">.</span><span class="n">add_event</span><span class="p">([</span><span class="n">customers</span><span class="p">,</span> <span class="n">resources</span><span class="p">],</span> <span class="p">[</span><span class="n">resources</span><span class="p">],</span> <span class="n">process</span><span class="p">)</span>
 
