@@ -22,20 +22,20 @@ administrator.put("a1")
 # Define events.
 start_event(shop, [], [offer_qeue], "customer_arrived", lambda: exp(1/10))
 
-task(shop, [offer_qeue, administrator], [to_choose, administrator], "create_offer", lambda c, r: [SimToken((c, r), exp(1/4))])
+task(shop, [offer_qeue, administrator], [to_choose, administrator], "create_offer", lambda c, r: [SimToken((c, r), delay=exp(1/4))])
 
 def choose(c):
   waiting_time = exp(1/4)
   if waiting_time < 5:
-    return [SimToken((c[0], waiting_time), waiting_time), None]
+    return [SimToken((c[0], waiting_time), delay=waiting_time), None]
   else:
-    return [None, SimToken((c[0], 5), 5)]
+    return [None, SimToken((c[0], 5), delay=5)]
 
 shop.add_event([to_choose], [waiting_for_response, to_leave], choose)
 
 intermediate_event(shop, [waiting_for_response], [processing_queue], "wait_for_response", lambda c: [SimToken(c)])
 
-task(shop, [processing_queue, administrator], [done, administrator], "process_response", lambda c,r: [SimToken((c, r), exp(1/4))])
+task(shop, [processing_queue, administrator], [done, administrator], "process_response", lambda c,r: [SimToken((c, r), delay=exp(1/4))])
 
 end_event(shop, [done], [], "done")
 

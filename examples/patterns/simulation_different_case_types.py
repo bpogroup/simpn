@@ -24,9 +24,9 @@ administrator.put("a1")
 start_event(shop, [], [offer_queue], "simple_customer_arrived", lambda: exp(1/15), lambda: [SimToken("simple")])
 start_event(shop, [], [offer_queue], "complex_customer_arrived", lambda: exp(1/30), lambda: [SimToken("complex")])
 
-task(shop, [offer_queue, administrator], [to_response, administrator], "create_offer", lambda c, r: [SimToken((c, r), exp(1/4))])
+task(shop, [offer_queue, administrator], [to_response, administrator], "create_offer", lambda c, r: [SimToken((c, r), delay=exp(1/4))])
 
-shop.add_event([to_response], [to_choose], lambda c: [SimToken(c, exp(1/4))], name="wait_for_response")
+shop.add_event([to_response], [to_choose], lambda c: [SimToken(c, delay=exp(1/4))], name="wait_for_response")
 
 def choose(c):
     if c[1] == "simple":
@@ -35,9 +35,9 @@ def choose(c):
         return [None, SimToken(c)]
 shop.add_event([to_choose], [simple_response_queue, complex_response_queue], choose)
 
-task(shop, [simple_response_queue, administrator], [done, administrator], "process_simple_response", lambda c,r: [SimToken((c, r), exp(1/3))])
+task(shop, [simple_response_queue, administrator], [done, administrator], "process_simple_response", lambda c,r: [SimToken((c, r), delay=exp(1/3))])
 
-task(shop, [complex_response_queue, administrator], [done, administrator], "process_complex_response", lambda c,r : [SimToken((c, r), exp(1/6))])
+task(shop, [complex_response_queue, administrator], [done, administrator], "process_complex_response", lambda c,r : [SimToken((c, r), delay=exp(1/6))])
 
 end_event(shop, [done], [], "done")
 

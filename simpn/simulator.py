@@ -100,7 +100,7 @@ class SimVarQueue(SimVar):
 
     @property
     def marking(self):
-        token = SimToken(self.simvar.marking, self.simvar._time)
+        token = SimToken(list(self.simvar.marking), self.simvar._time)
         return [token]
 
     def put(self, value, time=0):
@@ -114,7 +114,7 @@ class SimVarQueue(SimVar):
         try:
             for t in token:
                 if not isinstance(t, SimToken):
-                    raise TypeError(self._id + ": something went wrong placing the queue back with value " + str(token) + ". Element " + str(t) + " does not appear to be a token, but the queue must be a list of tokens.")
+                    raise TypeError(self._id + ": something went wrong placing the queue back with value " + str(token) + ". Element " + str(t) + " does not appear to be a token, but the queue must be a list of tokens. Maybe you just added a value, not a token?")
                 self.simvar.add_token(t)
         except:
             raise TypeError(self._id + ": something went wrong placing the queue back with value " + str(token) + ".")

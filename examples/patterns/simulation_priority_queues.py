@@ -18,7 +18,7 @@ cassier.put("c1")
 # Define events.
 start_event(shop, [], [scan_queue], "customer_arrived", lambda: exp(1/10), behavior=lambda: [SimToken(randint(1, 2))])
 
-scan_groceries = task(shop, [scan_queue, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), exp(1/9))])
+scan_groceries = task(shop, [scan_queue, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
 
 end_event(shop, [done], [], "done")
 

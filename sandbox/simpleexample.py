@@ -6,7 +6,7 @@ resources = shop.add_var("resources")
 customers = shop.add_var("customers")
 
 def process(customer, resource):
-    return [SimToken(resource, 0.75)]
+    return [SimToken(resource, delay=0.75)]
 
 shop.add_event([customers, resources], [resources], process)
 

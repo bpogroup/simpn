@@ -32,7 +32,7 @@ resource = my_problem.add_var("resource")
 completed = my_problem.add_var("completed")
 
 prototype.start_event(my_problem, [], [arrived], "arrive", lambda: random.expovariate(LAMBDA))
-prototype.task(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), random.expovariate(MU))])
+prototype.task(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), delay=random.expovariate(MU))])
 prototype.end_event(my_problem, [completed], [], name="done")
 
 for i in range(C):

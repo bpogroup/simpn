@@ -19,17 +19,17 @@ from simpn.simulator import SimToken
 from random import expovariate as exp
 
 def start(c, r):
-  return [SimToken((c, r), exp(1/0.8))]
+  return [SimToken((c, r), delay=exp(1/0.8))]
 
 shop.add_event([waiting, resource], [busy], start)
 
 def complete(b):
-  return [SimToken(b[1], 0)]
+  return [SimToken(b[1], delay=0)]
 
 shop.add_event([busy], [resource], complete)
 
 def arrive(a):
-  return [SimToken(a+1, exp(1)), SimToken('c' + str(a))]
+  return [SimToken(a+1, delay=exp(1)), SimToken('c' + str(a))]
 
 shop.add_event([arrival], [arrival, waiting], arrive)
 

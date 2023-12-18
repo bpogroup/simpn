@@ -21,11 +21,11 @@ cassier.put("r1")
 
 # Define events.
 def start_scan(c, r):
-  return [SimToken((c, r), exp(1/9))]
+  return [SimToken((c, r), delay=exp(1/9))]
 task(shop, [scan_queue, cassier], [bag_queue, cassier], "scan_groceries", start_scan)
 
 def start_bag(c, r):
-  return [SimToken((c, r), exp(1/9))]
+  return [SimToken((c, r), delay=exp(1/9))]
 task(shop, [bag_queue, bagger], [done, bagger], "bag_groceries", start_bag)
 
 def interarrival_time():

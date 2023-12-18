@@ -8,17 +8,17 @@ my_problem = SimProblem()
 
 @event(my_problem, ["arrival", "arrived"])
 def arrive(arrival):
-    return [SimToken(arrival, random.expovariate(1)), SimToken(random.randint(1, 2))]
+    return [SimToken(arrival, delay=random.expovariate(1)), SimToken(random.randint(1, 2))]
 
 
 @event(my_problem, ["busy"], guard=lambda a, r: a == r)
 def start(arrived, resources):
-    return [SimToken((arrived, resources), 0.75)]
+    return [SimToken((arrived, resources), delay=0.75)]
 
 
 @event(my_problem, ["completed", "resources"])
 def complete(busy):
-    return [SimToken(busy[0], 0), SimToken(busy[1], 0)]
+    return [SimToken(busy[0], delay=0), SimToken(busy[1], delay=0)]
 
 
 my_problem.var("resources").put(1)

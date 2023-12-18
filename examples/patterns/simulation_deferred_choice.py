@@ -23,13 +23,13 @@ cassier.put("r1")
 # Define events.
 start_event(shop, [], [to_deferred_choice], "customer_arrived", lambda: exp(1/10))
 
-shop.add_event([to_deferred_choice], [scan_queue, to_leave], lambda c: [SimToken(c), SimToken(c, 15)], "deferred_choice")
+shop.add_event([to_deferred_choice], [scan_queue, to_leave], lambda c: [SimToken(c), SimToken(c, delay=15)], "deferred_choice")
 
 shop.add_event([scan_queue, to_leave], [left], lambda c, l: [SimToken(c)], "leave", guard=lambda c1, c2: c1==c2)
 
 end_event(shop, [left], [], "left")
 
-task(shop, [scan_queue, cassier], [to_remove, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), exp(1/9))])
+task(shop, [scan_queue, cassier], [to_remove, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
 
 shop.add_event([to_remove, to_leave], [done], lambda c1, c2: [SimToken(c1)], "remove", guard=lambda c1, c2: c1==c2)
 

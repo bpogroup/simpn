@@ -19,11 +19,11 @@ administrator.put("a1")
 # Define events.
 start_event(sales, [], [offer_queue], "customer_arrived", lambda: exp(1/10))
 
-task(sales, [offer_queue, administrator], [to_response, administrator], "create_offer", lambda c, r: [SimToken((c, r), exp(1/4))])
+task(sales, [offer_queue, administrator], [to_response, administrator], "create_offer", lambda c, r: [SimToken((c, r), delay=exp(1/4))])
 
-sales.add_event([to_response], [processing_queue], lambda c: [SimToken(c, exp(1/4))], name="wait_for_response")
+sales.add_event([to_response], [processing_queue], lambda c: [SimToken(c, delay=exp(1/4))], name="wait_for_response")
 
-task(sales, [processing_queue, administrator], [done, administrator], "process_response", lambda c, r: [SimToken((c, r), exp(1/4))])
+task(sales, [processing_queue, administrator], [done, administrator], "process_response", lambda c, r: [SimToken((c, r), delay=exp(1/4))])
 
 # Run the simulation.
 reporter = EventLogReporter("./temp/simulation_intermediate_event.csv", timeunit=TimeUnit.DAYS)

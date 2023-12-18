@@ -12,21 +12,21 @@ completed = my_problem.add_var("completed")
 
 
 def arrive(a):
-    return [SimToken(a, random.expovariate(1)), SimToken(random.randint(1, 2))]
+    return [SimToken(a, delay=random.expovariate(1)), SimToken(random.randint(1, 2))]
 
 
 my_problem.add_event([arrival], [arrival, arrived], arrive)
 
 
 def start(a, r):
-    return [SimToken((a, r), 0.75)]
+    return [SimToken((a, r), delay=0.75)]
 
 
 my_problem.add_event([arrived, resource], [busy], start, guard=lambda a, r: a == r)
 
 
 def complete(b):
-    return [SimToken(b[0], 0), SimToken(b[1], 0)]
+    return [SimToken(b[0], delay=0), SimToken(b[1], delay=0)]
 
 
 my_problem.add_event([busy], [completed, resource], complete)

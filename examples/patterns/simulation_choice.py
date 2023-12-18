@@ -21,7 +21,7 @@ cassier.put("r1")
 atm.put("a1")
 
 # Define events.
-task(shop, [scan_queue, cassier], [to_choose, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), exp(1/9))])
+task(shop, [scan_queue, cassier], [to_choose, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
 
 def choose(c):
     percentage = uniform(1,100)
@@ -31,7 +31,7 @@ def choose(c):
         return [None, SimToken(c)]
 shop.add_event([to_choose], [atm_queue, done], choose)
 
-task(shop, [atm_queue, atm], [done, atm], "use_atm", lambda c, r: [SimToken((c, r), exp(1/9))])
+task(shop, [atm_queue, atm], [done, atm], "use_atm", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
 
 start_event(shop, [], [scan_queue], "arrive", lambda: exp(1/10))
 

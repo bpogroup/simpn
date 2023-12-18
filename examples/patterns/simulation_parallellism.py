@@ -32,11 +32,11 @@ shop.add_event([to_split], [scan_queue, atm_queue], lambda c: [SimToken(c), SimT
 
 
 def start_scan_groceries(c, r):
-  return [SimToken((c, r), exp(1/9))]
+  return [SimToken((c, r), delay=exp(1/9))]
 task(shop, [scan_queue, cassier], [wait_sync_w_atm, cassier], "scan_groceries", start_scan_groceries)
 
 def start_use_atm(c, r):
-  return [SimToken((c, r), exp(1/9))]
+  return [SimToken((c, r), delay=exp(1/9))]
 task(shop, [atm_queue, atm], [wait_sync_w_scan, atm], "use_atm", start_use_atm)
 
 

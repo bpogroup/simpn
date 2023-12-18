@@ -18,7 +18,7 @@ for i in range(1, 6):
 # Define events.
 start_event(shop, [], [scan_queue], "start", lambda: exp(1/2))
 
-task(shop, [scan_queue, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), exp(1/9))])
+task(shop, [scan_queue, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
 
 end_event(shop, [done], [], "complete")
 

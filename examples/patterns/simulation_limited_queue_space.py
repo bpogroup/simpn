@@ -9,7 +9,6 @@ shop = SimProblem()
 # Define queues and other 'places' in the process.
 to_check_queue = shop.add_var("to check queue")
 queue = shop.add_var("queue")
-queue_length = shop.var("queue.count")
 done = shop.add_var("done")
 to_leave = shop.add_var("to leave")
 
@@ -21,14 +20,17 @@ cassier.put("r1")
 start_event(shop, [], [to_check_queue], "start", lambda: exp(1/9))
 
 # Check the queue length
-def check_queue_length(c, ql):
-    if ql < 5: # If it is less than 5 customers in the queue, the customer goes into the queue
-        return [SimToken(c), None]
+def check_queue_length(customer, complete_queue):
+    if len(complete_queue) < 5: # If it is less than 5 customers in the queue, the customer goes into the queue
+        # we add the customer to the queue by actually manipulating the queue variable
+        complete_queue.append(SimToken(customer))
+        return [complete_queue, None]
     else: # If it is more than 5 customers in the queue, the customer leaves
-        return [None, SimToken(c)]
-shop.add_event([to_check_queue, queue_length], [queue, to_leave], check_queue_length)
+        # note that this means that the queue is not changed, but we need to put it back.
+        return [complete_queue, SimToken(customer)]
+shop.add_event([to_check_queue, queue.queue], [queue.queue, to_leave], check_queue_length)
 
-task(shop, [queue, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), exp(1/9))])
+task(shop, [queue, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
 
 end_event(shop, [done], [], "complete")
 end_event(shop, [to_leave], [], "leave")
