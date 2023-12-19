@@ -8,12 +8,15 @@ customers = shop.add_var("customers")
 busy = shop.add_var("busy")
 done = shop.add_var("done")
 
-def start(customerqueue, resource):
-    customer = customerqueue[0]
-    resultqueue = customerqueue[1:]
-    return [resultqueue, SimToken((customer, resource), delay=0.75)]
+def start(ws, r):
+    c = ws[0].value
+    resultqueue = ws[1:]
+    return [resultqueue, SimToken((c, r), delay=0.75)]
 
-shop.add_event([customers.queue, resources], [customers.queue, busy], start, guard = lambda q, r: len(q) > 0)
+def start_condition(ws, r):
+    return len(ws) > 0
+
+shop.add_event([customers.queue, resources], [customers.queue, busy], start, guard = start_condition)
 
 def complete(busy):
     return [SimToken(busy[0]), SimToken(busy[1])]
