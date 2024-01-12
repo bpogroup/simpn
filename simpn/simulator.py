@@ -548,6 +548,13 @@ class SimProblem:
         # if there are no such bindings, set the clock to the earliest time at which there are
         if min_enabling_time is not None and min_enabling_time > self.clock:
             self.clock = min_enabling_time
+            # We now also need to update the bindings, because the SimVarTime may have changed and needs to be updated.
+            # TODO This is inefficient, because we are recalculating all bindings, while we only need to recalculate the ones that have SimVarTime in their inflow.
+            timed_bindings = [] 
+            for t in self.events:
+                for (binding, time) in self.event_bindings(t):
+                    timed_bindings.append((binding, time, t))
+
         # now return the untimed bindings + the timed bindings that have time <= clock
         return [(binding, time, t) for (binding, time, t) in timed_bindings if time <= self.clock]
 
