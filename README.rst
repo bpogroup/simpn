@@ -14,19 +14,11 @@ SimPN provides a simple syntax that is based on Python functions and variables, 
 Installation
 ============
 
-At this moment, the code is only available in beta from the TestPyPI repository.
-This means that installing it with pip is a bit more involved than usual.
-You must first install the dependencies as follows.
+The SimPN package is available on PyPI and can simply be installed with pip.
 
 .. code-block::
 
-    python -m pip install sortedcontainers==2.4.0 pygame==2.5.2 igraph==0.11.2
-
-Next, you can install the package itself.
-
-.. code-block::
-
-    python -m pip install --index-url https://test.pypi.org/simple/ --no-deps simpn
+    python -m pip install simpn
 
 A Basic Tutorial
 ================
