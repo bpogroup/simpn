@@ -46,6 +46,7 @@ shop.add_event([wait_sync_w_atm, wait_sync_w_scan], [to_done], lambda c1, c2: [S
 end_event(shop, [to_done], [], "done")
 
 
-m = Visualisation(shop, "./temp/layout.txt")
+#m = Visualisation(shop, "./temp/layout.txt")
+m = Visualisation(shop)
 m.show()
 m.save_layout("./temp/layout.txt")

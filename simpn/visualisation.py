@@ -120,40 +120,18 @@ class Edge:
 
 
 class Node:
-    def __init__(self, shape, id, text, pos=(0, 0)):
-        self._shape = shape
-        self._id = id
-        self._text = text
-        self._pos = pos  # the center of the node
+    def __init__(self, model_node):
+        self._model_node = model_node
+        self._pos = (0, 0)  # the center of the node
         self._half_height = NODE_HEIGHT / 2
         self._half_width = NODE_WIDTH / 2
         self._width = NODE_WIDTH
         self._height = NODE_HEIGHT
         self._size = MAX_SIZE
-        
-    def get_shape(self):
-        return self._shape
-    
+            
     def draw(self, screen):
-        if self._shape == Shape.PLACE:
-            pygame.draw.circle(screen, TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), NODE_WIDTH/2)
-            pygame.draw.circle(screen, TUE_BLUE, (self._pos[0], self._pos[1]), NODE_WIDTH/2, LINE_WIDTH)    
-        elif self._shape == Shape.TRANSTION:
-            pygame.draw.rect(screen, TUE_LIGHTBLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, NODE_WIDTH, NODE_HEIGHT))
-            pygame.draw.rect(screen, TUE_BLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, NODE_WIDTH, NODE_HEIGHT), LINE_WIDTH)
-        font = pygame.font.SysFont('Calibri', TEXT_SIZE)
-        bold_font = pygame.font.SysFont('Calibri', TEXT_SIZE, bold=True)
-        text_line = 0
-        for (c, b, l) in self._text:
-            if b:
-                label = bold_font.render(l, True, c)
-            else:
-                label = font.render(l, True, c)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH + int(label.get_height()*text_line)
-            screen.blit(label, (text_x_pos, text_y_pos))
-            text_line += 1
-    
+        raise Exception("Node.raise must be implemented at subclass level.")
+
     def hook(self, hook_pos):
         if hook_pos == Hook.LEFT:
             return self._pos[0] - self._half_width, self._pos[1]
@@ -171,10 +149,60 @@ class Node:
         return self._pos
     
     def get_id(self):
-        return self._id
+        raise Exception("Node.get_id must be implemented at subclass level.")
+        
+
+class PlaceViz(Node):
+    def __init__(self, model_node):
+        super().__init__(model_node)
     
-    def set_text(self, text):
-        self._text = text
+    def draw(self, screen):
+        pygame.draw.circle(screen, TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), NODE_WIDTH/2)
+        pygame.draw.circle(screen, TUE_BLUE, (self._pos[0], self._pos[1]), NODE_WIDTH/2, LINE_WIDTH)    
+        font = pygame.font.SysFont('Calibri', TEXT_SIZE)
+        bold_font = pygame.font.SysFont('Calibri', TEXT_SIZE, bold=True)
+
+        # draw label
+        label = font.render(self._model_node.get_id(), True, TUE_BLUE)
+        text_x_pos = self._pos[0] - int(label.get_width()/2)
+        text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
+        screen.blit(label, (text_x_pos, text_y_pos))
+
+        # draw marking
+        mstr = "["
+        ti = 0
+        for token in self._model_node.marking:
+            mstr += str(token.value) + "@" + str(round(token.time, 2))
+            if ti < len(self._model_node.marking) - 1:
+                mstr += ", "
+            ti += 1
+        mstr += "]"
+        label = label = bold_font.render(mstr, True, TUE_RED)
+        text_x_pos = self._pos[0] - int(label.get_width()/2)
+        text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH + int(label.get_height())
+        screen.blit(label, (text_x_pos, text_y_pos))
+
+    def get_id(self):
+        return self._model_node.get_id()
+
+
+class TransitionViz(Node):
+    def __init__(self, model_node):
+        super().__init__(model_node)
+    
+    def draw(self, screen):
+        pygame.draw.rect(screen, TUE_LIGHTBLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, NODE_WIDTH, NODE_HEIGHT))
+        pygame.draw.rect(screen, TUE_BLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, NODE_WIDTH, NODE_HEIGHT), LINE_WIDTH)
+        font = pygame.font.SysFont('Calibri', TEXT_SIZE)
+
+        # draw label
+        label = font.render(self._model_node.get_id(), True, TUE_BLUE)
+        text_x_pos = self._pos[0] - int(label.get_width()/2)
+        text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
+        screen.blit(label, (text_x_pos, text_y_pos))
+
+    def get_id(self):
+        return self._model_node.get_id()
 
 
 class Button(pygame.sprite.Sprite):
@@ -217,9 +245,9 @@ class Visualisation:
         self._selected_nodes = None        
         
         for var in self._problem.places:
-            self._nodes[var.get_id()] = Node(Shape.PLACE, var.get_id(), [(TUE_BLUE, False, var.get_id()), ""])
+            self._nodes[var.get_id()] = PlaceViz(var)
         for event in self._problem.events:
-            event_shape = Node(Shape.TRANSTION, event.get_id(), [(TUE_BLUE, False, event.get_id())])
+            event_shape = TransitionViz(event)
             self._nodes[event.get_id()] = event_shape
             for incoming in event.incoming:
                 node_id = incoming.get_id()
@@ -240,23 +268,10 @@ class Visualisation:
                 print("WARNING: could not load the layout because of the exception below.\nauto-layout will be used.\n", e)
         if not layout_loaded:
             self.__layout()        
-        self.__set_token_values()
 
         self.__screen = pygame.display.set_mode(self._size, pygame.RESIZABLE)
         self._buttons = self.__init_buttons()
     
-    def __set_token_values(self):
-        for p in self._problem.places:
-            mstr = "["
-            ti = 0
-            for token in p.marking:
-                mstr += str(token.value) + "@" + str(round(token.time, 2))
-                if ti < len(p.marking) - 1:
-                    mstr += ", "
-                ti += 1
-            mstr += "]"
-            self._nodes[p.get_id()].set_text([(TUE_BLUE, False, p.get_id()), (TUE_RED, True, mstr)])
-
     def __draw(self):
         self.__screen.fill(TUE_GREY)
         for shape in self._nodes.values():
@@ -268,7 +283,6 @@ class Visualisation:
 
     def action_step(self):
         self._problem.step()
-        self.__set_token_values()
     
     def __init_buttons(self):
         # No buttons for now.
@@ -376,7 +390,6 @@ class Visualisation:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 self._problem.step()
-                self.__set_token_values()
 
     def show(self):
             """
