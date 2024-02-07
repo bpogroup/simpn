@@ -1,6 +1,5 @@
 import inspect
 from simpn.simulator import SimToken
-from simpn.immutabletypes import pn_list
 
 
 def start_event(model, inflow, outflow, name, interarrival_time, behavior=None):
@@ -42,16 +41,6 @@ def start_event(model, inflow, outflow, name, interarrival_time, behavior=None):
     invar.put(name + "0")
 
     return result
-
-
-def basic_event(model, inflow, outflow, name, behavior, guard=None):
-    """
-    Just here for uniformity. Generates a simple event that can normally be created using model.add_event.
-    The parameters are the same as for model.add_event and will simply be passed to that function.
-
-    :return: the SimEvent that completes the task.
-    """
-    model.add_event(inflow, outflow, behavior, name=name, guard=guard)
 
 
 def task(model, inflow, outflow, name, behavior, guard=None):

@@ -1,4 +1,0 @@
-583,380
-resources,50,150
-customers,50,50
-process,150,150
