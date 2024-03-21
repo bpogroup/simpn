@@ -143,6 +143,7 @@ class SimVarTime(SimVar):
     
     def __init__(self, problem):
         self._id = SimVarTime.TIME_ID
+        self.checkpoints = dict()
         self.problem = problem
 
     @property
