@@ -3,7 +3,7 @@ from simpn.simulator import SimProblem, SimToken
 from random import expovariate as exp
 from random import uniform
 from simpn.reporters import WarmupReporter, ProcessReporter
-from simpn.prototypes import start_event, task, end_event
+import simpn.prototypes as prototype
 
 # Instantiate a simulation problem.
 agency = SimProblem()
@@ -18,11 +18,11 @@ employee.put("e1")
 employee.put("e2")
 
 # Define events.
-start_event(agency, [], [waiting], "arrive", lambda: exp(7)*60)
+prototype.BPMNStartEvent(agency, [], [waiting], "arrive", lambda: exp(7)*60)
 
-task(agency, [waiting, employee], [done, employee], "answer_call", lambda c, r: [SimToken((c, r), delay=uniform(10, 15))])
+prototype.BPMNTask(agency, [waiting, employee], [done, employee], "answer_call", lambda c, r: [SimToken((c, r), delay=uniform(10, 15))])
 
-end_event(agency, [done], [], "complete")
+prototype.BPMNEndEvent(agency, [done], [], "complete")
 
 # Store the initial state of the simulator.
 agency.store_checkpoint("initial state")

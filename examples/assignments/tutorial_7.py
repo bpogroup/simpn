@@ -3,7 +3,7 @@ from simpn.simulator import SimProblem, SimToken
 from simpn.reporters import EventLogReporter
 from random import expovariate as exp
 from random import uniform
-from simpn.prototypes import start_event, task, end_event
+import simpn.prototypes as prototype
 
 # Instantiate a simulation problem.
 agency = SimProblem()
@@ -21,17 +21,17 @@ employee.put("e1")
 employee.put("e2")
 
 # Define events.
-start_event(agency, [], [to_deferred_choice], "arrive", lambda: exp(7)*60)
+prototype.BPMNStartEvent(agency, [], [to_deferred_choice], "arrive", lambda: exp(7)*60)
 
 agency.add_event([to_deferred_choice], [waiting, to_leave], lambda c: [SimToken(c), SimToken(c, delay=5)], "deferred_choice")
 
-task(agency, [waiting, employee], [done, employee], "answer_call", lambda c, r: [SimToken((c, r), delay=uniform(10, 15))])
+prototype.BPMNTask(agency, [waiting, employee], [done, employee], "answer_call", lambda c, r: [SimToken((c, r), delay=uniform(10, 15))])
 
 agency.add_event([to_leave, waiting], [to_left], lambda c1, c2: [SimToken(c1)], "leave", guard=lambda c1, c2: c1==c2)
 
-end_event(agency, [done], [], "complete")
+prototype.BPMNEndEvent(agency, [done], [], "complete")
 
-end_event(agency, [to_left], [], "left")
+prototype.BPMNEndEvent(agency, [to_left], [], "left")
 
 # Simulate once with a visualisation.
 reporter = EventLogReporter("./temp/agency_leaving.csv")

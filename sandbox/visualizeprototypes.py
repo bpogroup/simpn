@@ -1,8 +1,7 @@
 import random
 from simpn.simulator import SimProblem, SimToken
 import simpn.prototypes as prototype
-from simpn.reporters import SimpleReporter
-
+from simpn.visualisation import Visualisation
 
 def arrive():
     return [SimToken(random.randint(1, 2))]
@@ -21,7 +20,5 @@ prototype.BPMNEndEvent(my_problem, [completed], [], name="done")
 resource.put(1)
 resource.put(2)
 
-print(my_problem)
-print()
-
-my_problem.simulate(40, SimpleReporter())
+m = Visualisation(my_problem)
+m.show()

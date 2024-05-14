@@ -1,6 +1,6 @@
 import unittest
 from simpn.simulator import SimProblem, SimToken, SimVarQueue
-from simpn.prototypes import start_event, task
+import simpn.prototypes as prototype
 from random import randint
 
 
@@ -387,11 +387,11 @@ class TestPriorities(unittest.TestCase):
         resource.put("r1")
         resource.put("r2")
 
-        start_event(test_problem, [], [task1_queue], "", 1)
+        prototype.BPMNStartEvent(test_problem, [], [task1_queue], "", 1)
 
-        task(test_problem, [task2_queue, resource], [done, resource], "task2", lambda c, r: [SimToken((c, r), delay=1.25)])
+        prototype.BPMNTask(test_problem, [task2_queue, resource], [done, resource], "task2", lambda c, r: [SimToken((c, r), delay=1.25)])
 
-        task(test_problem, [task1_queue, resource], [task2_queue, resource], "task1", lambda c, r: [SimToken((c, r), delay=1.25)])
+        prototype.BPMNTask(test_problem, [task1_queue, resource], [task2_queue, resource], "task1", lambda c, r: [SimToken((c, r), delay=1.25)])
 
         last_completion = None
         completion_count = 0
@@ -432,11 +432,11 @@ class TestPriorities(unittest.TestCase):
         resource.put("r2")
         resource.put("r3")
 
-        start_event(test_problem, [], [task1_queue], "", 1, behavior=lambda: [SimToken(randint(1, 2))])
+        prototype.BPMNStartEvent(test_problem, [], [task1_queue], "", 1, behavior=lambda: [SimToken(randint(1, 2))])
 
-        task(test_problem, [task2_queue, resource], [done, resource], "task2", lambda c, r: [SimToken((c, r), delay=2)])
+        prototype.BPMNTask(test_problem, [task2_queue, resource], [done, resource], "task2", lambda c, r: [SimToken((c, r), delay=2)])
 
-        task(test_problem, [task1_queue, resource], [task2_queue, resource], "task1", lambda c, r: [SimToken((c, r), delay=2)])
+        prototype.BPMNTask(test_problem, [task1_queue, resource], [task2_queue, resource], "task1", lambda c, r: [SimToken((c, r), delay=2)])
 
         start1_count = 0
         start2_count = 0

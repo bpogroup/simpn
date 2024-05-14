@@ -2,7 +2,7 @@ from simpn.simulator import SimProblem
 from simpn.simulator import SimToken
 from random import expovariate as exp, uniform as uniform
 from simpn.reporters import EventLogReporter
-from simpn.prototypes import task, start_event, end_event
+import simpn.prototypes as prototype
 
 # Instantiate a simulation problem.
 shop = SimProblem()
@@ -21,7 +21,7 @@ cassier_1.put("c1")
 cassier_2.put("c2")
 
 # Define events.
-start_event(shop, [], [to_choose], "arrive", lambda: exp(1/6))
+prototype.BPMNStartEvent(shop, [], [to_choose], "arrive", lambda: exp(1/6))
 
 def choose(c, c1_queue, c2_queue):
   if len(c1_queue) < len(c2_queue):
@@ -31,10 +31,10 @@ def choose(c, c1_queue, c2_queue):
   return [c1_queue, c2_queue]
 shop.add_event([to_choose, waiting_1.queue, waiting_2.queue], [waiting_1.queue, waiting_2.queue], choose)
 
-task(shop, [waiting_1, cassier_1], [done, cassier_1], "scan_groceries_1", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
-task(shop, [waiting_2, cassier_2], [done, cassier_2], "scan_groceries_2", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
+prototype.BPMNTask(shop, [waiting_1, cassier_1], [done, cassier_1], "scan_groceries_1", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
+prototype.BPMNTask(shop, [waiting_2, cassier_2], [done, cassier_2], "scan_groceries_2", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
 
-end_event(shop, [done], [], "leave")
+prototype.BPMNEndEvent(shop, [done], [], "leave")
 
 # Run the simulation.
 reporter = EventLogReporter("./temp/simulation_multiple_queues.csv")

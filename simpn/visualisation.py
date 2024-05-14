@@ -14,7 +14,7 @@ TUE_LIGHTBLUE = (188, 188, 246)
 TUE_GREY = (242, 242, 242)
 WHITE = (255, 255, 255)
 # sizes
-NODE_WIDTH, NODE_HEIGHT = 50, 50
+STANDARD_NODE_WIDTH, STANDARD_NODE_HEIGHT = 50, 50
 NODE_SPACING = 100
 GRID_SPACING = 50
 LINE_WIDTH = 2
@@ -48,20 +48,22 @@ class Edge:
 
     def draw(self, screen):
         start_node_xy = self.get_start_node().get_pos()
+        start_node_width, start_node_height = self.get_start_node()._width, self.get_start_node()._height
         end_node_xy = self.get_end_node().get_pos()
-        if start_node_xy[1] - NODE_HEIGHT/2 > end_node_xy[1] + NODE_HEIGHT/2:
+        end_node_width, end_node_height = self.get_end_node()._width, self.get_end_node()._height
+        if start_node_xy[1] - start_node_height/2 > end_node_xy[1] + end_node_height/2:
             self.set_start_hook(Hook.TOP)
-        elif start_node_xy[1] + NODE_HEIGHT/2 < end_node_xy[1] - NODE_HEIGHT/2:
+        elif start_node_xy[1] + start_node_height/2 < end_node_xy[1] - end_node_height/2:
             self.set_start_hook(Hook.BOTTOM)
-        elif start_node_xy[0] - NODE_WIDTH/2 > end_node_xy[0] + NODE_WIDTH/2:
+        elif start_node_xy[0] - start_node_width/2 > end_node_xy[0] + end_node_width/2:
             self.set_start_hook(Hook.LEFT)
         else:
             self.set_start_hook(Hook.RIGHT)
-        if end_node_xy[1] - NODE_HEIGHT/2 > start_node_xy[1] + NODE_HEIGHT/2:
+        if end_node_xy[1] - end_node_height/2 > start_node_xy[1] + start_node_height/2:
             self.set_end_hook(Hook.TOP)
-        elif end_node_xy[1] + NODE_HEIGHT/2 < start_node_xy[1] - NODE_HEIGHT/2:
+        elif end_node_xy[1] + end_node_height/2 < start_node_xy[1] - start_node_height/2:
             self.set_end_hook(Hook.BOTTOM)
-        elif end_node_xy[0] - NODE_WIDTH/2 > start_node_xy[0] + NODE_WIDTH/2:
+        elif end_node_xy[0] - end_node_width/2 > start_node_xy[0] + start_node_width/2:
             self.set_end_hook(Hook.LEFT)
         else:
             self.set_end_hook(Hook.RIGHT)
@@ -123,11 +125,10 @@ class Node:
     def __init__(self, model_node):
         self._model_node = model_node
         self._pos = (0, 0)  # the center of the node
-        self._half_height = NODE_HEIGHT / 2
-        self._half_width = NODE_WIDTH / 2
-        self._width = NODE_WIDTH
-        self._height = NODE_HEIGHT
-        self._size = MAX_SIZE
+        self._width = STANDARD_NODE_WIDTH
+        self._height = STANDARD_NODE_HEIGHT
+        self._half_width =  self._width / 2
+        self._half_height = self._height / 2
             
     def draw(self, screen):
         raise Exception("Node.raise must be implemented at subclass level.")
@@ -149,7 +150,7 @@ class Node:
         return self._pos
     
     def get_id(self):
-        raise Exception("Node.get_id must be implemented at subclass level.")
+        return self._model_node.get_id()
         
 
 class PlaceViz(Node):
@@ -157,8 +158,8 @@ class PlaceViz(Node):
         super().__init__(model_node)
     
     def draw(self, screen):
-        pygame.draw.circle(screen, TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), NODE_WIDTH/2)
-        pygame.draw.circle(screen, TUE_BLUE, (self._pos[0], self._pos[1]), NODE_WIDTH/2, LINE_WIDTH)    
+        pygame.draw.circle(screen, TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._half_height)
+        pygame.draw.circle(screen, TUE_BLUE, (self._pos[0], self._pos[1]), self._half_height, LINE_WIDTH)    
         font = pygame.font.SysFont('Calibri', TEXT_SIZE)
         bold_font = pygame.font.SysFont('Calibri', TEXT_SIZE, bold=True)
 
@@ -177,13 +178,10 @@ class PlaceViz(Node):
                 mstr += ", "
             ti += 1
         mstr += "]"
-        label = label = bold_font.render(mstr, True, TUE_RED)
+        label = bold_font.render(mstr, True, TUE_RED)
         text_x_pos = self._pos[0] - int(label.get_width()/2)
         text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH + int(label.get_height())
-        screen.blit(label, (text_x_pos, text_y_pos))
-
-    def get_id(self):
-        return self._model_node.get_id()
+        screen.blit(label, (text_x_pos, text_y_pos))        
 
 
 class TransitionViz(Node):
@@ -191,8 +189,8 @@ class TransitionViz(Node):
         super().__init__(model_node)
     
     def draw(self, screen):
-        pygame.draw.rect(screen, TUE_LIGHTBLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, NODE_WIDTH, NODE_HEIGHT))
-        pygame.draw.rect(screen, TUE_BLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, NODE_WIDTH, NODE_HEIGHT), LINE_WIDTH)
+        pygame.draw.rect(screen, TUE_LIGHTBLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, self._width, self._height))
+        pygame.draw.rect(screen, TUE_BLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, self._width, self._height), LINE_WIDTH)
         font = pygame.font.SysFont('Calibri', TEXT_SIZE)
 
         # draw label
@@ -200,9 +198,6 @@ class TransitionViz(Node):
         text_x_pos = self._pos[0] - int(label.get_width()/2)
         text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
         screen.blit(label, (text_x_pos, text_y_pos))
-
-    def get_id(self):
-        return self._model_node.get_id()
 
 
 class Button(pygame.sprite.Sprite):
@@ -243,22 +238,46 @@ class Visualisation:
         self._nodes = dict()
         self._edges = []
         self._selected_nodes = None        
-        
+
+        # Add visualizations for prototypes, places, and transitions,
+        # but not for places and transitions that are part of prototypes.
+        element_to_prototype = dict()  # mapping of prototype element ids to prototype ids
+        viznodes_with_edges = []
+        for prototype in self._problem.prototypes:
+            prototype_viznode = prototype.get_visualisation()
+            self._nodes[prototype.get_id()] = prototype_viznode
+            viznodes_with_edges.append(prototype_viznode)
+            for event in prototype.events:
+                element_to_prototype[event.get_id()] = prototype.get_id()
+            for place in prototype.places:
+                element_to_prototype[place.get_id()] = prototype.get_id()
         for var in self._problem.places:
-            self._nodes[var.get_id()] = PlaceViz(var)
+            if var.get_id() not in element_to_prototype:
+                self._nodes[var.get_id()] = PlaceViz(var)
         for event in self._problem.events:
-            event_shape = TransitionViz(event)
-            self._nodes[event.get_id()] = event_shape
-            for incoming in event.incoming:
+            if event.get_id() not in element_to_prototype:
+                event_viznode = TransitionViz(event)
+                self._nodes[event.get_id()] = event_viznode
+                viznodes_with_edges.append(event_viznode)                
+        # Add visualization for edges.
+        # If an edge is from or to a prototype element, it must be from or to the prototype itself.
+        for viznode in viznodes_with_edges:
+            for incoming in viznode._model_node.incoming:
                 node_id = incoming.get_id()
                 if node_id.endswith(".queue"):
                     node_id = node_id[:-len(".queue")]
-                self._edges.append(Edge(start=(self._nodes[node_id], Hook.RIGHT), end=(event_shape, Hook.LEFT)))
-            for outgoing in event.outgoing:
+                if node_id in element_to_prototype:
+                    node_id = element_to_prototype[node_id]
+                other_viznode = self._nodes[node_id]
+                self._edges.append(Edge(start=(other_viznode, Hook.RIGHT), end=(viznode, Hook.LEFT)))
+            for outgoing in viznode._model_node.outgoing:
                 node_id = outgoing.get_id()
                 if node_id.endswith(".queue"):
                     node_id = node_id[:-len(".queue")]
-                self._edges.append(Edge(start=(event_shape, Hook.RIGHT), end=(self._nodes[node_id], Hook.LEFT)))
+                if node_id in element_to_prototype:
+                    node_id = element_to_prototype[node_id]
+                other_viznode = self._nodes[node_id]
+                self._edges.append(Edge(start=(viznode, Hook.RIGHT), end=(other_viznode, Hook.LEFT)))
         layout_loaded = False
         if layout_file is not None:
             try:
@@ -316,9 +335,9 @@ class Visualisation:
         layout = graph.layout_sugiyama()
         layout.rotate(-90)
         layout.scale(NODE_SPACING)
-        boundaries = layout.boundaries(border=NODE_WIDTH)
+        boundaries = layout.boundaries(border=STANDARD_NODE_WIDTH)
         layout.translate(-boundaries[0][0], -boundaries[0][1])
-        canvas_size = layout.boundaries(border=NODE_WIDTH)[1]
+        canvas_size = layout.boundaries(border=STANDARD_NODE_WIDTH)[1]
         self._size = (min(MAX_SIZE[0], canvas_size[0]), min(MAX_SIZE[1], canvas_size[1]))
         i = 0
         for v in graph.vs:
@@ -350,7 +369,7 @@ class Visualisation:
 
     def __get_node_at(self, pos):
         for node in self._nodes.values():
-            if node.get_pos()[0] - NODE_WIDTH/2 <= pos[0] <= node.get_pos()[0] + NODE_WIDTH/2 and node.get_pos()[1] - NODE_HEIGHT/2 <= pos[1] <= node.get_pos()[1] + NODE_HEIGHT/2:
+            if node.get_pos()[0] - node._width/2 <= pos[0] <= node.get_pos()[0] + node._width/2 and node.get_pos()[1] - node._height/2 <= pos[1] <= node.get_pos()[1] + node._height/2:
                 return node
         return None
 

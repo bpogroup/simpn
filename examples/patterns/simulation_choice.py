@@ -2,7 +2,7 @@ from simpn.simulator import SimProblem
 from simpn.simulator import SimToken
 from random import expovariate as exp, uniform as uniform
 from simpn.reporters import EventLogReporter
-from simpn.prototypes import task, start_event
+import simpn.prototypes as prototype
 
 # Instantiate a simulation problem.
 shop = SimProblem()
@@ -21,7 +21,7 @@ cassier.put("r1")
 atm.put("a1")
 
 # Define events.
-task(shop, [scan_queue, cassier], [to_choose, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
+prototype.BPMNTask(shop, [scan_queue, cassier], [to_choose, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
 
 def choose(c):
     percentage = uniform(1,100)
@@ -31,9 +31,9 @@ def choose(c):
         return [None, SimToken(c)]
 shop.add_event([to_choose], [atm_queue, done], choose)
 
-task(shop, [atm_queue, atm], [done, atm], "use_atm", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
+prototype.BPMNTask(shop, [atm_queue, atm], [done, atm], "use_atm", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
 
-start_event(shop, [], [scan_queue], "arrive", lambda: exp(1/10))
+prototype.BPMNStartEvent(shop, [], [scan_queue], "arrive", lambda: exp(1/10))
 
 # Run the simulation.
 reporter = EventLogReporter("./temp/simulation_choice.csv")

@@ -1,4 +1,4 @@
-#Resources have different activities and may therefore be unavailable to the process for some time
+# Resources have different activities and may therefore be unavailable to the process for some time
 # Cars arrive at a garage according to an exponential distribution of 20 min.
 # Checking a car takes Uniform(15,20) minutes (1 mechanic)
 # If the queue is empty the mechanic will take a coffee break of 10 minutes He will stay in his break unless
@@ -9,7 +9,7 @@ from simpn.simulator import SimProblem
 from simpn.simulator import SimToken
 from random import expovariate as exp, uniform
 from simpn.reporters import SimpleReporter
-from simpn.prototypes import start_event, task, end_event, intermediate_event
+import simpn.prototypes as prototype
 from simpn.visualisation import Visualisation
 
 # Instantiate a simulation problem.
@@ -25,10 +25,10 @@ mechanic.put("m1") # mechanic m1
 mechanic_break = garage.add_var("mechanic_break") # the variable that contains mechanics who are on a break
 
 # Define events.
-start_event(garage, [], [check_queue], "start", lambda: 20)
+prototype.BPMNStartEvent(garage, [], [check_queue], "start", lambda: 20)
 
 # Note: after the task is done, we send mechanics for the 'break check'
-task(garage, [check_queue, mechanic], [done, mechanic], "check_cars", lambda c, r: [SimToken((c, r), delay=uniform(15,20))])
+prototype.BPMNTask(garage, [check_queue, mechanic], [done, mechanic], "check_cars", lambda c, r: [SimToken((c, r), delay=uniform(15,20))])
 
 def start_break_condition(c,car_queue):
     if len(car_queue)==0:
@@ -64,7 +64,7 @@ def back_to_work(c, car_queue):
 garage.add_event([mechanic_break, check_queue.queue],[mechanic_break, check_queue.queue],stay_in_break, guard=stay_in_break_condition)
 garage.add_event([mechanic_break, check_queue.queue],[mechanic, check_queue.queue],back_to_work, guard=back_to_work_condition)
 
-end_event(garage, [done], [], "complete")
+prototype.BPMNEndEvent(garage, [done], [], "complete")
 
 # Run the simulation.
 # garage.simulate(100, SimpleReporter())

@@ -2,7 +2,7 @@ from simpn.simulator import SimProblem
 from simpn.simulator import SimToken
 from simpn.visualisation import Visualisation
 from random import expovariate as exp, uniform as uniform
-from simpn.prototypes import task, start_event, end_event
+import simpn.prototypes as prototype
 
 # Instantiate a simulation problem.
 shop = SimProblem()
@@ -25,7 +25,7 @@ atm.put("a1")
 # Define events.
 def interarrival_time():
   return exp(1/10)
-start_event(shop, [], [to_split], "arrive", interarrival_time)
+prototype.BPMNStartEvent(shop, [], [to_split], "arrive", interarrival_time)
 
 
 shop.add_event([to_split], [scan_queue, atm_queue], lambda c: [SimToken(c), SimToken(c)], name="split")
@@ -33,17 +33,17 @@ shop.add_event([to_split], [scan_queue, atm_queue], lambda c: [SimToken(c), SimT
 
 def start_scan_groceries(c, r):
   return [SimToken((c, r), delay=exp(1/9))]
-task(shop, [scan_queue, cassier], [wait_sync_w_atm, cassier], "scan_groceries", start_scan_groceries)
+prototype.BPMNTask(shop, [scan_queue, cassier], [wait_sync_w_atm, cassier], "scan_groceries", start_scan_groceries)
 
 def start_use_atm(c, r):
   return [SimToken((c, r), delay=exp(1/9))]
-task(shop, [atm_queue, atm], [wait_sync_w_scan, atm], "use_atm", start_use_atm)
+prototype.BPMNTask(shop, [atm_queue, atm], [wait_sync_w_scan, atm], "use_atm", start_use_atm)
 
 
 shop.add_event([wait_sync_w_atm, wait_sync_w_scan], [to_done], lambda c1, c2: [SimToken(c1)], name="join", guard=lambda c1, c2: c1 == c2)
 
 
-end_event(shop, [to_done], [], "done")
+prototype.BPMNEndEvent(shop, [to_done], [], "done")
 
 
 #m = Visualisation(shop, "./temp/layout.txt")

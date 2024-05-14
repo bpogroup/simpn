@@ -5,3 +5,8 @@ Version 1.0.1 (2024-03-21)
 ---------------------------
 
 - [Bugfix] store-checkpoint did not work correctly for SimVarTime.
+
+Version 1.1.0 (2024-05-14)
+---------------------------
+
+- [Feature] improved visualization of prototypes.

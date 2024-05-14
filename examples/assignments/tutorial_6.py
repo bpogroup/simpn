@@ -2,7 +2,7 @@ from simpn.simulator import SimProblem, SimToken
 from random import expovariate as exp
 from random import uniform
 from simpn.reporters import EventLogReporter
-from simpn.prototypes import start_event, task, end_event
+import simpn.prototypes as prototype
 
 # Instantiate a simulation problem.
 agency = SimProblem()
@@ -33,17 +33,17 @@ def choose_task(c):
     else:
         return [None, SimToken(c)]
 
-start_event(agency, [], [to_choose], "arrive", lambda: exp(7)*60, behavior=arrival_type)
+prototype.BPMNStartEvent(agency, [], [to_choose], "arrive", lambda: exp(7)*60, behavior=arrival_type)
 
 agency.add_event([to_choose], [waiting_europe, waiting_international], choose_task)
 
-task(agency, [waiting_europe, employee_europe], [done_europe, employee_europe], "answer_call_europe", lambda c, r: [SimToken((c, r), delay=uniform(8, 12))])
+prototype.BPMNTask(agency, [waiting_europe, employee_europe], [done_europe, employee_europe], "answer_call_europe", lambda c, r: [SimToken((c, r), delay=uniform(8, 12))])
 
-task(agency, [waiting_international, employee_international], [done_international, employee_international], "answer_call_international", lambda c, r: [SimToken((c, r), delay=uniform(10, 15))])
+prototype.BPMNTask(agency, [waiting_international, employee_international], [done_international, employee_international], "answer_call_international", lambda c, r: [SimToken((c, r), delay=uniform(10, 15))])
 
-end_event(agency, [done_europe], [], "complete_europe")
+prototype.BPMNEndEvent(agency, [done_europe], [], "complete_europe")
 
-end_event(agency, [done_international], [], "complete_international")
+prototype.BPMNEndEvent(agency, [done_international], [], "complete_international")
 
 # Simulate with an EventLogReporter.
 reporter = EventLogReporter("./temp/agency_two_tasks.csv")

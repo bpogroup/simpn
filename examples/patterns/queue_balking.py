@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jan 29 08:37:14 2024
-
-@author: lgenga
-"""
-
 # Balking is a situation in which an arriving customer does not join the queue but
 # goes away or goes someplace else. Example: The owner of the petrol station has the
 # feeling that some potential clients are leaving the station because there is no place 
@@ -17,7 +9,7 @@ from simpn.simulator import SimProblem
 from simpn.simulator import SimToken
 from random import expovariate as exp, uniform
 from simpn.reporters import SimpleReporter
-from simpn.prototypes import start_event, task, end_event, intermediate_event
+import simpn.prototypes as prototype
 from simpn.visualisation import Visualisation
 
 
@@ -38,7 +30,7 @@ pump.put("p1")
 def interarrival_time():
   return exp(4)
 
-start_event(station, [], [to_check_queue], "start", interarrival_time)
+prototype.BPMNStartEvent(station, [], [to_check_queue], "start", interarrival_time)
 
 # Check the queue length
 def check_queue_length(customer, complete_queue):
@@ -51,10 +43,10 @@ def check_queue_length(customer, complete_queue):
         return [complete_queue, SimToken(customer)]
 
 station.add_event([to_check_queue, waiting.queue], [waiting.queue, to_leave], check_queue_length)
-task(station, [waiting, pump], [done, pump], "refueling", lambda c, r: [SimToken((c, r), delay=uniform(1,6))])
+prototype.BPMNTask(station, [waiting, pump], [done, pump], "refueling", lambda c, r: [SimToken((c, r), delay=uniform(1,6))])
 
-end_event(station, [done], [], "complete")
-end_event(station, [to_leave], [], "leave")
+prototype.BPMNEndEvent(station, [done], [], "complete")
+prototype.BPMNEndEvent(station, [to_leave], [], "leave")
 
 
 # Run the simulation.

@@ -286,6 +286,7 @@ class SimProblem:
     def __init__(self, debugging=True):
         self.places = []
         self.events = []
+        self.prototypes = []
         self.id2node = dict()
         self.clock = 0
         self._debugging = debugging
@@ -459,6 +460,19 @@ class SimProblem:
         self.id2node[t_name] = result
 
         return result
+
+    def add_prototype(self, prototype):
+        if len(prototype.places) == 0 and len(prototype.events) == 0:
+            raise TypeError("Prototype " + prototype.name + ": does not have any variables or events. That should not be possible, please notify the developer.")
+        for place in prototype.places:
+            if place not in self.places:
+                raise TypeError("Prototype " + prototype.name + ": did not add all its places to the model. That should not be possible, please notify the developer.")
+        for event in prototype.events:
+            if event not in self.events:
+                raise TypeError("Prototype " + prototype.name + ": did not add all its events to the model. That should not be possible, please notify the developer.")
+        if prototype.get_id() in self.id2node:
+            raise TypeError("Prototype " + prototype.name + ": node with the same name already exists. Names must be unique.")
+        self.prototypes.append(prototype)
 
     @staticmethod
     def tokens_combinations(event):

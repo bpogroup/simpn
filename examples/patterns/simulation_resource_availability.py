@@ -1,6 +1,6 @@
 from simpn.simulator import SimProblem, SimToken
 from simpn.reporters import SimpleReporter
-from simpn.prototypes import start_event, task, end_event
+import simpn.prototypes as prototype
 
 # Instantiate a simulation problem.
 shop = SimProblem()
@@ -18,10 +18,10 @@ cassier_break = shop.add_var("cassier_break") # the variable that contains cassi
 cassier_break_check = shop.add_var("break_check") # the variable that contains cassiers for whom we must check if they go on break
 
 # Define events.
-start_event(shop, [], [scan_queue], "start", lambda: 1)
+prototype.BPMNStartEvent(shop, [], [scan_queue], "start", lambda: 1)
 
 # Note: after the task is done, we send cassiers for the 'break check'
-task(shop, [scan_queue, cassier], [done, cassier_break_check], "scan_groceries", lambda c, r: [SimToken((c, r), delay=1)])
+prototype.BPMNTask(shop, [scan_queue, cassier], [done, cassier_break_check], "scan_groceries", lambda c, r: [SimToken((c, r), delay=1)])
 
 # The break check is basically a choice
 def check_break(c, time):
@@ -31,7 +31,7 @@ def check_break(c, time):
         return [SimToken(c)]
 shop.add_event([cassier_break_check, time], [cassier], check_break)
 
-end_event(shop, [done], [], "complete")
+prototype.BPMNEndEvent(shop, [done], [], "complete")
 
 # Run the simulation.
 shop.simulate(5, SimpleReporter())

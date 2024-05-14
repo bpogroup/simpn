@@ -17,11 +17,9 @@ arrived = my_problem.add_var("arrived")
 resource = my_problem.add_var("resource")
 completed = my_problem.add_var("completed")
 
-prototype.start_event(my_problem, [], [arrived], "arrive", lambda: random.expovariate(1), behavior=lambda: [SimToken(random.randint(1, 2))])
-prototype.task(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), delay=0.75)])  # unordered execution
-# prototype.task_fifo(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), delay=0.75)], guard=lambda c, r: c[1] == r)  # ordered execution with guard
-# prototype.task_fifo(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), delay=0.75)])  # ordered execution
-prototype.end_event(my_problem, [completed], [], name="done")
+prototype.BPMNStartEvent(my_problem, [], [arrived], "arrive", lambda: random.expovariate(1), behavior=lambda: [SimToken(random.randint(1, 2))])
+prototype.BPMNTask(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), delay=0.75)])  # unordered execution
+prototype.BPMNEndEvent(my_problem, [completed], [], name="done")
 
 resource.put(1)
 

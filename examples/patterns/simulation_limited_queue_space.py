@@ -1,7 +1,7 @@
 from simpn.simulator import SimProblem, SimToken
 from random import expovariate as exp
 from simpn.reporters import EventLogReporter
-from simpn.prototypes import start_event, task, end_event, intermediate_event
+import simpn.prototypes as prototype
 
 # Instantiate a simulation problem.
 shop = SimProblem()
@@ -17,7 +17,7 @@ cassier = shop.add_var("cassier")
 cassier.put("r1")
 
 # Define events.
-start_event(shop, [], [to_check_queue], "start", lambda: exp(1/9))
+prototype.BPMNStartEvent(shop, [], [to_check_queue], "start", lambda: exp(1/9))
 
 # Check the queue length
 def check_queue_length(customer, complete_queue):
@@ -30,10 +30,10 @@ def check_queue_length(customer, complete_queue):
         return [complete_queue, SimToken(customer)]
 shop.add_event([to_check_queue, waiting.queue], [waiting.queue, to_leave], check_queue_length)
 
-task(shop, [waiting, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
+prototype.BPMNTask(shop, [waiting, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
 
-end_event(shop, [done], [], "complete")
-end_event(shop, [to_leave], [], "leave")
+prototype.BPMNEndEvent(shop, [done], [], "complete")
+prototype.BPMNEndEvent(shop, [to_leave], [], "leave")
 
 
 # Run the simulation.

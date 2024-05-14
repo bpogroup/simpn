@@ -3,7 +3,7 @@ from simpn.simulator import SimProblem, SimToken
 from simpn.visualisation import Visualisation
 from random import expovariate as exp
 from random import uniform
-from simpn.prototypes import start_event, task, end_event
+import simpn.prototypes as prototype
 
 # Instantiate a simulation problem.
 agency = SimProblem()
@@ -26,15 +26,15 @@ def check_free(customer, employee_queue):
     else:
         return [None, SimToken(customer), employee_queue]
 
-start_event(agency, [], [to_choice], "arrive", lambda: exp(7)*60)
+prototype.BPMNStartEvent(agency, [], [to_choice], "arrive", lambda: exp(7)*60)
 
 agency.add_event([to_choice, employee.queue], [waiting, to_left, employee.queue], check_free)
 
-task(agency, [waiting, employee], [done, employee], "answer_call", lambda c, r: [SimToken((c, r), delay=uniform(10, 15))])
+prototype.BPMNTask(agency, [waiting, employee], [done, employee], "answer_call", lambda c, r: [SimToken((c, r), delay=uniform(10, 15))])
 
-end_event(agency, [done], [], "complete")
+prototype.BPMNEndEvent(agency, [done], [], "complete")
 
-end_event(agency, [to_left], [], "left")
+prototype.BPMNEndEvent(agency, [to_left], [], "left")
 
 # Simulate once with a visualisation.
 visualisation = Visualisation(agency)

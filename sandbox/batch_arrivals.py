@@ -1,6 +1,6 @@
 from simpn.simulator import SimProblem, SimToken
 from simpn.visualisation import Visualisation
-from simpn.prototypes import start_event
+import simpn.prototypes as prototype
 from random import expovariate as exp
 
 shop = SimProblem()
@@ -10,7 +10,7 @@ customers = shop.add_var("customers")
 
 time = shop.var("time")
 
-start_event(shop, [], [batch], "batch_arrival", lambda: exp(1/2))
+prototype.BPMNStartEvent(shop, [], [batch], "batch_arrival", lambda: exp(1/2))
 
 def batch_explosion(b, cs, t):
     for i in range(2): # each batch has two customers

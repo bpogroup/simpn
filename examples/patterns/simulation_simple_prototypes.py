@@ -1,7 +1,7 @@
 from simpn.simulator import SimProblem, SimToken
 from random import expovariate as exp
 from simpn.reporters import EventLogReporter, SimpleReporter
-from simpn.prototypes import start_event, task, end_event
+import simpn.prototypes as prototype
 
 # Instantiate a simulation problem.
 shop = SimProblem()
@@ -15,11 +15,11 @@ cassier = shop.add_var("cassier")
 cassier.put("c1")
 
 # Define events.
-start_event(shop, [], [waiting], "arrive", lambda: exp(1/10))
+prototype.BPMNStartEvent(shop, [], [waiting], "arrive", lambda: exp(1/10))
 
-task(shop, [waiting, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
+prototype.BPMNTask(shop, [waiting, cassier], [done, cassier], "scan_groceries", lambda c, r: [SimToken((c, r), delay=exp(1/9))])
 
-end_event(shop, [done], [], "complete")
+prototype.BPMNEndEvent(shop, [done], [], "complete")
 
 # Simulate once with a simple reporter.
 shop.simulate(24*60, SimpleReporter())
