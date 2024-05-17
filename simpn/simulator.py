@@ -1,5 +1,6 @@
 import inspect
 from sortedcontainers import SortedList
+import simpn.visualisation as vis
 
 
 class SimVar:
@@ -85,6 +86,8 @@ class SimVar:
         else:
             raise LookupError("No checkpoint '" + name + "' at place '" + str(self) + "'.")
 
+    def get_visualisation(self):
+        return vis.PlaceViz(self)
 
 class SimVarQueue(SimVar):
     """
@@ -233,6 +236,8 @@ class SimEvent:
     def __repr__(self):
         return self.__str__()
 
+    def get_visualisation(self):
+        return vis.TransitionViz(self)
 
 class SimToken:
     """
@@ -348,7 +353,17 @@ class SimProblem:
         :param priority: a function that takes a token as input and returns a value that is used to sort the tokens in the order in which they will be processed (lower values first). The default is processing in the order of the time of the token.
         :return: a SimVar with the specified name as identifier.
         """
+        # Generate and add SimVar
+        result = SimVar(name, priority=priority)
+        self.add_prototype_var(result)
+        return result
+
+    def add_prototype_var(self, var):
+        """
+        Adds the SimVar to the problem. This function should only be used for prototypes.
+        """
         # Check name
+        name = var.get_id()
         if name in self.id2node:
             raise TypeError("Node with name " + name + " already exists. Names must be unique.")
         if name.endswith(SimVarQueue.QUEUE_SUFFIX):
@@ -356,12 +371,10 @@ class SimProblem:
         if name == SimVarTime.TIME_ID:
             raise TypeError("Cannot create SimVar with name " + name + ". " + SimVarTime.TIME_ID + " is reserved for the time variable. If you just want to get the time variable, use the .var() method instead.")
 
-        # Generate and add SimVar
-        result = SimVar(name, priority=priority)
-        self.places.append(result)
-        self.id2node[name] = result
+        # Add SimVar
+        self.places.append(var)
+        self.id2node[name] = var
 
-        return result
 
     def var(self, name):
         """

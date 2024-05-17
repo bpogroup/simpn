@@ -1,5 +1,6 @@
 import igraph
 import os
+import traceback
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from enum import Enum, auto
@@ -253,10 +254,10 @@ class Visualisation:
                 element_to_prototype[place.get_id()] = prototype.get_id()
         for var in self._problem.places:
             if var.get_id() not in element_to_prototype:
-                self._nodes[var.get_id()] = PlaceViz(var)
+                self._nodes[var.get_id()] = var.get_visualisation()
         for event in self._problem.events:
             if event.get_id() not in element_to_prototype:
-                event_viznode = TransitionViz(event)
+                event_viznode = event.get_visualisation()
                 self._nodes[event.get_id()] = event_viznode
                 viznodes_with_edges.append(event_viznode)                
         # Add visualization for edges.
@@ -427,8 +428,9 @@ class Visualisation:
                     self.__handle_event(event)
                 try:
                     self.__draw()
-                except:
+                except Exception:
                     print("Error while drawing the visualisation.")
+                    print(traceback.format_exc())
                     self.__running = False
                 clock.tick(30)
 
