@@ -10,3 +10,8 @@ Version 1.1.0 (2024-05-14)
 ---------------------------
 
 - [Feature] improved visualization of prototypes.
+
+Version 1.2.0 (2024-05-20)
+---------------------------
+
+- [Feature] added queueing network prototypes.

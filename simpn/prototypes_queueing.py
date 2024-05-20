@@ -1,6 +1,7 @@
 import inspect
 import pygame
 from simpn.simulator import SimToken, SimVar
+import random
 import simpn.prototypes as prototypes
 import simpn.visualisation as vis
 
@@ -218,3 +219,97 @@ class QueueingServer(prototypes.Prototype):
         return self.QueueingServerViz(self)
 
 
+class QueueingSink(SimVar):
+    def __init__(self, model, _id, priority=lambda token: token.time):
+        """
+        A SimVar that represents a sink.
+        It is just a SimVar with a different visualisation.
+        """
+        super().__init__(_id, priority)
+
+        model.add_prototype_var(self)
+
+    class QueueingSinkViz(vis.Node):
+        def __init__(self, model_node):
+            super().__init__(model_node)
+        
+        def draw(self, screen):
+            x, y = self._pos
+            hw, hh = self._half_width, self._half_height
+            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x-hw, y), (x+hw, y-hw), (x+hw, y+hh), (x-hw, y)])
+            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x-hw, y), (x+hw, y-hw), (x+hw, y+hh), (x-hw, y)], vis.LINE_WIDTH)
+
+            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+            bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
+            
+            # draw label
+            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+            text_x_pos = self._pos[0] - int(label.get_width()/2)
+            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+            screen.blit(label, (text_x_pos, text_y_pos))
+
+            # draw marking
+            label = bold_font.render(str(len(self._model_node.marking)), True, vis.TUE_RED)
+            text_x_pos = self._pos[0] - int(label.get_width()/2)
+            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
+            screen.blit(label, (text_x_pos, text_y_pos))        
+
+    def get_visualisation(self):
+        return self.QueueingSinkViz(self)
+
+
+class QueueingChoice(prototypes.Prototype):
+
+    def __init__(self, model, incoming, outgoing, name, weights):
+        """
+        Generates a composition of SimVar and SimEvent that represents a choice of which queue to go in.
+        Adds it to the specified model. The choice is made according to the weights.
+        Cases are taken from the (single) incoming SimVar and placed in one of the outgoing SimVars according to specified the weights.
+
+        :param model: the SimProblem to which the generator must be added.
+        :param incoming: parameter is only here for consistency, must be [].
+        :param outgoing: a list with a single SimVar in which the generated cases will be placed.
+        :param name: the name of the generator.
+        :param weights: a list of weights that sum up to 1.0.
+        """
+        super().__init__(model, incoming, outgoing, name)
+
+        if len(incoming) != 1:
+            raise TypeError("Choice " + name + ": must have exacly one incoming SimVar.")
+        if len(outgoing) < 2:
+            raise TypeError("Choice " + name + ": must have at least two outgoing SimVar.")
+        if len(outgoing) != len(weights):
+            raise TypeError("Choice " + name + ": the number of outgoing SimVars must be equal to the number of weights.")
+        for w in weights:
+            if type(w) is not int and type(w) is not float:
+                raise TypeError("Choice " + name + ": the weights must be numeric values. " + str(w) + " is not.")
+
+        def choose(c):
+            chosen = random.choices(list(range(len(outgoing))), weights)[0]
+            result = [None] * len(outgoing)
+            result[chosen] = SimToken(c)
+            return result
+        choice_event = model.add_event(incoming, outgoing, choose)
+        self.add_event(choice_event)
+
+        model.add_prototype(self)
+
+    class QueueingChoiceViz(vis.Node):
+        def __init__(self, model_node):
+            super().__init__(model_node)
+        
+        def draw(self, screen):
+            x, y = self._pos
+            hw, hh = self._half_width, self._half_height
+            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x-hw, y), (x, y-hw), (x+hw, y), (x, y+hh), (x-hw, y)])
+            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x-hw, y), (x, y-hw), (x+hw, y), (x, y+hh), (x-hw, y)], vis.LINE_WIDTH)
+            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+
+            # draw label
+            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+            text_x_pos = self._pos[0] - int(label.get_width()/2)
+            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+            screen.blit(label, (text_x_pos, text_y_pos))
+
+    def get_visualisation(self):
+        return self.QueueingChoiceViz(self)
