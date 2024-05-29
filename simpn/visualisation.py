@@ -366,7 +366,8 @@ class Visualisation:
             self._size = tuple(map(int, f.readline().strip().split(",")))
             for line in f:
                 id, x, y = line.strip().split(",")
-                self._nodes[id].set_pos((int(x), int(y)))
+                if id in self._nodes:
+                    self._nodes[id].set_pos((int(x), int(y)))
 
     def __get_node_at(self, pos):
         for node in self._nodes.values():
