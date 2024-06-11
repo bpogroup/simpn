@@ -74,6 +74,11 @@ class Edge:
         angle = arrow.angle_to(pygame.Vector2(0, -1))
         body_length = arrow.length() - ARROW_HEIGHT
 
+        # if the end node does not want to show arrowheads, we simply draw a line from start to end
+        if not self.get_end_node()._show_arrowheads:
+            pygame.draw.line(screen, TUE_BLUE, start, end, int(LINE_WIDTH*1.5))
+            return
+
         # Create the triangle head around the origin
         head_verts = [
             pygame.Vector2(0, ARROW_HEIGHT / 2),  # Center
@@ -130,6 +135,7 @@ class Node:
         self._height = STANDARD_NODE_HEIGHT
         self._half_width =  self._width / 2
         self._half_height = self._height / 2
+        self._show_arrowheads = True
             
     def draw(self, screen):
         raise Exception("Node.raise must be implemented at subclass level.")
@@ -152,7 +158,7 @@ class Node:
     
     def get_id(self):
         return self._model_node.get_id()
-        
+            
 
 class PlaceViz(Node):
     def __init__(self, model_node):

@@ -1,6 +1,6 @@
 import inspect
 import pygame
-from simpn.simulator import SimToken
+from simpn.simulator import SimToken, SimVar
 import simpn.visualisation as vis
 
 
@@ -260,3 +260,47 @@ class BPMNEndEvent(Prototype):
 
     def get_visualisation(self):
         return self.BPMNEndEventViz(self)
+
+
+class BPMNFlow(SimVar):
+    def __init__(self, model, _id):
+        """
+        A SimVar that represents a BPMN Flow.
+        It is just a SimVar with a different visualisation.
+        """
+        super().__init__(_id)
+
+        model.add_prototype_var(self)
+
+    class BPMNFlowViz(vis.Node):
+        def __init__(self, model_node):
+            super().__init__(model_node)
+            self._width = 3
+            self._height = 3
+            self._half_width =  self._width / 2
+            self._half_height = self._height / 2
+            self._show_arrowheads = False
+        
+        def draw(self, screen):
+            x, y = self._pos
+            hw, hh = self._half_width, self._half_height
+            pygame.draw.rect(screen, vis.TUE_BLUE, pygame.Rect(x-hw, y-hh, self._width, self._height))
+
+            bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
+            
+            # draw marking
+            mstr = "["
+            ti = 0
+            for token in self._model_node.marking:
+                mstr += str(token.value) + "@" + str(round(token.time, 2))
+                if ti < len(self._model_node.marking) - 1:
+                    mstr += ", "
+                ti += 1
+            mstr += "]"
+            label = bold_font.render(mstr, True, vis.TUE_RED)
+            text_x_pos = self._pos[0] - int(label.get_width()/2)
+            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
+            screen.blit(label, (text_x_pos, text_y_pos))        
+
+    def get_visualisation(self):
+        return self.BPMNFlowViz(self)
