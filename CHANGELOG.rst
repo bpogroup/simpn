@@ -10,3 +10,18 @@ Version 1.1.0 (2024-05-14)
 ---------------------------
 
 - [Feature] improved visualization of prototypes.
+
+Version 1.2.0 (2024-05-20)
+---------------------------
+
+- [Feature] added queueing network prototypes.
+
+Version 1.2.1 (2024-05-29)
+---------------------------
+
+- [Bugfix] if a layout contains a node not in the model anymore, it does not generate an exception.
+
+Version 1.2.2 (2024-05-29)
+---------------------------
+
+- [Change] changed the semantics of queue tokens: now they are always available instead of at the time of the last token in the queue.

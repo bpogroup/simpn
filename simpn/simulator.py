@@ -20,7 +20,6 @@ class SimVar:
         self._id = _id
         self.marking = SortedList(key=priority)
         self.checkpoints = dict()
-        self._time = 0  # the time at which the last token is available
         self.queue = SimVarQueue(self)
 
     def put(self, value, time=0):
@@ -32,8 +31,6 @@ class SimVar:
         """
         token = SimToken(value, time)
         self.add_token(token)
-        if time > self._time:
-            self._time = time
 
     def add_token(self, token, count=1):
         """
@@ -43,8 +40,6 @@ class SimVar:
         :param count: the number of times to put the token value in the SimVar (defaults to 1 time).
         """
         self.marking.add(token)
-        if token.time > self._time:
-            self._time = token.time
 
     def remove_token(self, token):
         """
@@ -56,8 +51,6 @@ class SimVar:
             self.marking.remove(token)
         else:
             raise LookupError("No token '" + token + "' at place '" + str(self) + "'.")          
-        if token.time >= self._time:
-            self._time = max([t.time for t in self.marking] + [0])
     
     def get_id(self):
         return self._id
@@ -79,7 +72,6 @@ class SimVar:
         Restores the SimVar marking from the checkpoint with the given name.
         """
         if name in self.checkpoints:
-            self._time = 0
             self.marking.clear()
             for token in self.checkpoints[name]:
                 self.add_token(token)
@@ -103,7 +95,7 @@ class SimVarQueue(SimVar):
 
     @property
     def marking(self):
-        token = SimToken(list(self.simvar.marking), self.simvar._time)
+        token = SimToken(list(self.simvar.marking), 0)
         return [token]
 
     def put(self, value, time=0):
@@ -127,7 +119,6 @@ class SimVarQueue(SimVar):
         # However, the queue object should remain intact, because that is the same object that is passed as a token.
         # Therefore, we set the marking to a new empty list.
         self.simvar.marking = SortedList(key=self.simvar.marking.key)
-        self.simvar._time = 0
 
     def __str__(self):
         return self._id
@@ -466,6 +457,12 @@ class SimProblem:
             parameters = inspect.signature(guard).parameters
             if len(parameters) != len(inflow):
                 raise TypeError("Event " + t_name + ": the constraint function must take as many parameters as there are input variables.")
+
+        # Check queue operations: if the inflow is only queue vars, but the outflow is not, we post a warning.
+        inflow_queues = all([isinstance(i, SimVarQueue) for i in inflow])
+        outflow_queues = all([isinstance(o, SimVarQueue) for o in outflow])
+        if inflow_queues and not outflow_queues:
+            print("WARNING: Event " + t_name + ": has only queue variables in the inflow, but not in the outflow. This may lead to unexpected behavior, because queues do not have time, so the outflow tokens are produced at time=0.")
 
         # Generate and add SimEvent
         result = SimEvent(t_name, guard=guard, behavior=behavior, incoming=inflow, outgoing=outflow)

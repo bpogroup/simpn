@@ -344,7 +344,7 @@ class Visualisation:
         layout.scale(NODE_SPACING)
         boundaries = layout.boundaries(border=STANDARD_NODE_WIDTH)
         layout.translate(-boundaries[0][0], -boundaries[0][1])
-        canvas_size = layout.boundaries(border=STANDARD_NODE_WIDTH)[1]
+        canvas_size = layout.boundaries(border=STANDARD_NODE_WIDTH*2)[1]
         self._size = (min(MAX_SIZE[0], canvas_size[0]), min(MAX_SIZE[1], canvas_size[1]))
         i = 0
         for v in graph.vs:
@@ -372,7 +372,8 @@ class Visualisation:
             self._size = tuple(map(int, f.readline().strip().split(",")))
             for line in f:
                 id, x, y = line.strip().split(",")
-                self._nodes[id].set_pos((int(x), int(y)))
+                if id in self._nodes:
+                    self._nodes[id].set_pos((int(x), int(y)))
 
     def __get_node_at(self, pos):
         for node in self._nodes.values():
