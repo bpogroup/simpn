@@ -6,3 +6,4 @@
 
     howto
     api
+    teaching
