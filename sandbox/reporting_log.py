@@ -1,8 +1,7 @@
 import random
 from simpn.simulator import SimProblem, SimToken
 import simpn.prototypes as prototype
-from simpn.visualisation import Visualisation
-
+from simpn.reporters import EventLogReporter
 
 my_problem = SimProblem()
 
@@ -17,6 +16,4 @@ prototype.BPMNStartEvent(my_problem, [], [arrived], "arrive", lambda: random.exp
 prototype.BPMNTask(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), delay=0.75)])
 prototype.BPMNEndEvent(my_problem, [completed], [], name="done")
 
-vis = Visualisation(my_problem, "./temp/prototypes_layout.txt")
-vis.show()
-vis.save_layout("./temp/prototypes_layout.txt")
+my_problem.simulate(1000, EventLogReporter("./temp/prototypes_log.txt"))

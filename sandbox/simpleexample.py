@@ -1,4 +1,5 @@
 from simpn.simulator import SimProblem, SimToken
+from simpn.reporters import SimpleReporter
 
 shop = SimProblem()
 
@@ -15,12 +16,4 @@ customers.put("c1")
 customers.put("c2")
 customers.put("c3")
 
-from simpn.reporters import SimpleReporter
-
 shop.simulate(10, SimpleReporter())
-
-from simpn.visualisation import Visualisation
-
-v = Visualisation(shop, "layout.txt")
-v.show()
-v.save_layout("layout.txt")
