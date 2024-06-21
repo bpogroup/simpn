@@ -25,3 +25,9 @@ Version 1.2.2 (2024-05-29)
 ---------------------------
 
 - [Change] changed the semantics of queue tokens: now they are always available instead of at the time of the last token in the queue.
+
+Version 1.2.3 (2024-06-21)
+---------------------------
+
+- [Minor feature] added configurable separator to EventLogReporter.
+- [Minor feature] added BPMNFlow prototype.

@@ -198,14 +198,16 @@ class EventLogReporter(Reporter):
     :param initial_time: a datetime value.
     :param time_format: a datetime formatting string.
     :param data_fields: the data fields to report in the log.
+    :param separator: the separator to use in the log.
     """
-    def __init__(self, filename, timeunit=TimeUnit.MINUTES, initial_time=datetime(2020, 1, 1), time_format="%Y-%m-%d %H:%M:%S.%f"):
+    def __init__(self, filename, timeunit=TimeUnit.MINUTES, initial_time=datetime(2020, 1, 1), time_format="%Y-%m-%d %H:%M:%S.%f", separator=","):
         self.task_start_times = dict()
         self.timeunit = timeunit
         self.initial_time = initial_time
         self.time_format = time_format
         self.logfile = open(filename, "wt")
-        self.logfile.write("case_id,task,resource,start_time,completion_time\n")
+        self.sep = separator        
+        self.logfile.write("case_id"+self.sep+"task"+self.sep+"resource"+self.sep+"start_time"+self.sep+"completion_time\n")
 
     def displace(self, time):
         return self.initial_time + (timedelta(seconds=time) if self.timeunit == TimeUnit.SECONDS else timedelta(
@@ -224,10 +226,10 @@ class EventLogReporter(Reporter):
             task = event.get_id()[:event.get_id().index("<")]
             resource = binding[0][1].value[1]
             if (case_id, task) in self.task_start_times.keys():
-                self.logfile.write(str(case_id) + ",")
-                self.logfile.write(task + ",")
-                self.logfile.write(str(resource) + ",")
-                self.logfile.write(self.displace(self.task_start_times[(case_id, task)]).strftime(self.time_format) + ",")
+                self.logfile.write(str(case_id) + self.sep)
+                self.logfile.write(task + self.sep)
+                self.logfile.write(str(resource) + self.sep)
+                self.logfile.write(self.displace(self.task_start_times[(case_id, task)]).strftime(self.time_format) + self.sep)
                 self.logfile.write(self.displace(time).strftime(self.time_format))
                 self.logfile.write("\n")
                 self.logfile.flush()
@@ -238,10 +240,10 @@ class EventLogReporter(Reporter):
             else:
                 case_id = binding[0][1].value[0]
             event = event.get_id()[:event.get_id().index("<")]
-            self.logfile.write(str(case_id) + ",")
-            self.logfile.write(event + ",")
-            self.logfile.write(",")
-            self.logfile.write(self.displace(time).strftime(self.time_format) + ",")
+            self.logfile.write(str(case_id) + self.sep)
+            self.logfile.write(event + self.sep)
+            self.logfile.write(self.sep)
+            self.logfile.write(self.displace(time).strftime(self.time_format) + self.sep)
             self.logfile.write(self.displace(time).strftime(self.time_format))
             self.logfile.write("\n")
             self.logfile.flush()

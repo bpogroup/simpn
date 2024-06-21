@@ -283,8 +283,7 @@ class BPMNFlow(SimVar):
         
         def draw(self, screen):
             x, y = self._pos
-            hw, hh = self._half_width, self._half_height
-            pygame.draw.rect(screen, vis.TUE_BLUE, pygame.Rect(x-hw, y-hh, self._width, self._height))
+            pygame.draw.circle(screen, vis.TUE_BLUE, (x, y), self._width)
 
             bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
             

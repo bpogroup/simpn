@@ -16,4 +16,4 @@ prototype.BPMNStartEvent(my_problem, [], [arrived], "arrive", lambda: random.exp
 prototype.BPMNTask(my_problem, [arrived, resource], [completed, resource], "task", lambda a, r: [SimToken((a, r), delay=0.75)])
 prototype.BPMNEndEvent(my_problem, [completed], [], name="done")
 
-my_problem.simulate(1000, EventLogReporter("./temp/prototypes_log.txt"))
+my_problem.simulate(1000, EventLogReporter("./temp/prototypes_log.csv", separator=";"))
