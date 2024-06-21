@@ -100,29 +100,34 @@ class BPMNTask(Prototype):
     def __init__(self, model, incoming, outgoing, name, behavior, guard=None):
         """
         Generates a composition of SimVar and SimEvent that represents a BPMN task.
-        Adds it to the specified model. The task must have two incoming and two outgoing SimVar.
+        Adds it to the specified model. The task must have at least two incoming and two outgoing SimVar.
         The first SimVar represents the case that must be processed by the task and the second the resource.
+        There can be additional SimVar that represent additional variables that the task may need or produce.
+        If there are additional SimVar, they must be in the same position in both the incoming and outgoing lists.
         The behavior specifies how the task may change the case data.
         It also specifies the processing time of the task in the form of a SimToken delay.
         The behavior must take two input parameters according to the incoming and produces a single outgoing, which is a tuple (case, resource)@delay.
 
         :param model: the SimProblem to which the task composition must be added.
-        :param incoming: a list with two SimVar: a case SimVar and a resource SimVar.
-        :param outgoing: a list with two SimVar: a case SimVar and a resource SimVar.
+        :param incoming: a list with at least two SimVar: a case SimVar, a resource SimVar, and optionally additional SimVar.
+        :param outgoing: a list with at least two SimVar: a case SimVar, a resource SimVar, and optionally additional SimVar.
         :param name: the name of the task.
-        :param behavior: the behavior function, which takes two input parameters according to the incoming and produces a single outgoing, which is a tuple (case, resource)@delay.
+        :param behavior: the behavior function, which takes at least two input parameters according to the incoming and produces a single outgoing, which is a tuple (case, resource [, <additional variable 1>, <additional variable 2>, ...])@delay.
         :param guard: an optional guard that specifies which combination of case and resource is allowed. The guard must take two input parameters according to the incoming.
         """
         super().__init__(model, incoming, outgoing, name)
 
         if len(incoming) != 2:
-            raise TypeError("Task event " + name + ": must have two input parameters; the first for cases and the second for resources.")
-        if len(outgoing) != 2:
-            raise TypeError("Task event " + name + ": must have two output parameters; the first for cases and the second for resources.")
+            raise TypeError("Task event " + name + ": must have at least two input parameters; the first for cases and the second for resources.")
+        if len(outgoing) != len(incoming):
+            raise TypeError("Task event " + name + ": must have as many output parameters as there are input parameters.")
+        for i in range(2, len(incoming)):
+            if outgoing[i] != incoming[i]:
+                raise TypeError("Task event " + name + ": the output variables must be the same as the input variables. However, output variable at index " + str(i) + " is different from input variable at index " + str(i) + ".")
         if not callable(behavior):
             raise TypeError("Task event " + name + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
-        if len(inspect.signature(behavior).parameters) != 2:
-            raise TypeError("Task event " + name + ": the behavior function must have two parameters.")
+        if len(inspect.signature(behavior).parameters) != len(incoming):
+            raise TypeError("Task event " + name + ": the behavior function must have as many parameters as inputs.")
 
         busyvar_name = name + "_busy"
         start_event_name = name + "<task:start>"
@@ -131,7 +136,7 @@ class BPMNTask(Prototype):
         self.add_var(self._busyvar)
         start_event = model.add_event(incoming, [self._busyvar], behavior, name=start_event_name, guard=guard)
         self.add_event(start_event)
-        complete_event = model.add_event([self._busyvar], outgoing, lambda b: [SimToken(b[0]), SimToken(b[1])], name=complete_event_name)
+        complete_event = model.add_event([self._busyvar], outgoing, lambda b: [SimToken(b[i]) for i in range(len(b))], name=complete_event_name)
         self.add_event(complete_event)
 
         model.add_prototype(self)
