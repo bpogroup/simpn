@@ -3,6 +3,7 @@ import os
 import traceback
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
+import simpn.assets as assets
 from enum import Enum, auto
 
 
@@ -239,7 +240,10 @@ class Visualisation:
         pygame.init()
         pygame.font.init()
         pygame.display.set_caption('Petri Net Visualisation')
-        
+        assets.create_assets(assets.images, "assets")
+        icon = pygame.image.load('./assets/logo.png')
+        pygame.display.set_icon(icon)
+
         self.__running = False
         self._problem = sim_problem
         self._nodes = dict()

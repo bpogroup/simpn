@@ -1,5 +1,7 @@
 .idea/
 /temp/
+/assets/*.*
+/assets/data/*.b64
 
 # dotenv
 .env

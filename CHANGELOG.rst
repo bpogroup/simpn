@@ -33,3 +33,7 @@ Version 1.2.3 (2024-06-22)
 - [Minor feature] added BPMNFlow prototype.
 - [Minor feature] BPMN tasks can now have multiple inflows and outflows.
 - [Minor feature] BPMN intermediate events can now have multiple inflows and outflows.
+
+Version 1.2.4 (2024-08-27)
+
+- [Minor feature] added ability to include images in package, used to add logo.

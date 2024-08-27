@@ -32,7 +32,8 @@ exclude = [
     "/temp",
     "/TODO.rst",
     "/.*",
-    "/requirements.txt"
+    "/requirements.txt",
+    "/assets"
 ]
 
 [project.urls]
