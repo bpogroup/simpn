@@ -174,8 +174,14 @@ it can happen on any of these values.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_event" title="simpn.simulator.SimProblem.add_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_event</span></code></a>(inflow, outflow, behavior[, name, ...])</p></td>
 <td><p>Creates a new SimEvent with the specified parameters (also see SimEvent).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_prototype_var" title="simpn.simulator.SimProblem.add_prototype_var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_prototype_var</span></code></a>(var)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_place" title="simpn.simulator.SimProblem.add_place"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_place</span></code></a>(**kwargs)</p></td>
+<td><p>Adds a SimVar to the problem.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_prototype_var" title="simpn.simulator.SimProblem.add_prototype_var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_prototype_var</span></code></a>(var)</p></td>
 <td><p>Adds the SimVar to the problem.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_transition" title="simpn.simulator.SimProblem.add_transition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_transition</span></code></a>(**kwargs)</p></td>
+<td><p>Creates a new SimEvent with the specified parameters.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_var" title="simpn.simulator.SimProblem.add_var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_var</span></code></a>(name[, priority])</p></td>
 <td><p>Creates a new SimVar with the specified name as identifier.</p></td>
@@ -189,22 +195,25 @@ it can happen on any of these values.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.fire" title="simpn.simulator.SimProblem.fire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fire</span></code></a>(timed_binding)</p></td>
 <td><p>Fires the specified timed binding.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.restore_checkpoint" title="simpn.simulator.SimProblem.restore_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore_checkpoint</span></code></a>(name)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.place" title="simpn.simulator.SimProblem.place"><code class="xref py py-obj docutils literal notranslate"><span class="pre">place</span></code></a>(**kwargs)</p></td>
+<td><p>Returns the SimVar with the given name.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.restore_checkpoint" title="simpn.simulator.SimProblem.restore_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore_checkpoint</span></code></a>(name)</p></td>
 <td><p>Restores the state of the simulator to the checkpoint with the given name.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.simulate" title="simpn.simulator.SimProblem.simulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulate</span></code></a>(duration[, reporter])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.simulate" title="simpn.simulator.SimProblem.simulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulate</span></code></a>(duration[, reporter])</p></td>
 <td><p>Executes a simulation run for the problem for the specified duration.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.step" title="simpn.simulator.SimProblem.step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">step</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.step" title="simpn.simulator.SimProblem.step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">step</span></code></a>()</p></td>
 <td><p>Executes a single step of the simulation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.store_checkpoint" title="simpn.simulator.SimProblem.store_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store_checkpoint</span></code></a>(name)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.store_checkpoint" title="simpn.simulator.SimProblem.store_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store_checkpoint</span></code></a>(name)</p></td>
 <td><p>Stores the state of the simulator as a checkpoint with the given name.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.tokens_combinations" title="simpn.simulator.SimProblem.tokens_combinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tokens_combinations</span></code></a>(event)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.tokens_combinations" title="simpn.simulator.SimProblem.tokens_combinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tokens_combinations</span></code></a>(event)</p></td>
 <td><p>Creates a list of token combinations that are available to the specified event.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.var" title="simpn.simulator.SimProblem.var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">var</span></code></a>(name)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.var" title="simpn.simulator.SimProblem.var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">var</span></code></a>(name)</p></td>
 <td><p>Returns the SimVar with the given name.</p></td>
 </tr>
 </tbody>
@@ -230,9 +239,21 @@ it can happen on any of these values.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_place">
+<span class="sig-name descname"><span class="pre">add_place</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_place" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a SimVar to the problem. This function is a wrapper around add_var for people with a Petri-net background.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_prototype_var">
 <span class="sig-name descname"><span class="pre">add_prototype_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_prototype_var" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds the SimVar to the problem. This function should only be used for prototypes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_transition">
+<span class="sig-name descname"><span class="pre">add_transition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_transition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new SimEvent with the specified parameters. This function is a wrapper around add_event for people with a Petri-net background.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -287,6 +308,12 @@ the possible bindings are ([(a, 1&#64;2), (b, 2&#64;3)], 3) and ([(a, 1&#64;2), 
 <span class="sig-name descname"><span class="pre">fire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.fire" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fires the specified timed binding.
 Binding is a tuple ([(place, token), (place, token), …], time, event)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.place">
+<span class="sig-name descname"><span class="pre">place</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.place" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the SimVar with the given name. This function is a wrapper around var for people with a Petri-net background.</p>
 </dd></dl>
 
 <dl class="py method">
