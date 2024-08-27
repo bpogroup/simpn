@@ -6,7 +6,7 @@ from simpn.visualisation import Visualisation
 
 my_problem = SimProblem()
 
-resource = my_problem.add_var("resource")
+resource = my_problem.add_place("resource")
 resource.put(1)
 resource.put(2)
 

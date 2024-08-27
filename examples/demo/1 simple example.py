@@ -3,12 +3,12 @@ from simpn.reporters import SimpleReporter
 
 shop = SimProblem()
 
-resources = shop.add_var("resources")
-customers = shop.add_var("customers")
+resources = shop.add_place("resources")
+customers = shop.add_place("customers")
 
 def process(c, r):
     return [SimToken(r, delay=0.75)]
-shop.add_event([customers, resources], [resources], process)
+shop.add_transition([customers, resources], [resources], process)
 
 resources.put("cassier")
 customers.put("c1")

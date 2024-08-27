@@ -37,3 +37,4 @@ Version 1.2.3 (2024-06-22)
 Version 1.2.4 (2024-08-27)
 
 - [Minor feature] added ability to include images in package, used to add logo.
+- [Minor feature] added synonymous methods for adding places and transitions, rather than variables and events, to the simulation model.

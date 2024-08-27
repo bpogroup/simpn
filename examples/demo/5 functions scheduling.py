@@ -5,11 +5,11 @@ from simpn.visualisation import Visualisation
 
 my_problem = SimProblem()
 
-resource = my_problem.add_var("resource")
+resource = my_problem.add_place("resource")
 resource.put(1)
 resource.put(2)
 
-schedule_time = my_problem.add_var("schedule_time")
+schedule_time = my_problem.add_place("schedule_time")
 schedule_time.put(5, 5)
 
 arrived = prototype.BPMNFlow(my_problem, "arrived")
@@ -25,7 +25,7 @@ def fifo_scheduler(_, customers):
     for customer in customers:
         schedule.append(customer)
     return [[], schedule]
-my_problem.add_event([schedule_time, arrived.queue], [arrived.queue, scheduled.queue], fifo_scheduler)
+my_problem.add_transition([schedule_time, arrived.queue], [arrived.queue, scheduled.queue], fifo_scheduler)
 
 vis = Visualisation(my_problem, "./temp/scheduler_layout.txt")
 vis.show()

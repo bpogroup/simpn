@@ -5,7 +5,7 @@ from simpn.reporters import EventLogReporter
 
 my_problem = SimProblem()
 
-resource = my_problem.add_var("resource")
+resource = my_problem.add_place("resource")
 resource.put(1)
 resource.put(2)
 

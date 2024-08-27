@@ -348,6 +348,12 @@ class SimProblem:
         result = SimVar(name, priority=priority)
         self.add_prototype_var(result)
         return result
+    def add_place(*args, **kwargs):
+        """
+        Adds a SimVar to the problem. This function is a wrapper around add_var for people with a Petri-net background.
+        """
+        self = args[0]
+        return self.add_var(*(args[1:]), **kwargs)
 
     def add_prototype_var(self, var):
         """
@@ -388,6 +394,12 @@ class SimProblem:
             return time_var
         else:
             raise LookupError("SimVar " + name + ": does not exist.")
+    def place(*args, **kwargs):
+        """
+        Returns the SimVar with the given name. This function is a wrapper around var for people with a Petri-net background.
+        """
+        self = args[0]
+        return self.var(*(args[1:]), **kwargs)
 
     def store_checkpoint(self, name):
         """
@@ -470,6 +482,12 @@ class SimProblem:
         self.id2node[t_name] = result
 
         return result
+    def add_transition(*args, **kwargs):
+        """
+        Creates a new SimEvent with the specified parameters. This function is a wrapper around add_event for people with a Petri-net background.
+        """
+        self = args[0]
+        return self.add_event(*(args[1:]), **kwargs)
 
     def add_prototype(self, prototype):
         if len(prototype.places) == 0 and len(prototype.events) == 0:
