@@ -11,8 +11,8 @@ completed = bank.add_place("completed")
 bank.add_transition([customers, resources], [busy], lambda c, r: [SimToken((c, r), delay=0.75 if r[-1]==c[-1] else 1.25)], "start_processing")
 bank.add_transition([busy], [completed, resources], lambda b: [SimToken(b[0]), SimToken(b[1])], "end_processing")
 
-resources.put("type 1")
 resources.put("type 2")
+resources.put("type 1")
 for i in range(4):
     customers.put("type " + str(i%2+1))
 
