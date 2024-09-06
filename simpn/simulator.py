@@ -471,12 +471,12 @@ class SimProblem:
             if not callable(guard):
                 raise TypeError("Event " + t_name + ": the constraint must be a function. (Maybe you made it a function call, exclude the brackets.)")
             parameters = inspect.signature(guard).parameters
-        num_mandatory_params = sum(
-            1 for p in parameters.values()
-            if p.kind not in [inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD] # count all parameters which are not "*args" or "**kwargs"
-        )
-        if num_mandatory_params > len(inflow):
-            raise TypeError("Event " + t_name + ": the constraint function must take as many parameters as there are input variables.")
+            num_mandatory_params = sum(
+                1 for p in parameters.values()
+                if p.kind not in [inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD] # count all parameters which are not "*args" or "**kwargs"
+            )
+            if num_mandatory_params > len(inflow):
+                raise TypeError("Event " + t_name + ": the constraint function must take as many parameters as there are input variables.")
 
         # Check queue operations: if the inflow is only queue vars, but the outflow is not, we post a warning.
         inflow_queues = all([isinstance(i, SimVarQueue) for i in inflow])
