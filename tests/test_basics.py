@@ -77,6 +77,14 @@ class TestBasics(unittest.TestCase):
         self.assertEqual(ta.behavior, test_behavior, "behavior of ta is correct")
         self.assertEqual(ta.guard, test_constraint, "constraint of ta is correct")
 
+    def test_transition_exceptions(self):
+        # if a transition function has an incorrect number of parameters, an exception is raised.
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        b = test_problem.add_var("b")
+        with self.assertRaises(Exception):
+            test_problem.add_event([a, b], [], lambda c: 1)
+
     def test_tokens_combinations_zero_to_one(self):
         test_problem = SimProblem()
         a = test_problem.add_var("a")
