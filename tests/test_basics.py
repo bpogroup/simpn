@@ -219,8 +219,8 @@ class TestSimVarQueue(unittest.TestCase):
         test_problem = SimProblem()
         a = test_problem.add_var("a")
         a.put(1)
-        self.assertEquals(len(a.queue.marking), 1, "The queue var only has one token")
-        self.assertEquals(a.queue.marking[0].value, [SimToken(1)], "The queue holds one token with value 1")
+        self.assertEqual(len(a.queue.marking), 1, "The queue var only has one token")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(1)], "The queue holds one token with value 1")
 
     def test_simvarqueue_add_token_2(self):
         # tests if putting an additional token is visible in the queue
@@ -228,33 +228,33 @@ class TestSimVarQueue(unittest.TestCase):
         a = test_problem.add_var("a")
         a.put(1)
         a.put(1)
-        self.assertEquals(len(a.queue.marking), 1, "The queue var only has one token")
-        self.assertEquals(a.queue.marking[0].value, [SimToken(1), SimToken(1)], "The queue holds one token with value 1")
+        self.assertEqual(len(a.queue.marking), 1, "The queue var only has one token")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(1), SimToken(1)], "The queue holds one token with value 1")
 
     def test_simvarqueue_time(self):
         # tests if putting a token changes the time of the queue
         test_problem = SimProblem()
         a = test_problem.add_var("a")
         a.put(1,1)
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
         a.put(1,2)
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
         a.put(1,1)
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
 
     def test_simvarqueue_add_token_function(self):
         # tests if the add_token function works
         test_problem = SimProblem()
         a = test_problem.add_var("a")
         a.add_token(SimToken(1,1))
-        self.assertEquals(a.queue.marking[0].value, [SimToken(1,1)], "Tokens are put in the queue in the correct order")
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(1,1)], "Tokens are put in the queue in the correct order")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
         a.add_token(SimToken(1,2))
-        self.assertEquals(a.queue.marking[0].value, [SimToken(1,1), SimToken(1,2)], "Tokens are put in the queue in the correct order")
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(1,1), SimToken(1,2)], "Tokens are put in the queue in the correct order")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
         a.add_token(SimToken(1,1))
-        self.assertEquals(a.queue.marking[0].value, [SimToken(1,1), SimToken(1,1), SimToken(1,2)], "Tokens are put in the queue in the correct order")
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(1,1), SimToken(1,1), SimToken(1,2)], "Tokens are put in the queue in the correct order")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
 
     def test_simvarqueue_remove_token_function(self):
         # tests if the remove_token function works
@@ -264,11 +264,11 @@ class TestSimVarQueue(unittest.TestCase):
         a.add_token(SimToken(1,2))
         a.add_token(SimToken(1,1))
         a.remove_token(SimToken(1,1))
-        self.assertEquals(a.queue.marking[0].value, [SimToken(1,1), SimToken(1,2)], "Tokens are put in the queue in the correct order")
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(1,1), SimToken(1,2)], "Tokens are put in the queue in the correct order")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
         a.remove_token(SimToken(1,2))
-        self.assertEquals(a.queue.marking[0].value, [SimToken(1,1)], "Tokens are put in the queue in the correct order")
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(1,1)], "Tokens are put in the queue in the correct order")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
 
     def test_simvarqueue_add_remove_through_firing(self):
         test_problem = SimProblem()
@@ -280,33 +280,33 @@ class TestSimVarQueue(unittest.TestCase):
 
         to_add.put(1, 1)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(a.queue.marking[0].value, [SimToken(1,1)], "Tokens are put in the queue in the correct order")
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(1,1)], "Tokens are put in the queue in the correct order")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
 
         to_add.put(2, 2)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(a.queue.marking[0].value, [SimToken(1,1), SimToken(2,2)], "Tokens are put in the queue in the correct order")
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(1,1), SimToken(2,2)], "Tokens are put in the queue in the correct order")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
 
         to_add.put(2, 2)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(a.queue.marking[0].value, [SimToken(1,1), SimToken(2,2), SimToken(2,2)], "Tokens are put in the queue in the correct order")
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(1,1), SimToken(2,2), SimToken(2,2)], "Tokens are put in the queue in the correct order")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
 
         to_remove.put(1)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(a.queue.marking[0].value, [SimToken(2,2), SimToken(2,2)], "Tokens are put in the queue in the correct order")
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(2,2), SimToken(2,2)], "Tokens are put in the queue in the correct order")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
 
         to_remove.put(2)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(a.queue.marking[0].value, [SimToken(2,2)], "Tokens are put in the queue in the correct order")
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].value, [SimToken(2,2)], "Tokens are put in the queue in the correct order")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
 
         to_remove.put(2)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(a.queue.marking[0].value, [], "Tokens are put in the queue in the correct order")
-        self.assertEquals(a.queue.marking[0].time, 0, "Time is always 0")
+        self.assertEqual(a.queue.marking[0].value, [], "Tokens are put in the queue in the correct order")
+        self.assertEqual(a.queue.marking[0].time, 0, "Time is always 0")
 
     def test_simvarqueue_can_get_from_queue(self):
         # tests if we can get an item from the queue
@@ -323,7 +323,7 @@ class TestSimVarQueue(unittest.TestCase):
         test_problem.add_event([a.queue], [result], name="get_queue", behavior=lambda q: [SimToken(q[0].value)])
         test_problem.fire(test_problem.bindings()[0])
         # the transition fires at the time of the queue, which is 0
-        self.assertEquals(result.marking, [SimToken(1,0)], "Token value is obtained from the queue.")
+        self.assertEqual(result.marking, [SimToken(1,0)], "Token value is obtained from the queue.")
 
     def test_simvarqueue_can_put_queue_back(self):
         # tests if we can get an item from the queue
@@ -335,7 +335,7 @@ class TestSimVarQueue(unittest.TestCase):
 
         test_problem.add_event([a.queue], [a.queue], name="put_queue", behavior=lambda q: [q[1:]])
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(a.marking, [SimToken(2,2), SimToken(2,3)], "The manipulated queue is put back.")
+        self.assertEqual(a.marking, [SimToken(2,2), SimToken(2,3)], "The manipulated queue is put back.")
 
     def test_simvarqueue_can_put_guard_on_queue(self):
         # tests if we can get an item from the queue
@@ -347,8 +347,8 @@ class TestSimVarQueue(unittest.TestCase):
 
         test_problem.add_event([a.queue], [a.queue], name="put_queue", behavior=lambda q: [[]], guard=lambda q: len(q) > 0)
         test_problem.fire(test_problem.bindings()[0])
-        self.assertEquals(a.marking, [], "The manipulated queue is put back.")
-        self.assertEquals(len(test_problem.bindings()), 0, "An empty queue does not fire.")
+        self.assertEqual(a.marking, [], "The manipulated queue is put back.")
+        self.assertEqual(len(test_problem.bindings()), 0, "An empty queue does not fire.")
 
 
 class TestTimeVariable(unittest.TestCase):
@@ -358,7 +358,7 @@ class TestTimeVariable(unittest.TestCase):
 
         time_var = test_problem.var("time")
 
-        self.assertEquals(time_var.marking, [SimToken(0)], "There is one token with value 0")
+        self.assertEqual(time_var.marking, [SimToken(0)], "There is one token with value 0")
 
     def test_updating(self):
         # tests if firing updates the time
@@ -370,7 +370,7 @@ class TestTimeVariable(unittest.TestCase):
 
         time_var = test_problem.var("time")
 
-        self.assertEquals(time_var.marking, [SimToken(2)], "There is one token with value 2")
+        self.assertEqual(time_var.marking, [SimToken(2)], "There is one token with value 2")
 
 
 class TestPriorities(unittest.TestCase):
