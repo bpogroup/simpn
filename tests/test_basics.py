@@ -1,6 +1,7 @@
 import unittest
 from simpn.simulator import SimProblem, SimToken, SimVarQueue
 import simpn.prototypes as prototype
+from simpn.function_registry import FunctionRegistry
 from random import randint
 
 
@@ -468,6 +469,81 @@ class TestPriorities(unittest.TestCase):
         self.assertGreater(start1_count, 10, "there are at least 10 starts of task 1")
         self.assertGreater(start2_count, 10, "there are at least 10 starts of task 2")
 
+
+class TestFunctionRegistry(unittest.TestCase):
+    def test_pure_function(self):
+        """
+        Tests the FunctionRegistry class to ensure it correctly generates unique function names
+        and handles different `behavior` cases: pure Python function, function with global variable access, method from an object.
+        """
+        def identity(x):
+            return x
+
+        fb = FunctionRegistry(sep=":")
+
+        # Test renaming of functions
+        func1 = fb.rename_callable(identity)  # Expected name: 'identity'
+        func2 = fb.rename_callable(identity)  # Expected name: 'identity:1'
+        func3 = fb.rename_callable(identity)  # Expected name: 'identity:2'
+
+        # Verify that the function names and outputs are correct
+        self.assertEqual(func1.__name__, "identity", "Function name for the first 'identity' function should be 'identity'.")
+        self.assertEqual(func1(5), 5, "Function 'identity' did not return the expected result.")
+        self.assertEqual(func2.__name__, "identity:1", "Function name for the second 'identity' function should be 'identity:1'.")
+        self.assertEqual(func2(5), 5, "Function 'identity:1' did not return the expected result.")
+        self.assertEqual(func3.__name__, "identity:2", "Function name for the third 'identity' function should be 'identity:2'.")
+        self.assertEqual(func3(5), 5, "Function 'identity:2' did not return the expected result.")
+
+    def test_function_with_global_var(self):
+        G = 3
+        def plus_global(x):
+            return x + G
+
+        # Create an instance of FunctionRegistry with ':' as the separator
+        fb = FunctionRegistry(sep=":")
+
+        func4 = fb.rename_callable(plus_global)  # Expected name: 'plus_global'
+        func5 = fb.rename_callable(plus_global)  # Expected name: 'plus_global:1'
+
+        self.assertEqual(func4.__name__, "plus_global", "Function name for the first 'plus_global' function should be 'plus_global'.")
+        self.assertEqual(func4(5), 8, "Function 'plus_global' did not return the expected result.")
+        self.assertEqual(func5.__name__, "plus_global:1", "Function name for the second 'plus_global' function should be 'plus_global:1'.")
+        self.assertEqual(func5(5), 8, "Function 'plus_global:1' did not return the expected result.")
+
+    def test_object_method(self):
+        fb = FunctionRegistry(sep=":")
+
+        class TestWithOOP:
+            def __init__(self, y):
+                self.y = y
+
+            def plus_attribute(self, x):
+                return x + self.y
+
+        # Create instances of TestWithOOP with different values for y
+        obj = TestWithOOP(10)
+        obj2 = TestWithOOP(100)
+        func6 = fb.rename_callable(obj.plus_attribute)  # Expected name: 'plus_attribute'
+        func7 = fb.rename_callable(obj.plus_attribute)  # Expected name: 'plus_attribute:1'
+        func8 = fb.rename_callable(obj2.plus_attribute)  # Expected name: 'plus_attribute:2'
+        func9 = fb.rename_callable(obj2.plus_attribute)  # Expected name: 'plus_attribute:3'
+
+        self.assertEqual(func6.__name__, "plus_attribute", "Function name for the first 'plus_attribute' function should be 'plus_attribute'.")
+        self.assertEqual(func6(5), 15, "Function 'plus_attribute' did not return the expected result.")
+        self.assertEqual(func7.__name__, "plus_attribute:1", "Function name for the second 'plus_attribute' function should be 'plus_attribute:1'.")
+        self.assertEqual(func7(5), 15, "Function 'plus_attribute:1' did not return the expected result.")
+
+        self.assertEqual(func8.__name__, "plus_attribute:2", "Function name for the third 'plus_attribute' function should be 'plus_attribute:2'.")
+        self.assertEqual(func8(5), 105, "Function 'plus_attribute:2' did not return the expected result.")
+        self.assertEqual(func9.__name__, "plus_attribute:3", "Function name for the fourth 'plus_attribute' function should be 'plus_attribute:3'.")
+        self.assertEqual(func9(5), 105, "Function 'plus_attribute:3' did not return the expected result.")
+
+        # Update obj2's attribute and verify the effect on the renamed function
+        obj2.y = 1000
+        self.assertEqual(func8.__name__, "plus_attribute:2", "Function name for 'plus_attribute:2' should remain 'plus_attribute:2' after updating obj2's attribute.")
+        self.assertEqual(func8(5), 1005, "Function 'plus_attribute:2' did not return the expected result after updating obj2's attribute.")
+        self.assertEqual(func9.__name__, "plus_attribute:3", "Function name for 'plus_attribute:3' should remain 'plus_attribute:3' after updating obj2's attribute.")
+        self.assertEqual(func9(5), 1005, "Function 'plus_attribute:3' did not return the expected result after updating obj2's attribute.")
 
 if __name__ == '__main__':
     unittest.main()

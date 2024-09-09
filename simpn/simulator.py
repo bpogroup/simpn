@@ -1,7 +1,7 @@
 import inspect
 from sortedcontainers import SortedList
 import simpn.visualisation as vis
-
+from simpn.function_registry import FunctionRegistry
 
 class SimVar:
     """
@@ -287,6 +287,7 @@ class SimProblem:
         self.clock = 0
         self._debugging = debugging
         self.clock_checkpoints = dict()
+        self.function_registry=FunctionRegistry()
 
     def __str__(self):
         result = ""
@@ -430,6 +431,9 @@ class SimProblem:
         :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.
         :return: a SimEvent with the specified parameters.
         """
+
+        # Manage the situation where the behavior is chained
+        behavior=self.function_registry.rename_callable(behavior)
 
         # Check name
         t_name = name
