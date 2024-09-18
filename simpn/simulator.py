@@ -278,8 +278,9 @@ class SimProblem:
     it can happen on any of these values.
 
     :param debugging: if set to True, produces more information for debugging purposes (defaults to True).
+    :param binding_priority: a function that takes a list of binding as input and returns the binding that will be selected in case there are multiple possible bindings to fire.
     """
-    def __init__(self, debugging=True):
+    def __init__(self, debugging=True, binding_priority=lambda bindings: bindings[0]):
         self.places = []
         self.events = []
         self.prototypes = []
@@ -287,6 +288,7 @@ class SimProblem:
         self.clock = 0
         self._debugging = debugging
         self.clock_checkpoints = dict()
+        self.binding_priority = binding_priority
 
     def __str__(self):
         result = ""
@@ -510,6 +512,14 @@ class SimProblem:
             raise TypeError("Prototype " + prototype.name + ": node with the same name already exists. Names must be unique.")
         self.prototypes.append(prototype)
 
+    def set_binding_priority(self, func):
+        """
+        Sets the binding priority function.
+
+        :param func: a function that takes a list of binding as input and returns the binding that will be selected in case there are multiple possible bindings to fire.
+        """
+        self.binding_priority = func
+
     @staticmethod
     def tokens_combinations(event):
         """
@@ -667,7 +677,7 @@ class SimProblem:
         """
         bindings = self.bindings()
         if len(bindings) > 0:
-            timed_binding = bindings[0]
+            timed_binding = self.binding_priority(bindings)
             self.fire(timed_binding)
             return timed_binding
         return None
@@ -688,7 +698,7 @@ class SimProblem:
         while self.clock <= duration and active_model:
             bindings = self.bindings()
             if len(bindings) > 0:
-                timed_binding = bindings[0]
+                timed_binding = self.binding_priority(bindings)
                 self.fire(timed_binding)
                 if reporter is not None:
                     if type(reporter) == list:

@@ -44,3 +44,8 @@ Version 1.2.5 (2024-09-08)
 --------------------------
 
 - [Minor feature] added variadic parameters for events.
+
+Version 1.2.6 (2024-09-18)
+--------------------------
+
+- [Minor feature] added the option to prioritize bindings.

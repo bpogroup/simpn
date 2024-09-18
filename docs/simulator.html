@@ -56,7 +56,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimEvent" title="simpn.simulator.SimEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimEvent</span></code></a>(_id[, guard, behavior, incoming, ...])</p></td>
 <td><p>A simulation event SimEvent that can happen when tokens are available on all of its incoming SimVar and its guard evaluates to True.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimProblem</span></code></a>([debugging])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimProblem</span></code></a>([debugging, binding_priority])</p></td>
 <td><p>A simulation problem SimProblem, which consists of a collection of simulation variables SimVar and a collection of simulation events SimEvent.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimToken" title="simpn.simulator.SimToken"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimToken</span></code></a>(value[, time, delay])</p></td>
@@ -156,7 +156,7 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debugging</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debugging=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binding_priority=&lt;function</span> <span class="pre">SimProblem.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem" title="Permalink to this definition">¶</a></dt>
 <dd><p>A simulation problem SimProblem, which consists of a collection of simulation variables SimVar and a collection of simulation events SimEvent.
 The simulation has a time and a marking of SimVar. A marking is an assignment of values to SimVar variables (also see SimVar).
 The difference between a normal Python variable and a SimVar is that: (1) a SimVar can have multiple values; and (2) these values have a simulation time
@@ -165,7 +165,10 @@ Python functions is that events can happen whenever its incoming SimVar paramete
 it can happen on any of these values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>debugging</strong> – if set to True, produces more information for debugging purposes (defaults to True).</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>debugging</strong> – if set to True, produces more information for debugging purposes (defaults to True).</p></li>
+<li><p><strong>binding_priority</strong> – a function that takes a list of binding as input and returns the binding that will be selected in case there are multiple possible bindings to fire.</p></li>
+</ul>
 </dd>
 </dl>
 <p><strong>Methods:</strong></p>
@@ -201,19 +204,22 @@ it can happen on any of these values.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.restore_checkpoint" title="simpn.simulator.SimProblem.restore_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore_checkpoint</span></code></a>(name)</p></td>
 <td><p>Restores the state of the simulator to the checkpoint with the given name.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.simulate" title="simpn.simulator.SimProblem.simulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulate</span></code></a>(duration[, reporter])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.set_binding_priority" title="simpn.simulator.SimProblem.set_binding_priority"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_binding_priority</span></code></a>(func)</p></td>
+<td><p>Sets the binding priority function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.simulate" title="simpn.simulator.SimProblem.simulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulate</span></code></a>(duration[, reporter])</p></td>
 <td><p>Executes a simulation run for the problem for the specified duration.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.step" title="simpn.simulator.SimProblem.step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">step</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.step" title="simpn.simulator.SimProblem.step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">step</span></code></a>()</p></td>
 <td><p>Executes a single step of the simulation.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.store_checkpoint" title="simpn.simulator.SimProblem.store_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store_checkpoint</span></code></a>(name)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.store_checkpoint" title="simpn.simulator.SimProblem.store_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store_checkpoint</span></code></a>(name)</p></td>
 <td><p>Stores the state of the simulator as a checkpoint with the given name.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.tokens_combinations" title="simpn.simulator.SimProblem.tokens_combinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tokens_combinations</span></code></a>(event)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.tokens_combinations" title="simpn.simulator.SimProblem.tokens_combinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tokens_combinations</span></code></a>(event)</p></td>
 <td><p>Creates a list of token combinations that are available to the specified event.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.var" title="simpn.simulator.SimProblem.var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">var</span></code></a>(name)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.var" title="simpn.simulator.SimProblem.var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">var</span></code></a>(name)</p></td>
 <td><p>Returns the SimVar with the given name.</p></td>
 </tr>
 </tbody>
@@ -320,6 +326,17 @@ Binding is a tuple ([(place, token), (place, token), …], time, event)</p>
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.restore_checkpoint">
 <span class="sig-name descname"><span class="pre">restore_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.restore_checkpoint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restores the state of the simulator to the checkpoint with the given name.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.set_binding_priority">
+<span class="sig-name descname"><span class="pre">set_binding_priority</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.set_binding_priority" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the binding priority function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> – a function that takes a list of binding as input and returns the binding that will be selected in case there are multiple possible bindings to fire.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
