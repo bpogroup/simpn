@@ -54,3 +54,8 @@ Version 1.2.7 (2024-11-06)
 --------------------------
 
 - [Minor feature] added the option to make nodes invisible in the visualization.
+
+Version 1.2.8 (2024-11-06)
+--------------------------
+
+- [Bugfix] visualization of time variable did not work correctly.

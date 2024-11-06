@@ -143,6 +143,7 @@ class SimVarTime(SimVar):
         self._id = SimVarTime.TIME_ID
         self.checkpoints = dict()
         self.problem = problem
+        self.visualize = True
 
     @property
     def marking(self):
