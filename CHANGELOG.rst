@@ -49,3 +49,8 @@ Version 1.2.6 (2024-09-18)
 --------------------------
 
 - [Minor feature] added the option to prioritize bindings.
+
+Version 1.2.7 (2024-11-06)
+--------------------------
+
+- [Minor feature] added the option to make nodes invisible in the visualization.

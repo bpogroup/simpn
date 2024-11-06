@@ -18,6 +18,7 @@ class Prototype:
         self.name = name
         self.places = []
         self.events = []
+        self.visualize = True
 
     def add_var(self, var):
         self.places.append(var)
@@ -31,6 +32,8 @@ class Prototype:
     def get_visualisation(self):
         raise NotImplementedError("Method get_visualisation must be implemented in subclass.")
 
+    def set_invisible(self):
+        self.visualize = False
 
 class BPMNStartEvent(Prototype):  
 

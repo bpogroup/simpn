@@ -21,6 +21,7 @@ class SimVar:
         self.marking = SortedList(key=priority)
         self.checkpoints = dict()
         self.queue = SimVarQueue(self)
+        self.visualize = True
 
     def put(self, value, time=0):
         """
@@ -80,6 +81,9 @@ class SimVar:
 
     def get_visualisation(self):
         return vis.PlaceViz(self)
+
+    def set_invisible(self):
+        self.visualize = False
 
 class SimVarQueue(SimVar):
     """
@@ -193,6 +197,7 @@ class SimEvent:
         else:
             self.outgoing = outgoing
         self.behavior = behavior
+        self.visualize = True
 
     def set_guard(self, func):
         """
@@ -229,6 +234,9 @@ class SimEvent:
 
     def get_visualisation(self):
         return vis.TransitionViz(self)
+
+    def set_invisible(self):
+        self.visualize = False
 
 class SimToken:
     """

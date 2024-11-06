@@ -255,18 +255,19 @@ class Visualisation:
         element_to_prototype = dict()  # mapping of prototype element ids to prototype ids
         viznodes_with_edges = []
         for prototype in self._problem.prototypes:
-            prototype_viznode = prototype.get_visualisation()
-            self._nodes[prototype.get_id()] = prototype_viznode
-            viznodes_with_edges.append(prototype_viznode)
-            for event in prototype.events:
-                element_to_prototype[event.get_id()] = prototype.get_id()
-            for place in prototype.places:
-                element_to_prototype[place.get_id()] = prototype.get_id()
+            if prototype.visualize:
+                prototype_viznode = prototype.get_visualisation()
+                self._nodes[prototype.get_id()] = prototype_viznode
+                viznodes_with_edges.append(prototype_viznode)
+                for event in prototype.events:
+                    element_to_prototype[event.get_id()] = prototype.get_id()
+                for place in prototype.places:
+                    element_to_prototype[place.get_id()] = prototype.get_id()
         for var in self._problem.places:
-            if var.get_id() not in element_to_prototype:
+            if var.visualize and var.get_id() not in element_to_prototype:
                 self._nodes[var.get_id()] = var.get_visualisation()
         for event in self._problem.events:
-            if event.get_id() not in element_to_prototype:
+            if event.visualize and event.get_id() not in element_to_prototype:
                 event_viznode = event.get_visualisation()
                 self._nodes[event.get_id()] = event_viznode
                 viznodes_with_edges.append(event_viznode)                
@@ -279,16 +280,18 @@ class Visualisation:
                     node_id = node_id[:-len(".queue")]
                 if node_id in element_to_prototype:
                     node_id = element_to_prototype[node_id]
-                other_viznode = self._nodes[node_id]
-                self._edges.append(Edge(start=(other_viznode, Hook.RIGHT), end=(viznode, Hook.LEFT)))
+                if node_id in self._nodes:
+                    other_viznode = self._nodes[node_id]
+                    self._edges.append(Edge(start=(other_viznode, Hook.RIGHT), end=(viznode, Hook.LEFT)))
             for outgoing in viznode._model_node.outgoing:
                 node_id = outgoing.get_id()
                 if node_id.endswith(".queue"):
                     node_id = node_id[:-len(".queue")]
                 if node_id in element_to_prototype:
                     node_id = element_to_prototype[node_id]
-                other_viznode = self._nodes[node_id]
-                self._edges.append(Edge(start=(viznode, Hook.RIGHT), end=(other_viznode, Hook.LEFT)))
+                if node_id in self._nodes:
+                    other_viznode = self._nodes[node_id]
+                    self._edges.append(Edge(start=(viznode, Hook.RIGHT), end=(other_viznode, Hook.LEFT)))
         layout_loaded = False
         if layout_file is not None:
             try:
