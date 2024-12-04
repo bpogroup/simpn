@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Simulator &#8212; SimPN  documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/readable.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d7e2fa82" />
+    <link rel="stylesheet" type="text/css" href="_static/readable.css?v=e058d051" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Reporters" href="reporters.html" />
@@ -22,7 +22,7 @@
   
   
 
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -49,7 +49,7 @@
           <div class="body" role="main">
             
   <section id="module-simpn.simulator">
-<span id="simulator"></span><h1>Simulator<a class="headerlink" href="#module-simpn.simulator" title="Permalink to this heading">¶</a></h1>
+<span id="simulator"></span><h1>Simulator<a class="headerlink" href="#module-simpn.simulator" title="Link to this heading">¶</a></h1>
 <p><strong>Classes:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
@@ -83,7 +83,7 @@
 </table>
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimEvent" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimEvent" title="Link to this definition">¶</a></dt>
 <dd><p>A simulation event SimEvent that can happen when tokens are available on all of its
 incoming SimVar and its guard evaluates to True. When it happens, it consumes a token from each
 of its incoming SimVar and produces a token on each of its outgoing places according to <cite>behavior</cite>.
@@ -121,7 +121,7 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimEvent.set_guard">
-<span class="sig-name descname"><span class="pre">set_guard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimEvent.set_guard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_guard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimEvent.set_guard" title="Link to this definition">¶</a></dt>
 <dd><p>Set the guard function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -132,7 +132,7 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimEvent.set_inflow">
-<span class="sig-name descname"><span class="pre">set_inflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimEvent.set_inflow" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_inflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimEvent.set_inflow" title="Link to this definition">¶</a></dt>
 <dd><p>Set the incoming SimVar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -143,7 +143,7 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimEvent.set_outflow">
-<span class="sig-name descname"><span class="pre">set_outflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimEvent.set_outflow" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_outflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimEvent.set_outflow" title="Link to this definition">¶</a></dt>
 <dd><p>Set the outgoing SimVar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -156,7 +156,7 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debugging=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binding_priority=&lt;function</span> <span class="pre">SimProblem.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debugging=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binding_priority=&lt;function</span> <span class="pre">SimProblem.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem" title="Link to this definition">¶</a></dt>
 <dd><p>A simulation problem SimProblem, which consists of a collection of simulation variables SimVar and a collection of simulation events SimEvent.
 The simulation has a time and a marking of SimVar. A marking is an assignment of values to SimVar variables (also see SimVar).
 The difference between a normal Python variable and a SimVar is that: (1) a SimVar can have multiple values; and (2) these values have a simulation time
@@ -226,7 +226,7 @@ it can happen on any of these values.</p>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_event">
-<span class="sig-name descname"><span class="pre">add_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_event" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_event" title="Link to this definition">¶</a></dt>
 <dd><p>Creates a new SimEvent with the specified parameters (also see SimEvent). Adds the SimEvent to the problem and returns it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -246,25 +246,25 @@ it can happen on any of these values.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_place">
-<span class="sig-name descname"><span class="pre">add_place</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_place" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_place</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_place" title="Link to this definition">¶</a></dt>
 <dd><p>Adds a SimVar to the problem. This function is a wrapper around add_var for people with a Petri-net background.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_prototype_var">
-<span class="sig-name descname"><span class="pre">add_prototype_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_prototype_var" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_prototype_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_prototype_var" title="Link to this definition">¶</a></dt>
 <dd><p>Adds the SimVar to the problem. This function should only be used for prototypes.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_transition">
-<span class="sig-name descname"><span class="pre">add_transition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_transition" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_transition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_transition" title="Link to this definition">¶</a></dt>
 <dd><p>Creates a new SimEvent with the specified parameters. This function is a wrapper around add_event for people with a Petri-net background.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_var">
-<span class="sig-name descname"><span class="pre">add_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority=&lt;function</span> <span class="pre">SimProblem.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_var" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority=&lt;function</span> <span class="pre">SimProblem.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_var" title="Link to this definition">¶</a></dt>
 <dd><p>Creates a new SimVar with the specified name as identifier. Adds the SimVar to the problem and returns it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -281,7 +281,7 @@ it can happen on any of these values.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.bindings">
-<span class="sig-name descname"><span class="pre">bindings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.bindings" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">bindings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.bindings" title="Link to this definition">¶</a></dt>
 <dd><p>Calculates the set of timed bindings that is enabled over all events in the problem.
 Each binding is a tuple ([(place, token), (place, token), …], time, event) that represents a single enabling binding.
 If no timed binding is enabled at the current clock time, updates the current clock time to the earliest time at which there is.
@@ -290,7 +290,7 @@ If no timed binding is enabled at the current clock time, updates the current cl
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.event_bindings">
-<span class="sig-name descname"><span class="pre">event_bindings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.event_bindings" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">event_bindings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.event_bindings" title="Link to this definition">¶</a></dt>
 <dd><p>Calculates the set of bindings that enables the given event.
 Each binding is a tuple ([(place, token), (place, token), …], time) that represents a single enabling binding.
 A binding is
@@ -311,26 +311,26 @@ the possible bindings are ([(a, 1&#64;2), (b, 2&#64;3)], 3) and ([(a, 1&#64;2), 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.fire">
-<span class="sig-name descname"><span class="pre">fire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.fire" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">fire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.fire" title="Link to this definition">¶</a></dt>
 <dd><p>Fires the specified timed binding.
 Binding is a tuple ([(place, token), (place, token), …], time, event)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.place">
-<span class="sig-name descname"><span class="pre">place</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.place" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">place</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.place" title="Link to this definition">¶</a></dt>
 <dd><p>Returns the SimVar with the given name. This function is a wrapper around var for people with a Petri-net background.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.restore_checkpoint">
-<span class="sig-name descname"><span class="pre">restore_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.restore_checkpoint" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">restore_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.restore_checkpoint" title="Link to this definition">¶</a></dt>
 <dd><p>Restores the state of the simulator to the checkpoint with the given name.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.set_binding_priority">
-<span class="sig-name descname"><span class="pre">set_binding_priority</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.set_binding_priority" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_binding_priority</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.set_binding_priority" title="Link to this definition">¶</a></dt>
 <dd><p>Sets the binding priority function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -341,7 +341,7 @@ Binding is a tuple ([(place, token), (place, token), …], time, event)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.simulate">
-<span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reporter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.simulate" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reporter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.simulate" title="Link to this definition">¶</a></dt>
 <dd><p>Executes a simulation run for the problem for the specified duration.
 A simulation run executes events until this is no longer possible, or until the specified duration.
 If at any moment multiple events can happen, one is selected at random.
@@ -360,7 +360,7 @@ each time a event happens (for a binding at a moment in simulation time).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.step">
-<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.step" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.step" title="Link to this definition">¶</a></dt>
 <dd><p>Executes a single step of the simulation.
 If multiple events can happen, one is selected at random.
 Returns the binding that happened, or None if no event could happen.</p>
@@ -368,13 +368,13 @@ Returns the binding that happened, or None if no event could happen.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.store_checkpoint">
-<span class="sig-name descname"><span class="pre">store_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.store_checkpoint" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">store_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.store_checkpoint" title="Link to this definition">¶</a></dt>
 <dd><p>Stores the state of the simulator as a checkpoint with the given name. The checkpoint can be restored later with restore_checkpoint.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.tokens_combinations">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tokens_combinations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.tokens_combinations" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tokens_combinations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.tokens_combinations" title="Link to this definition">¶</a></dt>
 <dd><p>Creates a list of token combinations that are available to the specified event.
 These are combinations of tokens that are on the incoming SimVar of the event.
 For example, if a event has incoming SimVar a and b with tokens 1&#64;0 on a and 2&#64;0, 3&#64;0 on b,
@@ -391,7 +391,7 @@ the possible combinations are [(a, 1&#64;0), (b, 2&#64;0)] and [(a, 1&#64;0), (b
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.var">
-<span class="sig-name descname"><span class="pre">var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.var" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.var" title="Link to this definition">¶</a></dt>
 <dd><p>Returns the SimVar with the given name.
 Raises an error if no such SimVar exists.</p>
 <dl class="field-list simple">
@@ -408,7 +408,7 @@ Raises an error if no such SimVar exists.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimToken">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimToken</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimToken" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimToken</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimToken" title="Link to this definition">¶</a></dt>
 <dd><p>A token SimToken, which is a possible value of a SimVar. A token has a value and the time at which this value is available in a SimVar.
 When the SimToken is used as the return value of an event behavior, the delay can be used. This represents the delay with which the value will be available.
 The value will then be available at &lt;time of event&gt; + &lt;delay&gt;.</p>
@@ -425,7 +425,7 @@ The value will then be available at &lt;time of event&gt; + &lt;delay&gt;.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimVar">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority=&lt;function</span> <span class="pre">SimVar.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority=&lt;function</span> <span class="pre">SimVar.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar" title="Link to this definition">¶</a></dt>
 <dd><p>A simulation variable SimVar has an identifier and a marking.
 A simulation variable can have multiple values. These values are available at particular times.
 For example, a variable van have the value 1 at time 0 (denoted as 1&#64;0) and also 2&#64;0.
@@ -462,7 +462,7 @@ The functions put and remove, put and remove tokens in such a way that the order
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVar.add_token">
-<span class="sig-name descname"><span class="pre">add_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.add_token" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.add_token" title="Link to this definition">¶</a></dt>
 <dd><p>Adds a token value in the SimVar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -476,7 +476,7 @@ The functions put and remove, put and remove tokens in such a way that the order
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVar.put">
-<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.put" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.put" title="Link to this definition">¶</a></dt>
 <dd><p>Put a token value in the SimVar at a particular time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -490,7 +490,7 @@ The functions put and remove, put and remove tokens in such a way that the order
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVar.remove_token">
-<span class="sig-name descname"><span class="pre">remove_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.remove_token" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">remove_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.remove_token" title="Link to this definition">¶</a></dt>
 <dd><p>Removes a token value (once) from the SimVar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -501,13 +501,13 @@ The functions put and remove, put and remove tokens in such a way that the order
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVar.restore_checkpoint">
-<span class="sig-name descname"><span class="pre">restore_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.restore_checkpoint" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">restore_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.restore_checkpoint" title="Link to this definition">¶</a></dt>
 <dd><p>Restores the SimVar marking from the checkpoint with the given name.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVar.store_checkpoint">
-<span class="sig-name descname"><span class="pre">store_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.store_checkpoint" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">store_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar.store_checkpoint" title="Link to this definition">¶</a></dt>
 <dd><p>Stores a checkpoint of the SimVar marking with the given name. The checkpoint can be restored later with restore_checkpoint.</p>
 </dd></dl>
 
@@ -515,7 +515,7 @@ The functions put and remove, put and remove tokens in such a way that the order
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimVarQueue">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVarQueue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simvar</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarQueue" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVarQueue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simvar</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarQueue" title="Link to this definition">¶</a></dt>
 <dd><p>A simulation variable that contains the queue of tokens from another SimVar.
 The identifier of this SimVar is &lt;simvar_id&gt;.queue, where simvar_id is the _id of the SimVar of which it contains the queue.
 Regular SimVar have a queue property that refers to their SimVarQueue variable.</p>
@@ -535,7 +535,7 @@ Regular SimVar have a queue property that refers to their SimVarQueue variable.<
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVarQueue.add_token">
-<span class="sig-name descname"><span class="pre">add_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarQueue.add_token" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarQueue.add_token" title="Link to this definition">¶</a></dt>
 <dd><p>Adds a token value in the SimVar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -549,7 +549,7 @@ Regular SimVar have a queue property that refers to their SimVarQueue variable.<
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVarQueue.put">
-<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarQueue.put" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarQueue.put" title="Link to this definition">¶</a></dt>
 <dd><p>Put a token value in the SimVar at a particular time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -563,7 +563,7 @@ Regular SimVar have a queue property that refers to their SimVarQueue variable.<
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVarQueue.remove_token">
-<span class="sig-name descname"><span class="pre">remove_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarQueue.remove_token" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">remove_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarQueue.remove_token" title="Link to this definition">¶</a></dt>
 <dd><p>Removes a token value (once) from the SimVar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -576,7 +576,7 @@ Regular SimVar have a queue property that refers to their SimVarQueue variable.<
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimVarTime">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVarTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">problem</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVarTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">problem</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime" title="Link to this definition">¶</a></dt>
 <dd><p>A simulation variable that contains the simulation time.
 This variable only always has a single token value, which is the simulation time.
 The identifier of this SimVar is ‘time’, which consequently is a reserved name.</p>
@@ -596,7 +596,7 @@ The identifier of this SimVar is ‘time’, which consequently is a reserved na
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVarTime.add_token">
-<span class="sig-name descname"><span class="pre">add_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime.add_token" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime.add_token" title="Link to this definition">¶</a></dt>
 <dd><p>Adds a token value in the SimVar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -610,7 +610,7 @@ The identifier of this SimVar is ‘time’, which consequently is a reserved na
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVarTime.put">
-<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime.put" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime.put" title="Link to this definition">¶</a></dt>
 <dd><p>Put a token value in the SimVar at a particular time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -624,7 +624,7 @@ The identifier of this SimVar is ‘time’, which consequently is a reserved na
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimVarTime.remove_token">
-<span class="sig-name descname"><span class="pre">remove_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime.remove_token" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">remove_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVarTime.remove_token" title="Link to this definition">¶</a></dt>
 <dd><p>Removes a token value (once) from the SimVar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -637,7 +637,7 @@ The identifier of this SimVar is ‘time’, which consequently is a reserved na
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpn.simulator.event">
-<span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><span class="pre">SimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.event" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><span class="pre">SimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.event" title="Link to this definition">¶</a></dt>
 <dd><p>A decorator that can be used to turn a Python function into a SimEvent.
 The event will be added to the specified sim_problem.
 If they do not yet exist, SimVar will be added for each parameter of the Python function and for each element in outflow.
@@ -666,7 +666,7 @@ The name of the SimEvent will be the name of the Python function.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h3><a href="index.html">Table of Contents</a></h3>
 <ul class="current">
@@ -683,7 +683,7 @@ The name of the SimEvent will be the name of the Python function.</p>
 <li class="toctree-l1"><a class="reference internal" href="teaching.html">Teaching Material</a></li>
 </ul>
 
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -691,7 +691,7 @@ The name of the SimEvent will be the name of the Python function.</p>
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
@@ -699,7 +699,7 @@ The name of the SimEvent will be the name of the Python function.</p>
     </div>
   <div class="footer">
     &copy; Copyright 2023, Remco Dijkman.
-    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.1.3.
   </div>
   
   </body>

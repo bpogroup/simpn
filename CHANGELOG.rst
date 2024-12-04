@@ -59,3 +59,8 @@ Version 1.2.8 (2024-11-06)
 --------------------------
 
 - [Bugfix] visualization of time variable did not work correctly.
+
+Version 1.2.9 (2024-12-04)
+--------------------------
+
+- [Bugfix] solved package dependency problems.
