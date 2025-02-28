@@ -7,7 +7,7 @@
 from simpn.simulator import SimProblem
 from simpn.simulator import SimToken
 from random import expovariate as exp, uniform
-from simpn.reporters import SimpleReporter
+from simpn.reporters import SimpleReporter, ProcessReporter
 import simpn.prototypes as prototype
 from simpn.visualisation import Visualisation
 
@@ -24,12 +24,12 @@ done = carwash.add_var("done")
 time_var = carwash.var("time")
 
 
-prototype.BPMNStartEvent(carwash, [], [waiting], "arrive", lambda: exp(100))
+prototype.BPMNStartEvent(carwash, [], [waiting], "arrive", lambda: exp(100), behavior=lambda : [SimToken({'tested': 0})]) #tokens enter the system with a flag set to false (meaning, they have not yet waited too long and decided whether to leave or not)
 
 
 def leave_condition(t, c1_queue, left_queue):
     for c in c1_queue:
-        if t - c.time > 0.5:
+        if c.value[1]['tested'] == 0 and t - c.time > 0.5: #c[1] contains the value of the token (c[0] is the token ID, used internally) and in this case it is a dictionary with a single key 'tested'
             return True
     return False
 
@@ -37,7 +37,8 @@ def leave_condition(t, c1_queue, left_queue):
 
 def leave_queue(t, c1_queue, left_queue):
     for c in c1_queue:
-        if t - c.time > 0.5:
+        if c.value[1]['tested'] == 0 and t - c.time > 0.5:
+            c.value[1]['tested'] = 1
             percentage = uniform(1,100)
             if percentage >= 80:
                 c1_queue.remove(c)
@@ -51,8 +52,10 @@ prototype.BPMNTask(carwash, [waiting, machine], [done, machine],"wash car", lamb
 prototype.BPMNEndEvent(carwash, [done], [], "leave after service")
 prototype.BPMNEndEvent(carwash, [left], [], "leave without service")
 
+reporter = ProcessReporter()
+carwash.simulate(10, reporter)
 
-#carwash.simulate(100, SimpleReporter())
-m = Visualisation(carwash, "./layout4.txt")
-m.show()
-m.save_layout("./layout4.txt")
+reporter.print_result()
+#m = Visualisation(carwash, "./layout4.txt")
+#m.show()
+#m.save_layout("./layout4.txt")
