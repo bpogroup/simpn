@@ -16,9 +16,15 @@ employee = agency.add_var("employee")
 employee.put("e1")
 
 # Define events.
-prototype.BPMNStartEvent(agency, [], [waiting], "arrive", lambda: exp(4)*60)
+def interarrival_time():
+  return exp(4)*60
 
-prototype.BPMNTask(agency, [waiting, employee], [done, employee], "answer_call", lambda c, r: [SimToken((c, r), delay=uniform(10, 15))])
+prototype.BPMNStartEvent(agency, [], [waiting], "arrive", interarrival_time)
+
+def start(c, r):
+  return [SimToken((c, r), delay=uniform(10, 15))]
+
+prototype.BPMNTask(agency, [waiting, employee], [done, employee], "answer_call", start)
 
 prototype.BPMNEndEvent(agency, [done], [], "complete")
 

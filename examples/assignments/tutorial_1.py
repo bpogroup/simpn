@@ -15,7 +15,7 @@ busy = agency.add_var("busy")
 arrival.put(1)
 
 # Define resources.
-employee = agency.add_var("emplpyee")
+employee = agency.add_var("employee")
 employee.put("e1")
 
 # Define events.
