@@ -28,7 +28,7 @@ pump.put("p1")
 
 # Define events.
 def interarrival_time():
-  return exp(4)
+  return exp(1/4)
 
 prototype.BPMNStartEvent(station, [], [to_check_queue], "start", interarrival_time)
 
