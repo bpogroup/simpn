@@ -64,3 +64,8 @@ Version 1.2.9 (2024-12-04)
 --------------------------
 
 - [Bugfix] solved package dependency problems.
+
+Version 1.2.10 (2025-05-09)
+--------------------------
+
+- [Monor feature] added BPMN exclusive split and join gateways.

@@ -330,3 +330,145 @@ class BPMNFlow(SimVar):
 
     def get_visualisation(self):
         return self.BPMNFlowViz(self)
+
+
+class BPMNExclusiveSplitGateway(Prototype):
+    def __init__(self, model, incoming, outgoing, label, behavior):
+        """
+        Generates a composition of SimVar and SimEvent that represents a BPMN exclusive split gateway.
+        A choice has a single incoming flow (SimVar) and multiple outgoing flows (SimVar) to choose from.
+        A behavior function must be specified that determines which outgoing flow is chosen.
+        The behavior function must take a single input parameter, which is the incoming flow.
+        The behavior function must return a list of SimToken, which are put on the outgoing flows. For outgoing flows that are not chosen, the behavior function must None. Exactly one SimToken must be returned for each outgoing flow.
+        
+        
+        :param model: the SimProblem to which the event composition must be added.
+        :param incoming: a list with exactly one SimVar: a case SimVar.
+        :param outgoing: a list with at least two SimVar: a case SimVar.
+        :param label: the label on the gateway.
+        :param behavior: specifies the choice behavior of the gateway.
+        """
+        super().__init__(model, incoming, outgoing, label)
+
+        if len(incoming) != 1:
+            raise TypeError("Gateway " + label + ": must have at exactly one input parameter for cases.")
+        if len(outgoing) < 2:
+            raise TypeError("Gateway " + label + ": must have at least two output parameter for cases.")
+        if not callable(behavior):
+            raise TypeError("Gateway " + label + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
+        if len(inspect.signature(behavior).parameters) != 1:
+            raise TypeError("Gateway " + label + ": the behavior function must have at exactly one input parameter for cases.")
+
+        def behavior_encapsulation(c):
+            # encapsulates the behavior to check if the behavior function returns a list of SimToken with the same length as the number of outgoing flows.
+            result = behavior(c)
+            if len(result) != len(outgoing):
+                raise TypeError("Gateway " + label + ": the behavior function must return a list of SimToken with the same length as the number of outgoing flows.")
+            count_tokens = 0
+            for i in range(len(result)):
+                if result[i] is not None:
+                    if not isinstance(result[i], SimToken):
+                        raise TypeError("Gateway " + label + ": the behavior function must return a list of SimToken. However, element " + str(i) + " is not a SimToken.")
+                    count_tokens += 1
+            if count_tokens != 1:
+                raise TypeError("Gateway " + label + ": the behavior function must return a list of SimToken with exactly one SimToken. However, " + str(count_tokens) + " SimTokens were returned.")
+            return result
+        result = model.add_event(incoming, outgoing, behavior_encapsulation, name=label + "<xor_split>")
+        self.add_event(result)
+
+        model.add_prototype(self)
+
+    class BPMNExclusiveSplitGatewayViz(vis.Node):
+        def __init__(self, model_node):
+            super().__init__(model_node)
+        
+        def draw(self, screen):
+            # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
+            x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
+            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
+            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
+            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+
+            # # draw a big X inside the diamond
+            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.3*self._height), (x_pos + 0.65*self._width, y_pos + 0.7*self._height), 4*vis.LINE_WIDTH)
+            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.7*self._height), (x_pos + 0.65*self._width, y_pos + 0.3*self._height), 4*vis.LINE_WIDTH)
+
+            # draw label
+            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+            text_x_pos = self._pos[0] - int(label.get_width()/2)
+            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+            screen.blit(label, (text_x_pos, text_y_pos))
+
+    def get_visualisation(self):
+        return self.BPMNExclusiveSplitGatewayViz(self)
+
+
+class BPMNExclusiveJoinGateway(Prototype):
+    def __init__(self, model, incoming, outgoing, label):
+        """
+        Generates a composition of SimVar and SimEvent that represents a BPMN exclusive join gateway.
+        A join gateway has multiple incoming flows and one outgoing flow.        
+        
+        :param model: the SimProblem to which the event composition must be added.
+        :param incoming: a list with exactly one SimVar: a case SimVar.
+        :param outgoing: a list with at least two SimVar: a case SimVar.
+        :param label: the label on the gateway.
+        """
+        super().__init__(model, incoming, outgoing, label)
+
+        if len(incoming) < 2:
+            raise TypeError("Gateway " + label + ": must have multiple input parameter for cases.")
+        if len(outgoing) != 1:
+            raise TypeError("Gateway " + label + ": must have exactly one output parameter for cases.")
+
+        self._joiner = model.add_var(label + "_joiner")
+        self.add_var(self._joiner)
+
+        for i in range(len(incoming)):
+            # create an event, connect it to the incoming flow and the joiner, add it to the model and to self
+            result = model.add_event([incoming[i]], [self._joiner], lambda c: [SimToken(c)], name=label + "<joiner" + str(i) + ">")
+            self.add_event(result)
+        # create an event, connect it to the joiner and the outgoing flow, add it to the model and to self
+        resutl = model.add_event([self._joiner], outgoing, lambda c: [SimToken(c)], name=label + "<joiner>")
+        self.add_event(resutl)
+
+        model.add_prototype(self)
+
+    class BPMNExclusiveJoinGatewayViz(vis.Node):
+        def __init__(self, model_node):
+            super().__init__(model_node)
+        
+        def draw(self, screen):
+            # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
+            x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
+            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
+            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
+            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+            bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
+
+            # # draw a big X inside the diamond
+            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.3*self._height), (x_pos + 0.65*self._width, y_pos + 0.7*self._height), 4*vis.LINE_WIDTH)
+            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.7*self._height), (x_pos + 0.65*self._width, y_pos + 0.3*self._height), 4*vis.LINE_WIDTH)
+
+            # draw label
+            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+            text_x_pos = self._pos[0] - int(label.get_width()/2)
+            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+            screen.blit(label, (text_x_pos, text_y_pos))
+            
+            # draw marking
+            mstr = "["
+            ti = 0
+            for token in self._model_node._joiner.marking:
+                mstr += str(token.value) + "@" + str(round(token.time, 2))
+                if ti < len(self._model_node._joiner.marking) - 1:
+                    mstr += ", "
+                ti += 1
+            mstr += "]"
+            label = bold_font.render(mstr, True, vis.TUE_RED)
+            text_x_pos = self._pos[0] - int(label.get_width()/2)
+            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
+            screen.blit(label, (text_x_pos, text_y_pos))        
+
+    def get_visualisation(self):
+        return self.BPMNExclusiveJoinGatewayViz(self)

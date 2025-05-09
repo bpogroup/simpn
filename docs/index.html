@@ -62,7 +62,7 @@
 <p>To illustrate how SimPN works, let’s consider a simulation model of a cash register at a small shop,
 which we can initialize as follows. This imports parts from the SimPN library that we use here
 and further on in the example.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simpn.simulator</span> <span class="kn">import</span> <span class="n">SimProblem</span><span class="p">,</span> <span class="n">SimToken</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">simpn.simulator</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimProblem</span><span class="p">,</span> <span class="n">SimToken</span>
 
 <span class="n">shop</span> <span class="o">=</span> <span class="n">SimProblem</span><span class="p">()</span>
 </pre></div>
@@ -98,7 +98,7 @@ You can probably understand why we did that: we now have one cassier and three c
 We define simulation events as Python functions that take a system state and return a new system state.
 Remember that the system state is defined in terms of variables, so an event function takes (values of) state variables as
 input and produces (values of) state variables as output.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="n">customer</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="n">customer</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">SimToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)]</span>
 
 <span class="n">shop</span><span class="o">.</span><span class="n">add_event</span><span class="p">([</span><span class="n">customers</span><span class="p">,</span> <span class="n">resources</span><span class="p">],</span> <span class="p">[</span><span class="n">resources</span><span class="p">],</span> <span class="n">process</span><span class="p">)</span>
@@ -137,7 +137,7 @@ In our example we will run the simulation for 10. (Since we only have 3 customer
 takes 0.75 to process, this should be more than enough.) We will use a <cite>SimpleReporter</cite> from the
 reporters package to report the result. This reporter simply prints each event that happens
 to the standard output.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simpn.reporters</span> <span class="kn">import</span> <span class="n">SimpleReporter</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">simpn.reporters</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleReporter</span>
 
 <span class="n">shop</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">SimpleReporter</span><span class="p">())</span>
 </pre></div>
@@ -154,14 +154,14 @@ in the variable <cite>resources</cite> again after 0.75. Accordingly, processing
 </pre></div>
 </div>
 <p>For completeness, the full code of the example is:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simpn.simulator</span> <span class="kn">import</span> <span class="n">SimProblem</span><span class="p">,</span> <span class="n">SimToken</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">simpn.simulator</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimProblem</span><span class="p">,</span> <span class="n">SimToken</span>
 
 <span class="n">shop</span> <span class="o">=</span> <span class="n">SimProblem</span><span class="p">()</span>
 
 <span class="n">resources</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">&quot;resources&quot;</span><span class="p">)</span>
 <span class="n">customers</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">&quot;customers&quot;</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="n">customer</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="n">customer</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">SimToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)]</span>
 
 <span class="n">shop</span><span class="o">.</span><span class="n">add_event</span><span class="p">([</span><span class="n">customers</span><span class="p">,</span> <span class="n">resources</span><span class="p">],</span> <span class="p">[</span><span class="n">resources</span><span class="p">],</span> <span class="n">process</span><span class="p">)</span>
@@ -171,7 +171,7 @@ in the variable <cite>resources</cite> again after 0.75. Accordingly, processing
 <span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
 <span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c3&quot;</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">simpn.reporters</span> <span class="kn">import</span> <span class="n">SimpleReporter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simpn.reporters</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleReporter</span>
 
 <span class="n">shop</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">SimpleReporter</span><span class="p">())</span>
 </pre></div>
@@ -182,7 +182,7 @@ in the variable <cite>resources</cite> again after 0.75. Accordingly, processing
 <h1>Visualizing the Model<a class="headerlink" href="#visualizing-the-model" title="Link to this heading">¶</a></h1>
 <p>To help check whether the model is correct, it is possible to visualize it. To this end, there is a Visualisation class.
 You can simply create an instance of this class and call the <cite>show</cite> method to show the model as follows.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simpn.visualisation</span> <span class="kn">import</span> <span class="n">Visualisation</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">simpn.visualisation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Visualisation</span>
 
 <span class="n">v</span> <span class="o">=</span> <span class="n">Visualisation</span><span class="p">(</span><span class="n">shop</span><span class="p">)</span>
 <span class="n">v</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
