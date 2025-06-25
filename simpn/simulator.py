@@ -259,7 +259,22 @@ class SimToken:
         return self.value == token.value and self.time == token.time
 
     def __lt__(self, token):
-        return (self.value, self.time) < (token.value, token.time)
+        if isinstance(token.value, dict) and isinstance(self.value, dict):
+            return self.time < token.time or (self.time == token.time and list(self.value.values()) < list(token.value.values()))
+        elif isinstance(token.value, (str, int, float, complex, bool)) and isinstance(self.value, (str, int, float, complex, bool)):
+            return self.time < token.time or (self.time == token.time and self.value < token.value)
+        elif isinstance(token.value, (list, tuple)) and isinstance(self.value, (list, tuple)):
+            return self.time < token.time or (self.time == token.time and str(self.value) < str(token.value)) #relied on string just to impose a strict ordering
+        elif isinstance(self.value, dict) and isinstance(token.value, (str, int, float, complex, bool, list, tuple)):
+            return self.time < token.time or (self.time == token.time and list(self.value.values()) < [token.value])
+        elif isinstance(self.value, (str, int, float, complex, bool, list, tuple)) and isinstance(token.value, dict):
+            return self.time < token.time or (self.time == token.time and [self.value] < list(token.value.values()))
+        elif isinstance(self.value, (list, tuple)) and isinstance(token.value, (str, int, float, complex, bool)):
+            return self.time < token.time or (self.time == token.time and self.value < [token.value])
+        elif isinstance(self.value, (str, int, float, complex, bool)) and isinstance(token.value, (list, tuple)):
+            return self.time < token.time or (self.time == token.time and [self.value] < token.value)
+        else:
+            raise TypeError("Unsupported comparison between '{}' and '{}'".format(type(self.value), type(token.value)))
 
     def __hash__(self):
         return (self.value, self.time).__hash__()

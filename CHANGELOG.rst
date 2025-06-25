@@ -69,3 +69,8 @@ Version 1.2.10 (2025-05-09)
 --------------------------
 
 - [Monor feature] added BPMN exclusive split and join gateways.
+
+Version 1.2.11 (2025-06-25)
+--------------------------
+
+- [Bugfix] tokens now have a dedicated less than operator that takes different datatypes into account properly.
