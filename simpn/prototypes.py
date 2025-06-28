@@ -1,17 +1,18 @@
 import inspect
 import pygame
-from simpn.simulator import SimToken, SimVar
+from simpn.simulator import SimToken, SimVar, SimEvent
 import simpn.visualisation as vis
 
 
 class Prototype:
+    """
+    Superclass for all prototypes. Contains the basic structure of a prototype, which is a composition of SimVar and SimEvent.
+    A prototype must subclass this class.
+    Each event and variable that the prototype creates must both be added to the model and to the prototype itself.
+    The prototype must finally be added to the model, using the model.add_prototype() method.
+    """
+
     def __init__(self, model, incoming, outgoing, name):
-        """
-        Superclass for all prototypes. Contains the basic structure of a prototype, which is a composition of SimVar and SimEvent.
-        A prototype must subclass this class.
-        Each event and variable that the prototype creates must both be added to the model and to the prototype itself.
-        The prototype must finally be added to the model, using the model.add_prototype() method.
-        """
         self.model = model
         self.incoming = incoming
         self.outgoing = outgoing
@@ -36,21 +37,21 @@ class Prototype:
         self.visualize = False
 
 class BPMNStartEvent(Prototype):  
+    """
+    Generates a composition of SimVar and SimEvent that represents a BPMN start event.
+    Adds it to the specified model. The start event generates new cases with the specified interarrival_time.
+    Cases are places on the outgoing SimVar. The cases will be a tuple (unique_number, case_data).
+    Case_data will be generated according to the specified behavior, or unspecified if behavior==None.
+
+    :param model: the SimProblem to which the start event composition must be added.
+    :param incoming: parameter is only here for consistency, must be [].
+    :param outgoing: a list with a single SimVar in which the cases will be placed.
+    :param name: the name of the start event.
+    :param interarrival_time: the interarrival time with which events are generated. Can be a numeric value or a function that produces a numeric value, such as a sampling function from a random distribution.
+    :param behavior: an optional behavior describing how case_data is produced.
+    """
 
     def __init__(self, model, incoming, outgoing, name, interarrival_time, behavior=None):
-        """
-        Generates a composition of SimVar and SimEvent that represents a BPMN start event.
-        Adds it to the specified model. The start event generates new cases with the specified interarrival_time.
-        Cases are places on the outgoing SimVar. The cases will be a tuple (unique_number, case_data).
-        Case_data will be generated according to the specified behavior, or unspecified if behavior==None.
-
-        :param model: the SimProblem to which the start event composition must be added.
-        :param incoming: parameter is only here for consistency, must be [].
-        :param outgoing: a list with a single SimVar in which the cases will be placed.
-        :param name: the name of the start event.
-        :param interarrival_time: the interarrival time with which events are generated. Can be a numeric value or a function that produces a numeric value, such as a sampling function from a random distribution.
-        :param behavior: an optional behavior describing how case_data is produced.
-        """
         super().__init__(model, incoming, outgoing, name)
 
         if len(incoming) != 0:
@@ -100,24 +101,25 @@ class BPMNStartEvent(Prototype):
     
 
 class BPMNTask(Prototype):
-    def __init__(self, model, incoming, outgoing, name, behavior, guard=None, outgoing_behavior=None):
-        """
-        Generates a composition of SimVar and SimEvent that represents a BPMN task.
-        Adds it to the specified model. The task must have at least two incoming and two outgoing SimVar.
-        The first SimVar represents the case that must be processed by the task and the second the resource.
-        There can be additional SimVar that represent additional variables that the task may need or produce.
-        The behavior specifies how the task may change the case data.
-        It also specifies the processing time of the task in the form of a SimToken delay.
-        The behavior must take input parameters according to the incoming variables and produces a single intermediate variable, which must be a tuple (case, resource [, <additional variable 1>, <additional variable 2>, ...])@delay.
+    """
+    Generates a composition of SimVar and SimEvent that represents a BPMN task.
+    Adds it to the specified model. The task must have at least two incoming and two outgoing SimVar.
+    The first SimVar represents the case that must be processed by the task and the second the resource.
+    There can be additional SimVar that represent additional variables that the task may need or produce.
+    The behavior specifies how the task may change the case data.
+    It also specifies the processing time of the task in the form of a SimToken delay.
+    The behavior must take input parameters according to the incoming variables and produces a single intermediate variable, which must be a tuple (case, resource [, <additional variable 1>, <additional variable 2>, ...])@delay.
 
-        :param model: the SimProblem to which the task composition must be added.
-        :param incoming: a list with at least two SimVar: a case SimVar, a resource SimVar, and optionally additional SimVar.
-        :param outgoing: a list with at least two SimVar: a case SimVar, a resource SimVar, and optionally additional SimVar.
-        :param name: the name of the task.
-        :param behavior: the behavior function, which takes at least two input parameters according to the incoming variables and produces a single intermediate variable.
-        :param guard: an optional guard that specifies which combination of case and resource is allowed. The guard must take at least two input parameters according to the incoming variables.
-        :param outgoing_behavior: an optional behavior that specifies how the outgoing variables are produced from the single intermediate variable.
-        """
+    :param model: the SimProblem to which the task composition must be added.
+    :param incoming: a list with at least two SimVar: a case SimVar, a resource SimVar, and optionally additional SimVar.
+    :param outgoing: a list with at least two SimVar: a case SimVar, a resource SimVar, and optionally additional SimVar.
+    :param name: the name of the task.
+    :param behavior: the behavior function, which takes at least two input parameters according to the incoming variables and produces a single intermediate variable.
+    :param guard: an optional guard that specifies which combination of case and resource is allowed. The guard must take at least two input parameters according to the incoming variables.
+    :param outgoing_behavior: an optional behavior that specifies how the outgoing variables are produced from the single intermediate variable.
+    """
+
+    def __init__(self, model, incoming, outgoing, name, behavior, guard=None, outgoing_behavior=None):
         super().__init__(model, incoming, outgoing, name)
 
         if len(incoming) < 2:
@@ -195,18 +197,19 @@ class BPMNTask(Prototype):
 
 
 class BPMNIntermediateEvent(Prototype):
-    def __init__(self, model, incoming, outgoing, name, behavior, guard=None):
-        """
-        Generates a composition of SimVar and SimEvent that represents a BPMN intermediate event.
-        The intermediate event can make changes to the data of a case and can generate waiting time for the case.
+    """
+    Generates a composition of SimVar and SimEvent that represents a BPMN intermediate event.
+    The intermediate event can make changes to the data of a case and can generate waiting time for the case.
 
-        :param model: the SimProblem to which the event composition must be added.
-        :param incoming: a list with at least one SimVar: a case SimVar.
-        :param outgoing: a list with at least one SimVar: a case SimVar.
-        :param name: the name of the event.
-        :param behavior: specifies the changes that the intermediate event makes to the data and the delay that the intermediate event may lead to.
-        :param guard: an optional guard that specifies under which condition the intermediate event can happen.
-        """
+    :param model: the SimProblem to which the event composition must be added.
+    :param incoming: a list with at least one SimVar: a case SimVar.
+    :param outgoing: a list with at least one SimVar: a case SimVar.
+    :param name: the name of the event.
+    :param behavior: specifies the changes that the intermediate event makes to the data and the delay that the intermediate event may lead to.
+    :param guard: an optional guard that specifies under which condition the intermediate event can happen.
+    """
+
+    def __init__(self, model, incoming, outgoing, name, behavior, guard=None):
         super().__init__(model, incoming, outgoing, name)
 
         if len(incoming) < 1:
@@ -249,15 +252,16 @@ class BPMNIntermediateEvent(Prototype):
 
 
 class BPMNEndEvent(Prototype):
-    def __init__(self, model, incoming, outgoing, name):
-        """
-        Generates a composition of SimVar and SimEvent that represents a BPMN end event.
+    """
+    Generates a composition of SimVar and SimEvent that represents a BPMN end event.
 
-        :param model: the SimProblem to which the event composition must be added.
-        :param incoming: a list with one SimVar: a case SimVar.
-        :param outgoing: parameter is only here for consistency, must be [].
-        :param name: the name of the event.
-        """
+    :param model: the SimProblem to which the event composition must be added.
+    :param incoming: a list with one SimVar: a case SimVar.
+    :param outgoing: parameter is only here for consistency, must be [].
+    :param name: the name of the event.
+    """
+
+    def __init__(self, model, incoming, outgoing, name):
         super().__init__(model, incoming, outgoing, name)
 
         if len(incoming) != 1:
@@ -290,11 +294,12 @@ class BPMNEndEvent(Prototype):
 
 
 class BPMNFlow(SimVar):
+    """
+    A SimVar that represents a BPMN Flow.
+    It is just a SimVar with a different visualisation.
+    """
+
     def __init__(self, model, _id):
-        """
-        A SimVar that represents a BPMN Flow.
-        It is just a SimVar with a different visualisation.
-        """
         super().__init__(_id)
 
         model.add_prototype_var(self)
@@ -333,21 +338,22 @@ class BPMNFlow(SimVar):
 
 
 class BPMNExclusiveSplitGateway(Prototype):
+    """
+    Generates a composition of SimVar and SimEvent that represents a BPMN exclusive split gateway.
+    A choice has a single incoming flow (SimVar) and multiple outgoing flows (SimVar) to choose from.
+    A behavior function must be specified that determines which outgoing flow is chosen.
+    The behavior function must take a single input parameter, which is the incoming flow.
+    The behavior function must return a list of SimToken, which are put on the outgoing flows. For outgoing flows that are not chosen, the behavior function must None. Exactly one SimToken must be returned for each outgoing flow.
+    
+    
+    :param model: the SimProblem to which the event composition must be added.
+    :param incoming: a list with exactly one SimVar: a case SimVar.
+    :param outgoing: a list with at least two SimVar: a case SimVar.
+    :param label: the label on the gateway.
+    :param behavior: specifies the choice behavior of the gateway.
+    """
+
     def __init__(self, model, incoming, outgoing, label, behavior):
-        """
-        Generates a composition of SimVar and SimEvent that represents a BPMN exclusive split gateway.
-        A choice has a single incoming flow (SimVar) and multiple outgoing flows (SimVar) to choose from.
-        A behavior function must be specified that determines which outgoing flow is chosen.
-        The behavior function must take a single input parameter, which is the incoming flow.
-        The behavior function must return a list of SimToken, which are put on the outgoing flows. For outgoing flows that are not chosen, the behavior function must None. Exactly one SimToken must be returned for each outgoing flow.
-        
-        
-        :param model: the SimProblem to which the event composition must be added.
-        :param incoming: a list with exactly one SimVar: a case SimVar.
-        :param outgoing: a list with at least two SimVar: a case SimVar.
-        :param label: the label on the gateway.
-        :param behavior: specifies the choice behavior of the gateway.
-        """
         super().__init__(model, incoming, outgoing, label)
 
         if len(incoming) != 1:
@@ -404,16 +410,17 @@ class BPMNExclusiveSplitGateway(Prototype):
 
 
 class BPMNExclusiveJoinGateway(Prototype):
+    """
+    Generates a composition of SimVar and SimEvent that represents a BPMN exclusive join gateway.
+    A join gateway has multiple incoming flows and one outgoing flow.        
+    
+    :param model: the SimProblem to which the event composition must be added.
+    :param incoming: a list with exactly one SimVar: a case SimVar.
+    :param outgoing: a list with at least two SimVar: a case SimVar.
+    :param label: the label on the gateway.
+    """
+
     def __init__(self, model, incoming, outgoing, label):
-        """
-        Generates a composition of SimVar and SimEvent that represents a BPMN exclusive join gateway.
-        A join gateway has multiple incoming flows and one outgoing flow.        
-        
-        :param model: the SimProblem to which the event composition must be added.
-        :param incoming: a list with exactly one SimVar: a case SimVar.
-        :param outgoing: a list with at least two SimVar: a case SimVar.
-        :param label: the label on the gateway.
-        """
         super().__init__(model, incoming, outgoing, label)
 
         if len(incoming) < 2:
@@ -472,3 +479,105 @@ class BPMNExclusiveJoinGateway(Prototype):
 
     def get_visualisation(self):
         return self.BPMNExclusiveJoinGatewayViz(self)
+
+
+class BPMNParallelSplitGateway(SimEvent):
+    """
+    A SimVar that represents a parallel split gateway.
+    It is just a SimEvent with a different visualisation.
+    It must have a single incoming place and multiple outgoing places.
+    Its behavior takes the data from the source place and passes it to each of its outgoing places.
+    """
+
+    def __init__(self, model, incoming, outgoing, label):
+        super().__init__(label)
+
+        if len(incoming) != 1:
+            raise TypeError("Gateway " + label + ": must have at exactly one input parameter for cases.")
+        if len(outgoing) < 2:
+            raise TypeError("Gateway " + label + ": must have at least two output parameter for cases.")
+
+        self.set_inflow(incoming)
+        self.set_outflow(outgoing)
+
+        self.set_behavior(lambda c: [SimToken(c) for _ in range(len(outgoing))])
+
+        model.add_prototype_event(self)
+
+    class BPMNParallelSplitGatewayViz(vis.Node):
+        def __init__(self, model_node):
+            super().__init__(model_node)
+        
+        def draw(self, screen):
+            # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
+            x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
+            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
+            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
+            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+
+            # # draw a big + inside the diamond
+            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + self._half_width, y_pos + 0.2*self._height), (x_pos + self._half_width, y_pos + 0.8*self._height), 4*vis.LINE_WIDTH)
+            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.2*self._width, y_pos + self._half_height), (x_pos + 0.8*self._width, y_pos + self._half_height), 4*vis.LINE_WIDTH)
+
+            # draw label
+            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+            text_x_pos = self._pos[0] - int(label.get_width()/2)
+            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+            screen.blit(label, (text_x_pos, text_y_pos))
+            
+    def get_visualisation(self):
+        return self.BPMNParallelSplitGatewayViz(self)
+    
+
+class BPMNParallelJoinGateway(SimEvent):
+    """
+    A SimVar that represents a parallel join gateway.
+    It is just a SimEvent with a different visualisation.
+    It must have multiple incoming places and a single outgoing place.
+    Its behavior takes the data from one of the source places and passes it to the outgoing place.
+    """
+
+    def __init__(self, model, incoming, outgoing, label, behavior=None):
+        super().__init__(label)
+
+        if len(incoming) < 2:
+            raise TypeError("Gateway " + label + ": must have at least two input parameter for cases.")
+        if len(outgoing) != 1:
+            raise TypeError("Gateway " + label + ": must have at exactly one output parameter for cases.")
+
+        self.set_inflow(incoming)
+        self.set_outflow(outgoing)
+
+        if behavior is not None:
+            self.set_behavior(behavior)
+        else:
+            self.set_behavior(lambda *args: [SimToken(args[0])])
+        
+        # the transition must be fired for cases with the same case identifier
+        self.set_guard(lambda *args: all([args[i][0] == args[0][0] for i in range(1,len(args))]))
+
+        model.add_prototype_event(self)
+
+    class BPMNParallelJoinGatewayViz(vis.Node):
+        def __init__(self, model_node):
+            super().__init__(model_node)
+        
+        def draw(self, screen):
+            # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
+            x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
+            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
+            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
+            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+
+            # # draw a big + inside the diamond
+            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + self._half_width, y_pos + 0.2*self._height), (x_pos + self._half_width, y_pos + 0.8*self._height), 4*vis.LINE_WIDTH)
+            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.2*self._width, y_pos + self._half_height), (x_pos + 0.8*self._width, y_pos + self._half_height), 4*vis.LINE_WIDTH)
+
+            # draw label
+            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+            text_x_pos = self._pos[0] - int(label.get_width()/2)
+            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+            screen.blit(label, (text_x_pos, text_y_pos))
+            
+    def get_visualisation(self):
+        return self.BPMNParallelJoinGatewayViz(self)

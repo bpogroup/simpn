@@ -224,6 +224,14 @@ class SimEvent:
         """
         self.outgoing = outgoing
 
+    def set_behavior(self, behavior):
+        """
+        Set the behavior.
+
+        :param behavior: the behavior to set.
+        """
+        self.behavior = behavior
+
     def get_id(self):
         return self._id
 
@@ -397,6 +405,19 @@ class SimProblem:
         # Add SimVar
         self.places.append(var)
         self.id2node[name] = var
+
+    def add_prototype_event(self, event):
+        """
+        Adds the SimEvent to the problem. This function should only be used for prototypes.        
+        """
+        # Check name
+        name = event.get_id()
+        if name in self.id2node:
+            raise TypeError("Node with name " + name + " already exists. Names must be unique.")
+
+        # Add SimEvent
+        self.events.append(event)
+        self.id2node[name] = event
 
 
     def var(self, name):

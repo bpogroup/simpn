@@ -53,15 +53,190 @@
 <p><strong>Classes:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNFlow" title="simpn.prototypes.BPMNFlow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNFlow</span></code></a>(model, _id)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNEndEvent" title="simpn.prototypes.BPMNEndEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNEndEvent</span></code></a>(model, incoming, outgoing, name)</p></td>
+<td><p>Generates a composition of SimVar and SimEvent that represents a BPMN end event.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNExclusiveJoinGateway" title="simpn.prototypes.BPMNExclusiveJoinGateway"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNExclusiveJoinGateway</span></code></a>(model, incoming, ...)</p></td>
+<td><p>Generates a composition of SimVar and SimEvent that represents a BPMN exclusive join gateway.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNExclusiveSplitGateway" title="simpn.prototypes.BPMNExclusiveSplitGateway"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNExclusiveSplitGateway</span></code></a>(model, incoming, ...)</p></td>
+<td><p>Generates a composition of SimVar and SimEvent that represents a BPMN exclusive split gateway.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNFlow" title="simpn.prototypes.BPMNFlow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNFlow</span></code></a>(model, _id)</p></td>
+<td><p>A SimVar that represents a BPMN Flow.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNIntermediateEvent" title="simpn.prototypes.BPMNIntermediateEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNIntermediateEvent</span></code></a>(model, incoming, ...)</p></td>
+<td><p>Generates a composition of SimVar and SimEvent that represents a BPMN intermediate event.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNParallelJoinGateway" title="simpn.prototypes.BPMNParallelJoinGateway"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNParallelJoinGateway</span></code></a>(model, incoming, ...)</p></td>
+<td><p>A SimVar that represents a parallel join gateway.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNParallelSplitGateway" title="simpn.prototypes.BPMNParallelSplitGateway"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNParallelSplitGateway</span></code></a>(model, incoming, ...)</p></td>
+<td><p>A SimVar that represents a parallel split gateway.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNStartEvent" title="simpn.prototypes.BPMNStartEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNStartEvent</span></code></a>(model, incoming, outgoing, ...)</p></td>
+<td><p>Generates a composition of SimVar and SimEvent that represents a BPMN start event.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNTask" title="simpn.prototypes.BPMNTask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNTask</span></code></a>(model, incoming, outgoing, name, ...)</p></td>
+<td><p>Generates a composition of SimVar and SimEvent that represents a BPMN task.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.Prototype" title="simpn.prototypes.Prototype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prototype</span></code></a>(model, incoming, outgoing, name)</p></td>
+<td><p>Superclass for all prototypes.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNEndEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNEndEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNEndEvent" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a composition of SimVar and SimEvent that represents a BPMN end event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the event composition must be added.</p></li>
+<li><p><strong>incoming</strong> – a list with one SimVar: a case SimVar.</p></li>
+<li><p><strong>outgoing</strong> – parameter is only here for consistency, must be [].</p></li>
+<li><p><strong>name</strong> – the name of the event.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNExclusiveJoinGateway">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNExclusiveJoinGateway</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNExclusiveJoinGateway" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a composition of SimVar and SimEvent that represents a BPMN exclusive join gateway.
+A join gateway has multiple incoming flows and one outgoing flow.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the event composition must be added.</p></li>
+<li><p><strong>incoming</strong> – a list with exactly one SimVar: a case SimVar.</p></li>
+<li><p><strong>outgoing</strong> – a list with at least two SimVar: a case SimVar.</p></li>
+<li><p><strong>label</strong> – the label on the gateway.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNExclusiveSplitGateway">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNExclusiveSplitGateway</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNExclusiveSplitGateway" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a composition of SimVar and SimEvent that represents a BPMN exclusive split gateway.
+A choice has a single incoming flow (SimVar) and multiple outgoing flows (SimVar) to choose from.
+A behavior function must be specified that determines which outgoing flow is chosen.
+The behavior function must take a single input parameter, which is the incoming flow.
+The behavior function must return a list of SimToken, which are put on the outgoing flows. For outgoing flows that are not chosen, the behavior function must None. Exactly one SimToken must be returned for each outgoing flow.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the event composition must be added.</p></li>
+<li><p><strong>incoming</strong> – a list with exactly one SimVar: a case SimVar.</p></li>
+<li><p><strong>outgoing</strong> – a list with at least two SimVar: a case SimVar.</p></li>
+<li><p><strong>label</strong> – the label on the gateway.</p></li>
+<li><p><strong>behavior</strong> – specifies the choice behavior of the gateway.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="simpn.prototypes.BPMNFlow">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNFlow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNFlow" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>A SimVar that represents a BPMN Flow.
+It is just a SimVar with a different visualisation.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNIntermediateEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNIntermediateEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNIntermediateEvent" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a composition of SimVar and SimEvent that represents a BPMN intermediate event.
+The intermediate event can make changes to the data of a case and can generate waiting time for the case.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the event composition must be added.</p></li>
+<li><p><strong>incoming</strong> – a list with at least one SimVar: a case SimVar.</p></li>
+<li><p><strong>outgoing</strong> – a list with at least one SimVar: a case SimVar.</p></li>
+<li><p><strong>name</strong> – the name of the event.</p></li>
+<li><p><strong>behavior</strong> – specifies the changes that the intermediate event makes to the data and the delay that the intermediate event may lead to.</p></li>
+<li><p><strong>guard</strong> – an optional guard that specifies under which condition the intermediate event can happen.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNParallelJoinGateway">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNParallelJoinGateway</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNParallelJoinGateway" title="Link to this definition">¶</a></dt>
+<dd><p>A SimVar that represents a parallel join gateway.
+It is just a SimEvent with a different visualisation.
+It must have multiple incoming places and a single outgoing place.
+Its behavior takes the data from one of the source places and passes it to the outgoing place.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNParallelSplitGateway">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNParallelSplitGateway</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNParallelSplitGateway" title="Link to this definition">¶</a></dt>
+<dd><p>A SimVar that represents a parallel split gateway.
+It is just a SimEvent with a different visualisation.
+It must have a single incoming place and multiple outgoing places.
+Its behavior takes the data from the source place and passes it to each of its outgoing places.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNStartEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNStartEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interarrival_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNStartEvent" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a composition of SimVar and SimEvent that represents a BPMN start event.
+Adds it to the specified model. The start event generates new cases with the specified interarrival_time.
+Cases are places on the outgoing SimVar. The cases will be a tuple (unique_number, case_data).
+Case_data will be generated according to the specified behavior, or unspecified if behavior==None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the start event composition must be added.</p></li>
+<li><p><strong>incoming</strong> – parameter is only here for consistency, must be [].</p></li>
+<li><p><strong>outgoing</strong> – a list with a single SimVar in which the cases will be placed.</p></li>
+<li><p><strong>name</strong> – the name of the start event.</p></li>
+<li><p><strong>interarrival_time</strong> – the interarrival time with which events are generated. Can be a numeric value or a function that produces a numeric value, such as a sampling function from a random distribution.</p></li>
+<li><p><strong>behavior</strong> – an optional behavior describing how case_data is produced.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNTask">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNTask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing_behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNTask" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a composition of SimVar and SimEvent that represents a BPMN task.
+Adds it to the specified model. The task must have at least two incoming and two outgoing SimVar.
+The first SimVar represents the case that must be processed by the task and the second the resource.
+There can be additional SimVar that represent additional variables that the task may need or produce.
+The behavior specifies how the task may change the case data.
+It also specifies the processing time of the task in the form of a SimToken delay.
+The behavior must take input parameters according to the incoming variables and produces a single intermediate variable, which must be a tuple (case, resource [, &lt;additional variable 1&gt;, &lt;additional variable 2&gt;, …])&#64;delay.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the task composition must be added.</p></li>
+<li><p><strong>incoming</strong> – a list with at least two SimVar: a case SimVar, a resource SimVar, and optionally additional SimVar.</p></li>
+<li><p><strong>outgoing</strong> – a list with at least two SimVar: a case SimVar, a resource SimVar, and optionally additional SimVar.</p></li>
+<li><p><strong>name</strong> – the name of the task.</p></li>
+<li><p><strong>behavior</strong> – the behavior function, which takes at least two input parameters according to the incoming variables and produces a single intermediate variable.</p></li>
+<li><p><strong>guard</strong> – an optional guard that specifies which combination of case and resource is allowed. The guard must take at least two input parameters according to the incoming variables.</p></li>
+<li><p><strong>outgoing_behavior</strong> – an optional behavior that specifies how the outgoing variables are produced from the single intermediate variable.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.Prototype">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">Prototype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.Prototype" title="Link to this definition">¶</a></dt>
+<dd><p>Superclass for all prototypes. Contains the basic structure of a prototype, which is a composition of SimVar and SimEvent.
+A prototype must subclass this class.
+Each event and variable that the prototype creates must both be added to the model and to the prototype itself.
+The prototype must finally be added to the model, using the model.add_prototype() method.</p>
+</dd></dl>
 
 </section>
 

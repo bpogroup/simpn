@@ -68,9 +68,16 @@ Version 1.2.9 (2024-12-04)
 Version 1.2.10 (2025-05-09)
 --------------------------
 
-- [Monor feature] added BPMN exclusive split and join gateways.
+- [Minor feature] added BPMN exclusive split and join gateways.
 
 Version 1.2.11 (2025-06-25)
 --------------------------
 
 - [Bugfix] tokens now have a dedicated less than operator that takes different datatypes into account properly.
+
+Version 1.2.12 (2025-06-28)
+---------------------------
+
+- [Bugfix] fixed problem with the API documentation of prototypes.
+- [Minor feature] data can now be exported to the log using the EventLogReporter
+- [Minor feature] added BPMN parallel split and join gateways.
