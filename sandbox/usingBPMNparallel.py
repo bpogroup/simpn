@@ -10,7 +10,7 @@ resource = my_problem.add_var("resource")
 resource.put(1)
 resource.put(2)
 
-start_to_and_split = prototype.BPMNFlow(my_problem, "start_to_end_plit")
+start_to_and_split = prototype.BPMNFlow(my_problem, "start_to_and_plit")
 and_split_to_a = prototype.BPMNFlow(my_problem, "and_split_to_a")
 and_split_to_b = prototype.BPMNFlow(my_problem, "and_split_to_b")
 a_to_join = prototype.BPMNFlow(my_problem, "a_to_join")
