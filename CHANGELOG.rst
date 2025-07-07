@@ -81,3 +81,8 @@ Version 1.2.12 (2025-06-28)
 - [Bugfix] fixed problem with the API documentation of prototypes.
 - [Minor feature] data can now be exported to the log using the EventLogReporter
 - [Minor feature] added BPMN parallel split and join gateways.
+
+Version 1.3.0 (2025-07-07)
+---------------------------
+
+- [Major feature] added conformance checking functionality to the analysis module.
