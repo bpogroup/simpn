@@ -22,6 +22,7 @@ class SimVar:
         self.checkpoints = dict()
         self.queue = SimVarQueue(self)
         self.visualize = True
+        self.visualize_edges = True
 
     def put(self, value, time=0):
         """
@@ -84,6 +85,10 @@ class SimVar:
 
     def set_invisible(self):
         self.visualize = False
+
+    def set_invisible_edges(self):
+        self.visualize_edges = False
+
 
 class SimVarQueue(SimVar):
     """
@@ -199,6 +204,7 @@ class SimEvent:
             self.outgoing = outgoing
         self.behavior = behavior
         self.visualize = True
+        self.visualize_edges = True
 
     def set_guard(self, func):
         """
@@ -246,6 +252,10 @@ class SimEvent:
 
     def set_invisible(self):
         self.visualize = False
+
+    def set_invisible_edges(self):
+        self.visualize_edges = False
+
 
 class SimToken:
     """

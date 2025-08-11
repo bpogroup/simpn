@@ -20,6 +20,7 @@ class Prototype:
         self.places = []
         self.events = []
         self.visualize = True
+        self.visualize_edges = True
 
     def add_var(self, var):
         self.places.append(var)
@@ -35,6 +36,10 @@ class Prototype:
 
     def set_invisible(self):
         self.visualize = False
+
+    def set_invisible_edges(self):
+        self.visualize_edges = False       
+
 
 class BPMNStartEvent(Prototype):  
     """

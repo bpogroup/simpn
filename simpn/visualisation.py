@@ -17,8 +17,6 @@ TUE_GREY = (242, 242, 242)
 WHITE = (255, 255, 255)
 # sizes
 STANDARD_NODE_WIDTH, STANDARD_NODE_HEIGHT = 50, 50
-NODE_SPACING = 100
-GRID_SPACING = 50
 LINE_WIDTH = 2
 ARROW_WIDTH, ARROW_HEIGHT = 12, 10
 TEXT_SIZE = 16
@@ -231,18 +229,25 @@ class Visualisation:
     Attributes:
     - sim_problem (SimProblem): the simulation problem to visualize
     - layout_file (str): the file path to the layout file (optional)
+    - grid_spacing (int): the spacing between grid lines (default: 50)
+    - node_spacing (int): the spacing between nodes (default: 100)
+    - layout_algorithm (str): the layout algorithm to use (default: "auto"), possible values: auto, sugiyama, davidson_harel, grid
 
     Methods:
     - save_layout(self, filename): saves the layout to a file
     - show(self): shows the visualisation
     """
-    def __init__(self, sim_problem, layout_file=None):
+    def __init__(self, sim_problem, layout_file=None, grid_spacing=50, node_spacing=100, layout_algorithm="auto"):
         pygame.init()
         pygame.font.init()
         pygame.display.set_caption('Petri Net Visualisation')
         assets.create_assets(assets.images, "assets")
         icon = pygame.image.load('./assets/logo.png')
         pygame.display.set_icon(icon)
+
+        self._grid_spacing = grid_spacing
+        self._node_spacing = node_spacing
+        self._layout_algorithm = layout_algorithm
 
         self.__running = False
         self._problem = sim_problem
@@ -258,7 +263,8 @@ class Visualisation:
             if prototype.visualize:
                 prototype_viznode = prototype.get_visualisation()
                 self._nodes[prototype.get_id()] = prototype_viznode
-                viznodes_with_edges.append(prototype_viznode)
+                if prototype.visualize_edges:
+                    viznodes_with_edges.append(prototype_viznode)
                 for event in prototype.events:
                     element_to_prototype[event.get_id()] = prototype.get_id()
                 for place in prototype.places:
@@ -270,28 +276,31 @@ class Visualisation:
             if event.visualize and event.get_id() not in element_to_prototype:
                 event_viznode = event.get_visualisation()
                 self._nodes[event.get_id()] = event_viznode
-                viznodes_with_edges.append(event_viznode)                
+                if event.visualize_edges:
+                    viznodes_with_edges.append(event_viznode)
         # Add visualization for edges.
         # If an edge is from or to a prototype element, it must be from or to the prototype itself.
         for viznode in viznodes_with_edges:
             for incoming in viznode._model_node.incoming:
-                node_id = incoming.get_id()
-                if node_id.endswith(".queue"):
-                    node_id = node_id[:-len(".queue")]
-                if node_id in element_to_prototype:
-                    node_id = element_to_prototype[node_id]
-                if node_id in self._nodes:
-                    other_viznode = self._nodes[node_id]
-                    self._edges.append(Edge(start=(other_viznode, Hook.RIGHT), end=(viznode, Hook.LEFT)))
+                if incoming.visualize_edges:
+                    node_id = incoming.get_id()
+                    if node_id.endswith(".queue"):
+                        node_id = node_id[:-len(".queue")]
+                    if node_id in element_to_prototype:
+                        node_id = element_to_prototype[node_id]
+                    if node_id in self._nodes:
+                        other_viznode = self._nodes[node_id]
+                        self._edges.append(Edge(start=(other_viznode, Hook.RIGHT), end=(viznode, Hook.LEFT)))
             for outgoing in viznode._model_node.outgoing:
-                node_id = outgoing.get_id()
-                if node_id.endswith(".queue"):
-                    node_id = node_id[:-len(".queue")]
-                if node_id in element_to_prototype:
-                    node_id = element_to_prototype[node_id]
-                if node_id in self._nodes:
-                    other_viznode = self._nodes[node_id]
-                    self._edges.append(Edge(start=(viznode, Hook.RIGHT), end=(other_viznode, Hook.LEFT)))
+                if outgoing.visualize_edges:
+                    node_id = outgoing.get_id()
+                    if node_id.endswith(".queue"):
+                        node_id = node_id[:-len(".queue")]
+                    if node_id in element_to_prototype:
+                        node_id = element_to_prototype[node_id]
+                    if node_id in self._nodes:
+                        other_viznode = self._nodes[node_id]
+                        self._edges.append(Edge(start=(viznode, Hook.RIGHT), end=(other_viznode, Hook.LEFT)))
         layout_loaded = False
         if layout_file is not None:
             try:
@@ -345,10 +354,19 @@ class Visualisation:
         for node in self._nodes.values():
             graph.add_vertex(node.get_id())
         for edge in self._edges:            
-            graph.add_edge(edge.get_start_node().get_id(), edge.get_end_node().get_id())
-        layout = graph.layout_sugiyama()
+            graph.add_edge(edge.get_start_node().get_id(), edge.get_end_node().get_id())        
+        if self._layout_algorithm == "auto":
+            layout = graph.layout(layout="auto", )
+        elif self._layout_algorithm == "sugiyama":
+            layout = graph.layout_sugiyama()
+        elif self._layout_algorithm == "davidson_harel":
+            layout = graph.layout_davidson_harel()
+        elif self._layout_algorithm == "grid":
+            layout = graph.layout_grid()
+        else:
+            raise Exception(f"Unknown layout algorithm: {self._layout_algorithm}")
         layout.rotate(-90)
-        layout.scale(NODE_SPACING)
+        layout.scale(self._node_spacing)
         boundaries = layout.boundaries(border=STANDARD_NODE_WIDTH)
         layout.translate(-boundaries[0][0], -boundaries[0][1])
         canvas_size = layout.boundaries(border=STANDARD_NODE_WIDTH*2)[1]
@@ -356,7 +374,7 @@ class Visualisation:
         i = 0
         for v in graph.vs:
             xy = layout[i]
-            xy  = (round(xy[0]/GRID_SPACING)*GRID_SPACING, round(xy[1]/GRID_SPACING)*GRID_SPACING)
+            xy  = (round(xy[0]/self._grid_spacing)*self._grid_spacing, round(xy[1]/self._grid_spacing)*self._grid_spacing)
             self._nodes[v["name"]].set_pos(xy)
             i += 1
 
@@ -398,8 +416,8 @@ class Visualisation:
             new_x = node.get_pos()[0] + x_delta
             new_y = node.get_pos()[1] + y_delta
             if snap:
-                new_x = round(new_x/GRID_SPACING)*GRID_SPACING
-                new_y = round(new_y/GRID_SPACING)*GRID_SPACING
+                new_x = round(new_x/self._grid_spacing)*self._grid_spacing
+                new_y = round(new_y/self._grid_spacing)*self._grid_spacing
             node.set_pos((new_x, new_y))
         self._selected_nodes = nodes, new_pos
 
