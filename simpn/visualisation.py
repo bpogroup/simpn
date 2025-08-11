@@ -281,7 +281,17 @@ class Visualisation:
         # Add visualization for edges.
         # If an edge is from or to a prototype element, it must be from or to the prototype itself.
         for viznode in viznodes_with_edges:
-            for incoming in viznode._model_node.incoming:
+            from_nodes = viznode._model_node.incoming
+            to_nodes = viznode._model_node.outgoing
+            if viznode._model_node.visualization_of_edges is not None:
+                from_nodes = []
+                to_nodes = []
+                for (a, b) in viznode._model_node.visualization_of_edges:
+                    if a == viznode._model_node:
+                        to_nodes.append(b)
+                    else:
+                        from_nodes.append(a)
+            for incoming in from_nodes:
                 if incoming.visualize_edges:
                     node_id = incoming.get_id()
                     if node_id.endswith(".queue"):
@@ -291,7 +301,7 @@ class Visualisation:
                     if node_id in self._nodes:
                         other_viznode = self._nodes[node_id]
                         self._edges.append(Edge(start=(other_viznode, Hook.RIGHT), end=(viznode, Hook.LEFT)))
-            for outgoing in viznode._model_node.outgoing:
+            for outgoing in to_nodes:
                 if outgoing.visualize_edges:
                     node_id = outgoing.get_id()
                     if node_id.endswith(".queue"):

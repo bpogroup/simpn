@@ -236,6 +236,27 @@ The behavior must take input parameters according to the incoming variables and 
 A prototype must subclass this class.
 Each event and variable that the prototype creates must both be added to the model and to the prototype itself.
 The prototype must finally be added to the model, using the model.add_prototype() method.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.Prototype.set_visualization_of_edges" title="simpn.prototypes.Prototype.set_visualization_of_edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_visualization_of_edges</span></code></a>(edges)</p></td>
+<td><p>Sets the specific edges to visualize.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.Prototype.set_visualization_of_edges">
+<span class="sig-name descname"><span class="pre">set_visualization_of_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.Prototype.set_visualization_of_edges" title="Link to this definition">¶</a></dt>
+<dd><p>Sets the specific edges to visualize. Only the specified edges will be visualized.
+Edges must be specified as either (a: SimVar, self) or (self, b: SimVar).
+Precondition: for each edge (a, self), a must be in self.incoming; for each edge (self, b), b must be in self.outgoing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edges</strong> – a list of edges to visualize.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>

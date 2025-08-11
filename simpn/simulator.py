@@ -88,7 +88,7 @@ class SimVar:
 
     def set_invisible_edges(self):
         self.visualize_edges = False
-
+    
 
 class SimVarQueue(SimVar):
     """
@@ -205,6 +205,7 @@ class SimEvent:
         self.behavior = behavior
         self.visualize = True
         self.visualize_edges = True
+        self.visualization_of_edges = None
 
     def set_guard(self, func):
         """
@@ -255,6 +256,22 @@ class SimEvent:
 
     def set_invisible_edges(self):
         self.visualize_edges = False
+
+    def set_visualization_of_edges(self, edges):
+        """
+        Sets the specific edges to visualize. Only the specified edges will be visualized.
+        Edges must be specified as either (a: SimVar, self) or (self, b: SimVar).
+        Precondition: for each edge (a, self), a must be in self.incoming; for each edge (self, b), b must be in self.outgoing.
+
+        :param edges: a list of edges to visualize.
+        """
+        for (a, b) in edges:
+            if a == self and b not in self.outgoing:
+                raise ValueError("Edge (" + str(a) + ", " + str(b) + ") is not a valid outgoing edge for event " + str(self) + ".")
+            if b == self and a not in self.incoming:
+                raise ValueError("Edge (" + str(a) + ", " + str(b) + ") is not a valid incoming edge for event " + str(self) + ".")
+
+        self.visualization_of_edges = edges
 
 
 class SimToken:

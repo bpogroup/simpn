@@ -120,6 +120,9 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimEvent.set_outflow" title="simpn.simulator.SimEvent.set_outflow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_outflow</span></code></a>(outgoing)</p></td>
 <td><p>Set the outgoing SimVar.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimEvent.set_visualization_of_edges" title="simpn.simulator.SimEvent.set_visualization_of_edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_visualization_of_edges</span></code></a>(edges)</p></td>
+<td><p>Sets the specific edges to visualize.</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py method">
@@ -162,6 +165,19 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>outgoing</strong> – a list of SimVar.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimEvent.set_visualization_of_edges">
+<span class="sig-name descname"><span class="pre">set_visualization_of_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimEvent.set_visualization_of_edges" title="Link to this definition">¶</a></dt>
+<dd><p>Sets the specific edges to visualize. Only the specified edges will be visualized.
+Edges must be specified as either (a: SimVar, self) or (self, b: SimVar).
+Precondition: for each edge (a, self), a must be in self.incoming; for each edge (self, b), b must be in self.outgoing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edges</strong> – a list of edges to visualize.</p>
 </dd>
 </dl>
 </dd></dl>
