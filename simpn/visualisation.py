@@ -204,22 +204,6 @@ class TransitionViz(Node):
         text_x_pos = self._pos[0] - int(label.get_width()/2)
         text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
         screen.blit(label, (text_x_pos, text_y_pos))
-
-
-class Button(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        self.image = pygame.Surface((31, 31), pygame.SRCALPHA, 32)
-        self.image = self.image.convert_alpha()
-        self.image.set_alpha(128)
-        self.rect = self.image.get_rect()
-
-    def set_pos(self, x, y):
-        self.rect.x = x
-        self.rect.y = y
-
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
     
 
 class Visualisation:
@@ -254,6 +238,8 @@ class Visualisation:
         self._nodes = dict()
         self._edges = []
         self._selected_nodes = None        
+        self._zoom_level = 1.0
+        self._size = MAX_SIZE
 
         # Add visualizations for prototypes, places, and transitions,
         # but not for places and transitions that are part of prototypes.
@@ -321,43 +307,24 @@ class Visualisation:
         if not layout_loaded:
             self.__layout()        
 
-        self.__screen = pygame.display.set_mode(self._size, pygame.RESIZABLE)
-        self._buttons = self.__init_buttons()
+        self.__win = pygame.display.set_mode(self._size, pygame.RESIZABLE) # the window
     
     def __draw(self):
+        self.__screen = pygame.Surface((self._size[0]/self._zoom_level, self._size[1]/self._zoom_level))
+        self.__win.fill(TUE_GREY)
         self.__screen.fill(TUE_GREY)
         for shape in self._nodes.values():
             shape.draw(self.__screen)
         for shape in self._edges:
             shape.draw(self.__screen)
-        self.__draw_buttons()
+        # scale the entire screen using the self._zoom_level and draw it in the window
+        self.__screen.get_width()
+        self.__win.blit(pygame.transform.smoothscale(self.__screen, (self._size[0], self._size[1])), (0, 0))
         pygame.display.flip()
 
     def action_step(self):
         self._problem.step()
     
-    def __init_buttons(self):
-        # No buttons for now.
-        # btn_step = Button()        
-        # pygame.draw.polygon(btn_step.image, TUE_RED, [(0, 0), (0, 30), (20, 15)])
-        # pygame.draw.polygon(btn_step.image, TUE_RED, [(20, 0), (20, 30), (25, 30), (25, 0)])
-        # btn_step.set_pos(self._size[0]-100, self._size[1]-50)
-        # btn_step.action = self.action_step
-
-        # return [btn_step]
-        return []
-
-    def __draw_buttons(self):
-        for btn in self._buttons:
-            btn.draw(self.__screen)
-
-    def __click_button_at(self, pos):
-        for btn in self._buttons:
-            if btn.rect.collidepoint(pos):
-                btn.action()
-                return True
-        return False
-
     def __layout(self):
         graph = igraph.Graph()
         graph.to_directed()
@@ -377,7 +344,7 @@ class Visualisation:
             raise Exception(f"Unknown layout algorithm: {self._layout_algorithm}")
         layout.rotate(-90)
         layout.scale(self._node_spacing)
-        boundaries = layout.boundaries(border=STANDARD_NODE_WIDTH)
+        boundaries = layout.boundaries(border=STANDARD_NODE_WIDTH*2)
         layout.translate(-boundaries[0][0], -boundaries[0][1])
         canvas_size = layout.boundaries(border=STANDARD_NODE_WIDTH*2)[1]
         self._size = (min(MAX_SIZE[0], canvas_size[0]), min(MAX_SIZE[1], canvas_size[1]))
@@ -396,6 +363,8 @@ class Visualisation:
             :param filename (str): The name of the file to save the layout to.
             """
             with open(filename, "w") as f:
+                f.write("version 2.0\n")
+                f.write(f"{self._zoom_level}\n")
                 f.write(f"{int(self._size[0])},{int(self._size[1])}\n")
                 for node in self._nodes.values():
                     if "," in node.get_id() or "\n" in node.get_id():
@@ -404,16 +373,22 @@ class Visualisation:
     
     def __load_layout(self, filename):
         with open(filename, "r") as f:
-            self._size = tuple(map(int, f.readline().strip().split(",")))
+            firstline = f.readline().strip()
+            if firstline == "version 2.0":
+                self._zoom_level = float(f.readline().strip())            
+                self._size = tuple(map(int, f.readline().strip().split(",")))
+            else:
+                self._size = tuple(map(int, firstline.split(",")))
             for line in f:
                 id, x, y = line.strip().split(",")
                 if id in self._nodes:
                     self._nodes[id].set_pos((int(x), int(y)))
 
     def __get_node_at(self, pos):
+        scaled_pos = (pos[0] / self._zoom_level, pos[1] / self._zoom_level)
         for node in self._nodes.values():
-            if node.get_pos()[0] - max(node._width/2, 10) <= pos[0] <= node.get_pos()[0] + max(node._width/2, 10) and \
-            node.get_pos()[1] - max(node._height/2, 10) <= pos[1] <= node.get_pos()[1] + max(node._height/2, 10):
+            if node.get_pos()[0] - max(node._width/2, 10) <= scaled_pos[0] <= node.get_pos()[0] + max(node._width/2, 10) and \
+            node.get_pos()[1] - max(node._height/2, 10) <= scaled_pos[1] <= node.get_pos()[1] + max(node._height/2, 10):
                 return node
         return None
 
@@ -421,8 +396,8 @@ class Visualisation:
         nodes = self._selected_nodes[0]
         org_pos = self._selected_nodes[1]
         new_pos = pygame.mouse.get_pos()
-        x_delta = new_pos[0] - org_pos[0]
-        y_delta = new_pos[1] - org_pos[1]
+        x_delta = (new_pos[0] - org_pos[0]) / self._zoom_level
+        y_delta = (new_pos[1] - org_pos[1]) / self._zoom_level
         for node in nodes:
             new_x = node.get_pos()[0] + x_delta
             new_y = node.get_pos()[1] + y_delta
@@ -436,13 +411,11 @@ class Visualisation:
         if event.type == pygame.QUIT:
             self.__running = False
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            button_clicked = self.__click_button_at(event.pos)
-            if not button_clicked:
-                node = self.__get_node_at(event.pos)
-                if node is not None:
-                    self._selected_nodes = [node], event.pos
-                else:
-                    self._selected_nodes = self._nodes.values(), event.pos
+            node = self.__get_node_at(event.pos)
+            if node is not None:
+                self._selected_nodes = [node], event.pos
+            else:
+                self._selected_nodes = self._nodes.values(), event.pos
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self._selected_nodes is not None:
             self.__drag(snap=True)
             self._selected_nodes = None
@@ -453,6 +426,31 @@ class Visualisation:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 self._problem.step()
+            elif event.key == pygame.K_0 and event.mod & pygame.KMOD_CTRL:
+                self.zoom("reset")
+            elif event.key == pygame.K_MINUS and event.mod & pygame.KMOD_CTRL:
+                self.zoom("decrease")
+            elif event.key == pygame.K_EQUALS and event.mod & pygame.KMOD_CTRL:
+                self.zoom("increase")
+        elif event.type == pygame.MOUSEWHEEL:
+            if event.y > 0:
+                self.zoom("increase")
+            else:
+                self.zoom("decrease")
+
+    def zoom(self, action):
+        """
+        Zooms the model. Action can be one of: increase, decrease, reset.
+
+        :param action: The zoom action to perform.
+        """
+        if action == "reset":
+            self._zoom_level = 1.0
+        elif action == "decrease":
+            self._zoom_level /= 1.1
+        elif action == "increase":
+            self._zoom_level *= 1.1
+        self._zoom_level = max(0.3, min(self._zoom_level, 3.0))  # clamp zoom level
 
     def show(self):
             """

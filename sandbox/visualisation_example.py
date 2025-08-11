@@ -16,6 +16,6 @@ v_customers.put("c1")
 v_customers.put("c2")
 v_customers.put("c3")
 
-v = Visualisation(shop, layout_algorithm="sugiyama", grid_spacing=100, node_spacing=200)
+v = Visualisation(shop, layout_algorithm="sugiyama", grid_spacing=100, node_spacing=200, layout_file="./temp/layout.txt")
 v.show()
 v.save_layout("./temp/layout.txt")
