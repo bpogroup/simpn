@@ -402,7 +402,8 @@ class Visualisation:
 
     def __get_node_at(self, pos):
         for node in self._nodes.values():
-            if node.get_pos()[0] - node._width/2 <= pos[0] <= node.get_pos()[0] + node._width/2 and node.get_pos()[1] - node._height/2 <= pos[1] <= node.get_pos()[1] + node._height/2:
+            if node.get_pos()[0] - max(node._width/2, 10) <= pos[0] <= node.get_pos()[0] + max(node._width/2, 10) and \
+            node.get_pos()[1] - max(node._height/2, 10) <= pos[1] <= node.get_pos()[1] + max(node._height/2, 10):
                 return node
         return None
 

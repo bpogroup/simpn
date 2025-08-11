@@ -87,7 +87,8 @@ Version 1.3.0 (2025-07-07)
 
 - [Major feature] added conformance checking functionality to the analysis module.
 
-Version 1.3.1 (2025-08-11)
+Version 1.3.2 (2025-08-11)
 ---------------------------
 
 - [Minor feature] added more configuration options for visualization.
+- [Minor feature] made node selection more robust by adding a minimum selection area.
