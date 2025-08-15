@@ -20,6 +20,8 @@ STANDARD_NODE_WIDTH, STANDARD_NODE_HEIGHT = 50, 50
 LINE_WIDTH = 2
 ARROW_WIDTH, ARROW_HEIGHT = 12, 10
 TEXT_SIZE = 16
+BUTTON_POSITION = (16, 16)
+BUTTON_SIZE = (32, 32)
 
 
 class Shape(Enum):
@@ -206,6 +208,37 @@ class TransitionViz(Node):
         screen.blit(label, (text_x_pos, text_y_pos))
     
 
+class Button:
+    """
+    A button as it will be drawn. The action is a function that will be executed when the button is clicked.
+    The button image will be scaled to the specified size.
+
+    :param image: The image to be displayed on the button.
+    :param action: The function to be executed when the button is clicked.
+    :param size: The size of the button (default: BUTTON_SIZE).
+    """
+    def __init__(self, image, action, size=BUTTON_SIZE):
+        self.image = image
+        self.image = pygame.transform.smoothscale(self.image, size)
+        self.position = None
+        self.button_rect = None
+        self.action = action
+
+    def draw(self, screen):
+        screen.blit(self.image, self.position)
+
+    def set_position(self, pos):
+        self.position = pos
+        self.button_rect = self.image.get_rect(topleft=self.position)
+
+    def click(self, pos):
+        x, y = pos
+        if self.button_rect.collidepoint(x, y):
+            self.action()
+            return True
+        return False
+
+
 class Visualisation:
     """
     A class for visualizing the provided simulation problem as a Petri net.
@@ -240,6 +273,9 @@ class Visualisation:
         self._selected_nodes = None        
         self._zoom_level = 1.0
         self._size = MAX_SIZE
+        self.buttons = []
+
+        self.__create_buttons()
 
         # Add visualizations for prototypes, places, and transitions,
         # but not for places and transitions that are part of prototypes.
@@ -309,6 +345,25 @@ class Visualisation:
 
         self.__win = pygame.display.set_mode(self._size, pygame.RESIZABLE) # the window
     
+    def __create_buttons(self):
+        self.buttons = []
+        self.buttons.append(Button(pygame.image.load("./assets/play.png"), self.action_hide_buttons, size=(BUTTON_SIZE[0], int(BUTTON_SIZE[1]/2))))
+        self.buttons.append(Button(pygame.image.load("./assets/play.png"), self.action_step))
+
+        # Set button positions
+        position = BUTTON_POSITION
+        for button in self.buttons:
+            button.set_position(position)
+            position = (position[0], position[1] + button.button_rect.height + 4)
+
+    def action_hide_buttons(self):
+        show_button = Button(pygame.image.load("./assets/play.png"), self.action_show_buttons, size=(BUTTON_SIZE[0], int(BUTTON_SIZE[1]/2)))
+        show_button.set_position(BUTTON_POSITION)
+        self.buttons = [show_button]
+    
+    def action_show_buttons(self):
+        self.__create_buttons()
+
     def __draw(self):
         self.__screen = pygame.Surface((self._size[0]/self._zoom_level, self._size[1]/self._zoom_level))
         self.__win.fill(TUE_GREY)
@@ -320,6 +375,10 @@ class Visualisation:
         # scale the entire screen using the self._zoom_level and draw it in the window
         self.__screen.get_width()
         self.__win.blit(pygame.transform.smoothscale(self.__screen, (self._size[0], self._size[1])), (0, 0))
+        # draw buttons
+        for button in self.buttons:
+            button.draw(self.__win)
+        # flip
         pygame.display.flip()
 
     def action_step(self):
@@ -411,6 +470,9 @@ class Visualisation:
         if event.type == pygame.QUIT:
             self.__running = False
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            for button in self.buttons:
+                if button.click(event.pos):
+                    return
             node = self.__get_node_at(event.pos)
             if node is not None:
                 self._selected_nodes = [node], event.pos
