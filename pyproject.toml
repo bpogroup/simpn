@@ -23,6 +23,11 @@ dependencies = [
     "igraph>=0.11.8"
 ]
 
+[package.data]
+include = [
+    "/assets/**.*"
+]
+
 [tool.hatch.build]
 exclude = [
     "/doc*",
