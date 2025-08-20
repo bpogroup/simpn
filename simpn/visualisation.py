@@ -432,7 +432,7 @@ class Visualisation:
     def __create_buttons_closed_menu(self):
         show_button = Button(
             pygame.image.load(
-                assets.get_img_asset("flip_open2.png")
+                assets.get_img_asset("flip_open.png")
             ), 
             self.action_show_buttons, 
             size=(BUTTON_SIZE[0], int(BUTTON_SIZE[1]/2))
