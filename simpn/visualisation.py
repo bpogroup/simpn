@@ -3,9 +3,7 @@ import os
 import traceback
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-import simpn
 import simpn.assets as assets
-from importlib.resources import files
 from enum import Enum, auto
 import threading
 
@@ -262,7 +260,7 @@ class Visualisation:
         pygame.display.set_caption('Petri Net Visualisation')
         # assets.create_assets(assets.images, "assets")
         icon = pygame.image.load(
-            files(simpn).joinpath("assets", "img", "logo.png")
+            assets.get_img_asset("logo.png")
         )
         pygame.display.set_icon(icon)
 
@@ -354,7 +352,7 @@ class Visualisation:
         self.buttons = []
         self.buttons.append(Button(
             pygame.image.load(
-                files(simpn).joinpath("assets", "img", "flip_close.png")
+                assets.get_img_asset("flip_close.png")
             ), 
             self.action_hide_buttons, 
             size=(BUTTON_SIZE[0], 
@@ -362,19 +360,19 @@ class Visualisation:
         )
         self.buttons.append(Button(
             pygame.image.load(
-                files(simpn).joinpath("assets", "img", "step.png")
+                assets.get_img_asset("step.png")
                 ),
             self.action_step)
         )
         self.buttons.append(Button(
             pygame.image.load(
-                files(simpn).joinpath("assets", "img", "play.png")
+                assets.get_img_asset("play.png")
             ),
             self.action_play)
         )
         self.buttons.append(Button(
             pygame.image.load(
-                files(simpn).joinpath("assets", "img", "stop.png")
+                assets.get_img_asset("stop.png")
             ), 
             self.action_stop)
         )
@@ -388,7 +386,7 @@ class Visualisation:
     def __create_buttons_closed_menu(self):
         show_button = Button(
             pygame.image.load(
-                files(simpn).joinpath("assets", "img", "flip_open.png")
+                assets.get_img_asset("flip_open2.png")
             ), 
             self.action_show_buttons, 
             size=(BUTTON_SIZE[0], int(BUTTON_SIZE[1]/2))
