@@ -2,6 +2,7 @@ import inspect
 import pygame
 from simpn.simulator import SimToken, SimVar, SimEvent
 import simpn.visualisation as vis
+import math
 
 
 class Prototype:
@@ -340,20 +341,46 @@ class BPMNFlow(SimVar):
             pygame.draw.circle(screen, vis.TUE_BLUE, (x, y), self._width)
 
             bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
-            
-            # draw marking
-            mstr = "["
-            ti = 0
-            for token in self._model_node.marking:
-                mstr += str(token.value) + "@" + str(round(token.time, 2))
-                if ti < len(self._model_node.marking) - 1:
-                    mstr += ", "
-                ti += 1
-            mstr += "]"
+            radius = self._width * 8  # distance from center for small circles
+            small_radius = 5
+            markings = self._model_node.marking
+            count = len(markings)
+            last_time = round(markings[-1].time,2) if len(markings) > 0 else None
+            # draw marking as tokens
+            for i,token in enumerate(markings):
+                angle = 2 * math.pi * i / 8  # angle in radians
+                x_offset = radius * math.cos(angle)
+                y_offset = radius * math.sin(angle)
+                color = vis.TUE_GREY if token.time <= self._curr_time else vis.TUE_RED
+                # draw tokens
+                pygame.draw.circle(
+                    screen, color,
+                    (int(x + x_offset), int(y + y_offset)),
+                    int(small_radius)
+                )
+                pygame.draw.circle(
+                    screen, pygame.colordict.THECOLORS.get('black'),
+                    (int(x + x_offset), int(y + y_offset)),
+                    int(small_radius),
+                    vis.LINE_WIDTH
+                )
+                # grow ring around flow dot
+                if (i > 0 and i % 8 == 0):
+                    radius = radius + small_radius
+
+            mstr = f"last @ {last_time}"
             label = bold_font.render(mstr, True, vis.TUE_RED)
             text_x_pos = self._pos[0] - int(label.get_width()/2)
             text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
-            screen.blit(label, (text_x_pos, text_y_pos))        
+            screen.blit(label, (text_x_pos, text_y_pos))  
+             
+            if (count > 0):
+                bold_font = pygame.font.SysFont('Calibri', int(vis.TEXT_SIZE * 1.25), bold=True)
+                label = bold_font.render(f"{count}", True, vis.TUE_RED)
+                screen.blit(label, (
+                    x -label.get_width()/2,
+                    y -label.get_height()/2)
+                )     
 
     def get_visualisation(self):
         return self.BPMNFlowViz(self)

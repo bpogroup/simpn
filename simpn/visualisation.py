@@ -6,6 +6,7 @@ import pygame
 import simpn.assets as assets
 from enum import Enum, auto
 import threading
+import math
 
 MAX_SIZE = 1920, 1080
 # colors
@@ -164,6 +165,7 @@ class Node:
 class PlaceViz(Node):
     def __init__(self, model_node):
         super().__init__(model_node)
+        self._last_time = None
     
     def draw(self, screen):
         pygame.draw.circle(screen, TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._half_height)
@@ -177,19 +179,63 @@ class PlaceViz(Node):
         text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
         screen.blit(label, (text_x_pos, text_y_pos))
 
-        # draw marking
-        mstr = "["
-        ti = 0
-        for token in self._model_node.marking:
-            mstr += str(token.value) + "@" + str(round(token.time, 2))
-            if ti < len(self._model_node.marking) - 1:
-                mstr += ", "
-            ti += 1
-        mstr += "]"
+        # draw marking as tokens
+        markings = self._model_node.marking
+        last_time = round(markings[-1].time,2) if len(markings) > 0 else None
+        radius = self._half_height * 0.5  # distance from center for small circles
+        small_radius = 5
+        n = 8 # number of tokens to draw in a single ring
+        if (len(markings) < n):
+            for i,token in enumerate(markings):
+                angle = 2 * math.pi * i / n  # angle in radians
+                x_offset = radius * math.cos(angle)
+                y_offset = radius * math.sin(angle)
+                color = TUE_GREY if token.time <= self._curr_time else TUE_RED
+                # draw tokens 
+                pygame.draw.circle(
+                    screen, color,
+                    (int(self._pos[0] + x_offset), int(self._pos[1] + y_offset)),
+                    int(small_radius)
+                )
+                pygame.draw.circle(
+                    screen, pygame.colordict.THECOLORS.get('black'),
+                    (int(self._pos[0] + x_offset), int(self._pos[1] + y_offset)),
+                    int(small_radius),
+                    LINE_WIDTH
+                )
+            mstr = f"last @ {last_time}"
+        else:
+            count = len(markings)
+            for i,token in enumerate(markings[:8]):
+                if (i < n):
+                    angle = 2 * math.pi * i / n  # angle in radians
+                    x_offset = radius * math.cos(angle)
+                    y_offset = radius * math.sin(angle)
+                    color = TUE_GREY if token.time <= self._curr_time else TUE_RED
+                    # draw tokens
+                    pygame.draw.circle(
+                        screen, color,
+                        (int(self._pos[0] + x_offset), int(self._pos[1] + y_offset)),
+                        int(small_radius)
+                    )
+                    pygame.draw.circle(
+                        screen, pygame.colordict.THECOLORS.get('black'),
+                        (int(self._pos[0] + x_offset), int(self._pos[1] + y_offset)),
+                        int(small_radius),
+                        LINE_WIDTH
+                    )
+            # draw the plus sign for more tokens
+            label = bold_font.render(f"{n}+", True, TUE_RED)
+            screen.blit(label, (self._pos[0]-self._half_height * 0.25, self._pos[1]-self._half_height * 0.25))
+            mstr = f"(x{count}) last @ {round(markings[-1].time, 2)}"
+            
+        # draw the label for last out token
         label = bold_font.render(mstr, True, TUE_RED)
         text_x_pos = self._pos[0] - int(label.get_width()/2)
         text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH + int(label.get_height())
-        screen.blit(label, (text_x_pos, text_y_pos))        
+        screen.blit(label, (text_x_pos, text_y_pos))      
+        if (last_time != None): 
+            self._last_time = last_time       
 
 
 class TransitionViz(Node):
@@ -387,9 +433,10 @@ class Visualisation:
         self.__screen = pygame.Surface((self._size[0]/self._zoom_level, self._size[1]/self._zoom_level))
         self.__win.fill(TUE_GREY)
         self.__screen.fill(TUE_GREY)
-        for shape in self._nodes.values():
-            shape.draw(self.__screen)
         for shape in self._edges:
+            shape.draw(self.__screen)
+        for shape in self._nodes.values():
+            shape._curr_time = self._problem.clock
             shape.draw(self.__screen)
         # scale the entire screen using the self._zoom_level and draw it in the window
         self.__screen.get_width()
