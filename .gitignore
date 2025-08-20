@@ -7,6 +7,8 @@
 # dotenv
 .env
 .vscode/
+Pipfile
+Pipfile.lock
 
 # virtualenv
 .venv
