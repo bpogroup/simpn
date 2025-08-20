@@ -2,6 +2,10 @@ import os
 import hashlib
 import base64
 
+import simpn
+from importlib.resources import files 
+from os.path import exists
+
 images = {
     "logo": {
         "filename": "logo.png",
@@ -67,3 +71,12 @@ def create_assets(asset_dict, asset_dir):
             # one of our checks failed or first run - write file
             with open(filename, "wb") as f:
                 f.write(base64.b64decode(asset["data"]))
+
+def get_img_asset(asset_name):
+    """
+    Returns the filepath for the asset within the package directory.
+    """
+    fspath = files(simpn).joinpath("assets", "img", asset_name)
+    if not exists(fspath):
+        raise ValueError(f"Unable to find asset :: {fspath}")
+    return fspath
