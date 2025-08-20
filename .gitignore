@@ -1,7 +1,5 @@
 .idea/
 /temp/
-/assets/*.*
-/assets/data/*.b64
 .DS_Store
 
 # dotenv
