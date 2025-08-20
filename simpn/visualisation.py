@@ -5,7 +5,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import simpn.assets as assets
 from enum import Enum, auto
-
+import threading
 
 MAX_SIZE = 1920, 1080
 # colors
@@ -266,6 +266,7 @@ class Visualisation:
         self._node_spacing = node_spacing
         self._layout_algorithm = layout_algorithm
 
+        self.__playing = False
         self.__running = False
         self._problem = sim_problem
         self._nodes = dict()
@@ -275,7 +276,7 @@ class Visualisation:
         self._size = MAX_SIZE
         self.buttons = []
 
-        self.__create_buttons()
+        self.__create_buttons_closed_menu()
 
         # Add visualizations for prototypes, places, and transitions,
         # but not for places and transitions that are part of prototypes.
@@ -345,10 +346,12 @@ class Visualisation:
 
         self.__win = pygame.display.set_mode(self._size, pygame.RESIZABLE) # the window
     
-    def __create_buttons(self):
+    def __create_buttons_open_menu(self):
         self.buttons = []
-        self.buttons.append(Button(pygame.image.load("./assets/play.png"), self.action_hide_buttons, size=(BUTTON_SIZE[0], int(BUTTON_SIZE[1]/2))))
-        self.buttons.append(Button(pygame.image.load("./assets/play.png"), self.action_step))
+        self.buttons.append(Button(pygame.image.load("./assets/flip_close.png"), self.action_hide_buttons, size=(BUTTON_SIZE[0], int(BUTTON_SIZE[1]/2))))
+        self.buttons.append(Button(pygame.image.load("./assets/step.png"), self.action_step))
+        self.buttons.append(Button(pygame.image.load("./assets/play.png"), self.action_play))
+        self.buttons.append(Button(pygame.image.load("./assets/stop.png"), self.action_stop))
 
         # Set button positions
         position = BUTTON_POSITION
@@ -356,13 +359,29 @@ class Visualisation:
             button.set_position(position)
             position = (position[0], position[1] + button.button_rect.height + 4)
 
-    def action_hide_buttons(self):
-        show_button = Button(pygame.image.load("./assets/play.png"), self.action_show_buttons, size=(BUTTON_SIZE[0], int(BUTTON_SIZE[1]/2)))
+    def __create_buttons_closed_menu(self):
+        show_button = Button(pygame.image.load("./assets/flip_open.png"), self.action_show_buttons, size=(BUTTON_SIZE[0], int(BUTTON_SIZE[1]/2)))
         show_button.set_position(BUTTON_POSITION)
         self.buttons = [show_button]
+
+    def action_hide_buttons(self):
+        self.__create_buttons_closed_menu()
     
     def action_show_buttons(self):
-        self.__create_buttons()
+        self.__create_buttons_open_menu()
+    
+    def play(self):
+        self.__playing = True
+        while self.__playing:
+            self._problem.step()
+            pygame.time.delay(500)
+
+    def action_play(self):
+        if not self.__playing:
+            threading.Thread(target=self.play).start()
+
+    def action_stop(self):
+        self.__playing = False
 
     def __draw(self):
         self.__screen = pygame.Surface((self._size[0]/self._zoom_level, self._size[1]/self._zoom_level))
@@ -382,7 +401,8 @@ class Visualisation:
         pygame.display.flip()
 
     def action_step(self):
-        self._problem.step()
+        if not self.__playing:
+            self._problem.step()
     
     def __layout(self):
         graph = igraph.Graph()

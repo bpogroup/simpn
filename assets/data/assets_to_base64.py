@@ -8,4 +8,8 @@ def convert_image_to_base64(fname):
             fout.write(encoded)
         print(hashlib.md5(encoded).hexdigest())
 
-convert_image_to_base64("./assets/data/play.png")
+# convert_image_to_base64("./assets/data/play.png")
+# convert_image_to_base64("./assets/data/step.png")
+# convert_image_to_base64("./assets/data/stop.png")
+# convert_image_to_base64("./assets/data/flip_open.png")
+# convert_image_to_base64("./assets/data/flip_close.png")
