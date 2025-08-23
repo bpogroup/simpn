@@ -5,7 +5,9 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import simpn.assets as assets
 from enum import Enum, auto
+from typing import List, Tuple
 import threading
+import math
 
 MAX_SIZE = 1920, 1080
 # colors
@@ -139,6 +141,9 @@ class Node:
         self._show_arrowheads = True
             
     def draw(self, screen):
+        """
+        This adds the drawable aspects of the node unto the given screen.
+        """
         raise Exception("Node.raise must be implemented at subclass level.")
 
     def hook(self, hook_pos):
@@ -160,10 +165,142 @@ class Node:
     def get_id(self):
         return self._model_node.get_id()
             
+class TokenShower(Node):
+    """
+    Visualises the given set of sorted markings at some (x,y)
+    location.
+
+    Tokens are shown as grey circles if their time is lower than the 
+    current supplied clock time via `set_time`. Otherwise, they are shown
+    as a red token.
+
+    A token count in the center of the ring can be shown via 
+    `show_token_count`.
+    """
+
+    def __init__(self, markings:List['simpn.simulator.SimToken']):
+        super().__init__(None)
+        self._count = len(markings)
+        if (self._count > 0):
+            self._first_token = markings[0]
+            self._last_token = markings[-1]
+        self._visualable_tokens = markings
+        self._rings = False
+        self._token_radius = 5
+        self._inner_ring_offset = (self._width / 2) - (self._token_radius * 2)
+        self._curr_time = None
+        self._show_count = False
+        self._show_timing = False
+
+
+    def show_many_rings(self, show:bool=True) -> 'TokenShower':
+        """
+        Allow the shower to make more than one ring of tokens.
+        """
+        self._rings = show
+        return self
+
+    def show_token_count(self, show:bool=True) -> 'TokenShower':
+        """
+        Sets whether to show the token count.
+        """
+        self._show_count = show 
+        return self
+    
+    def show_timing_info(self, show:bool=True) -> 'TokenShower':
+        """
+        Sets whether to show timing info about tokens.
+        """
+        self._show_timing = show
+        return self
+
+    def set_pos(self, pos:Tuple[float, float]) -> 'TokenShower':
+        self._pos = pos
+        return self
+    
+    def set_time(self, clock:float) -> 'TokenShower':
+        self._curr_time = clock 
+        return self
+    
+    def _compute_tokens_in_ring(self, offset:float, radius:float) -> Tuple[int, float]:
+        """
+        Computes the number of tokens in a ring given an offset and radius.
+        """
+        circum = 2 * math.pi * offset
+        n = math.ceil(circum / (radius * 2))
+
+        return n, circum
+
+    def draw(self, screen:pygame.Surface) -> None:
+        """
+        Draws tokens in a ring around the current position of the shower.
+        """
+        bold_font = pygame.font.SysFont('Calibri', TEXT_SIZE, bold=True)
+
+        offset = self._inner_ring_offset
+        n, _ = self._compute_tokens_in_ring(offset, self._token_radius)
+        # draw the ring
+        i = -1
+        for token in self._visualable_tokens:
+            i += 1
+            angle = 2 * math.pi * i / n
+            x_offset = offset * math.cos(angle)
+            y_offset = offset * math.sin(angle)
+            color = TUE_GREY if token.time <= self._curr_time else TUE_RED
+            # draw tokens 
+            pygame.draw.circle(
+                screen, color,
+                (int(self._pos[0] + x_offset), int(self._pos[1] + y_offset)),
+                int(self._token_radius)
+            )
+            pygame.draw.circle(
+                screen, pygame.colordict.THECOLORS.get('black'),
+                (int(self._pos[0] + x_offset), int(self._pos[1] + y_offset)),
+                int(self._token_radius),
+                LINE_WIDTH
+            )
+
+            # should we break or make a larger ring
+            if (i > 0 and i % n == 0):
+                if (self._rings):
+                    i = 0
+                    offset += self._token_radius 
+                    n, _ = self._compute_tokens_in_ring(offset, self._token_radius)
+                    n -= 2
+                else:
+                    break
+
+        # draw label for count 
+        if (self._count > 0 and self._show_count):
+            label = bold_font.render(f"{self._count}", True, TUE_RED)
+            screen.blit(label, 
+                (self._pos[0]-label.get_width() *  0.5, 
+                self._pos[1]-label.get_height() * 0.5)
+            )
+
+        # draw labels for the timing info
+        if (self._show_timing):
+            last_time = None 
+            text_x_pos = self._pos[0]
+            text_y_pos = self._pos[1] + self._half_height
+            first_time = None
+            if self._count > 0:
+                first_time = round(self._first_token.time,2) 
+                mstr = f"first @ {first_time}"
+                label = bold_font.render(mstr, True, TUE_RED)
+                text_y_pos += LINE_WIDTH + int(label.get_height())
+                screen.blit(label, (text_x_pos - label.get_width()/2, text_y_pos))     
+            if self._count > 1:
+                last_time = round(self._last_token.time,2) 
+                mstr = f"last @ {last_time}"
+                label = bold_font.render(mstr, True, TUE_RED)
+                text_y_pos += LINE_WIDTH + int(label.get_height())
+                screen.blit(label, (text_x_pos - label.get_width()/2, text_y_pos)) 
 
 class PlaceViz(Node):
     def __init__(self, model_node):
         super().__init__(model_node)
+        self._last_time = None
     
     def draw(self, screen):
         pygame.draw.circle(screen, TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._half_height)
@@ -177,20 +314,13 @@ class PlaceViz(Node):
         text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
         screen.blit(label, (text_x_pos, text_y_pos))
 
-        # draw marking
-        mstr = "["
-        ti = 0
-        for token in self._model_node.marking:
-            mstr += str(token.value) + "@" + str(round(token.time, 2))
-            if ti < len(self._model_node.marking) - 1:
-                mstr += ", "
-            ti += 1
-        mstr += "]"
-        label = bold_font.render(mstr, True, TUE_RED)
-        text_x_pos = self._pos[0] - int(label.get_width()/2)
-        text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH + int(label.get_height())
-        screen.blit(label, (text_x_pos, text_y_pos))        
-
+        # draw marking as tokens
+        TokenShower(self._model_node.marking) \
+            .set_pos(self._pos) \
+            .set_time(self._curr_time) \
+            .show_token_count() \
+            .show_timing_info() \
+            .draw(screen)    
 
 class TransitionViz(Node):
     def __init__(self, model_node):
@@ -207,7 +337,6 @@ class TransitionViz(Node):
         text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
         screen.blit(label, (text_x_pos, text_y_pos))
     
-
 class Button:
     """
     A button as it will be drawn. The action is a function that will be executed when the button is clicked.
@@ -237,7 +366,6 @@ class Button:
             self.action()
             return True
         return False
-
 
 class Visualisation:
     """
@@ -417,9 +545,10 @@ class Visualisation:
         self.__screen = pygame.Surface((self._size[0]/self._zoom_level, self._size[1]/self._zoom_level))
         self.__win.fill(TUE_GREY)
         self.__screen.fill(TUE_GREY)
-        for shape in self._nodes.values():
-            shape.draw(self.__screen)
         for shape in self._edges:
+            shape.draw(self.__screen)
+        for shape in self._nodes.values():
+            shape._curr_time = self._problem.clock
             shape.draw(self.__screen)
         # scale the entire screen using the self._zoom_level and draw it in the window
         self.__screen.get_width()

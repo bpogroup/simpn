@@ -2,6 +2,7 @@ import inspect
 import pygame
 from simpn.simulator import SimToken, SimVar, SimEvent
 import simpn.visualisation as vis
+import math
 
 
 class Prototype:
@@ -111,7 +112,7 @@ class BPMNStartEvent(Prototype):
             pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._width/2)
             pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2, vis.LINE_WIDTH)    
             font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
-
+            
             # draw label
             label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
             text_x_pos = self._pos[0] - int(label.get_width()/2)
@@ -291,10 +292,18 @@ class BPMNEndEvent(Prototype):
         if len(outgoing) != 0:
             raise TypeError("Event " + name + ": must not have output parameters.")
 
-        result = model.add_event(incoming, outgoing, lambda c: [], name=name + "<end_event>")
+        self._marking = []
+        result = model.add_event(incoming, outgoing, lambda c: self.behaviour(c), name=name + "<end_event>")
         self.add_event(result)
 
         model.add_prototype(self)
+
+    def behaviour(self, c):
+        """
+        wrapper to count tokens that made it to the end event.
+        """
+        self._marking.append(SimToken(c))
+        return []
 
     class BPMNEndEventViz(vis.Node):
         def __init__(self, model_node):
@@ -304,6 +313,13 @@ class BPMNEndEvent(Prototype):
             pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._width/2)
             pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2, vis.LINE_WIDTH*2)
             font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+
+            # draw tokens
+            vis.TokenShower(self._model_node._marking) \
+                .set_pos(self._pos) \
+                .show_token_count(True) \
+                .set_time(self._curr_time) \
+                .draw(screen)
 
             # draw label
             label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
@@ -339,21 +355,13 @@ class BPMNFlow(SimVar):
             x, y = self._pos
             pygame.draw.circle(screen, vis.TUE_BLUE, (x, y), self._width)
 
-            bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
-            
-            # draw marking
-            mstr = "["
-            ti = 0
-            for token in self._model_node.marking:
-                mstr += str(token.value) + "@" + str(round(token.time, 2))
-                if ti < len(self._model_node.marking) - 1:
-                    mstr += ", "
-                ti += 1
-            mstr += "]"
-            label = bold_font.render(mstr, True, vis.TUE_RED)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
-            screen.blit(label, (text_x_pos, text_y_pos))        
+            # draw tokens 
+            vis.TokenShower(self._model_node.marking) \
+                .show_timing_info() \
+                .show_token_count() \
+                .set_pos(self._pos) \
+                .set_time(self._curr_time) \
+                .draw(screen)    
 
     def get_visualisation(self):
         return self.BPMNFlowViz(self)
