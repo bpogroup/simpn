@@ -565,26 +565,28 @@ class Visualisation:
         self._zoom_level = max(0.3, min(self._zoom_level, 3.0))  # clamp zoom level
 
     def show(self):
-            """
-            Displays the Petri net visualisation in a window.
-            The method will block further execution until the window is closed.
+        """
+        Displays the Petri net visualisation in a window.
+        The method will block further execution until the window is closed.
 
-            The visualisation can be interacted with using the mouse and keyboard.
-            The spacebar can be used to step through the Petri net problem.
-            The mouse can be used to drag nodes around.
-            """
-            clock = pygame.time.Clock()
-            
-            self.__running = True
-            while self.__running:
-                for event in pygame.event.get():
-                    self.__handle_event(event)
-                try:
-                    self.__draw()
-                except Exception:
-                    print("Error while drawing the visualisation.")
-                    print(traceback.format_exc())
-                    self.__running = False
-                clock.tick(30)
-
-            pygame.quit()
+        The visualisation can be interacted with using the mouse and keyboard.
+        The spacebar can be used to step through the Petri net problem.
+        The mouse can be used to drag nodes around.
+        """
+        clock = pygame.time.Clock()
+        
+        self.__running = True
+        while self.__running:
+            for event in pygame.event.get():
+                self.__handle_event(event)
+            try:
+                self.__draw()
+            except Exception:
+                print("Error while drawing the visualisation.")
+                print(traceback.format_exc())
+                self.__running = False
+            clock.tick(30)
+        
+        self.__playing = False
+        pygame.time.delay(500)
+        pygame.quit()

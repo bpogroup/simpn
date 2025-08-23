@@ -94,3 +94,10 @@ Version 1.3.4 (2025-08-11)
 - [Minor feature] made node selection more robust by adding a minimum selection area.
 - [Minor feature] enabled visualization of specific node edges (rather than all or none).
 - [Minor feature] enabled zooming in and out.
+
+Version 1.3.5 ()
+---------------------------
+
+- [Minor feature] added menu in visualization.
+- [Minor feature] added continuous play functionality in visualization.
+- [Bugfix] fixed the problem where the visualization did not quit during continuous play.
