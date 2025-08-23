@@ -112,7 +112,7 @@ class BPMNStartEvent(Prototype):
             pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._width/2)
             pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2, vis.LINE_WIDTH)    
             font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
-
+            
             # draw label
             label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
             text_x_pos = self._pos[0] - int(label.get_width()/2)
@@ -292,10 +292,18 @@ class BPMNEndEvent(Prototype):
         if len(outgoing) != 0:
             raise TypeError("Event " + name + ": must not have output parameters.")
 
-        result = model.add_event(incoming, outgoing, lambda c: [], name=name + "<end_event>")
+        self._marking = []
+        result = model.add_event(incoming, outgoing, lambda c: self.behaviour(c), name=name + "<end_event>")
         self.add_event(result)
 
         model.add_prototype(self)
+
+    def behaviour(self, c):
+        """
+        wrapper to count tokens that made it to the end event.
+        """
+        self._marking.append(SimToken(c))
+        return []
 
     class BPMNEndEventViz(vis.Node):
         def __init__(self, model_node):
@@ -305,6 +313,13 @@ class BPMNEndEvent(Prototype):
             pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._width/2)
             pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2, vis.LINE_WIDTH*2)
             font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+
+            # draw tokens
+            vis.TokenShower(self._model_node._marking) \
+                .set_pos(self._pos) \
+                .show_token_count(True) \
+                .set_time(self._curr_time) \
+                .draw(screen)
 
             # draw label
             label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
@@ -340,47 +355,13 @@ class BPMNFlow(SimVar):
             x, y = self._pos
             pygame.draw.circle(screen, vis.TUE_BLUE, (x, y), self._width)
 
-            bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
-            radius = self._width * 8  # distance from center for small circles
-            small_radius = 5
-            markings = self._model_node.marking
-            count = len(markings)
-            last_time = round(markings[-1].time,2) if len(markings) > 0 else None
-            # draw marking as tokens
-            for i,token in enumerate(markings):
-                angle = 2 * math.pi * i / 8  # angle in radians
-                x_offset = radius * math.cos(angle)
-                y_offset = radius * math.sin(angle)
-                color = vis.TUE_GREY if token.time <= self._curr_time else vis.TUE_RED
-                # draw tokens
-                pygame.draw.circle(
-                    screen, color,
-                    (int(x + x_offset), int(y + y_offset)),
-                    int(small_radius)
-                )
-                pygame.draw.circle(
-                    screen, pygame.colordict.THECOLORS.get('black'),
-                    (int(x + x_offset), int(y + y_offset)),
-                    int(small_radius),
-                    vis.LINE_WIDTH
-                )
-                # grow ring around flow dot
-                if (i > 0 and i % 8 == 0):
-                    radius = radius + small_radius
-
-            mstr = f"last @ {last_time}"
-            label = bold_font.render(mstr, True, vis.TUE_RED)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
-            screen.blit(label, (text_x_pos, text_y_pos))  
-             
-            if (count > 0):
-                bold_font = pygame.font.SysFont('Calibri', int(vis.TEXT_SIZE * 1.25), bold=True)
-                label = bold_font.render(f"{count}", True, vis.TUE_RED)
-                screen.blit(label, (
-                    x -label.get_width()/2,
-                    y -label.get_height()/2)
-                )     
+            # draw tokens 
+            vis.TokenShower(self._model_node.marking) \
+                .show_timing_info() \
+                .show_token_count() \
+                .set_pos(self._pos) \
+                .set_time(self._curr_time) \
+                .draw(screen)    
 
     def get_visualisation(self):
         return self.BPMNFlowViz(self)
