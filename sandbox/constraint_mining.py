@@ -10,8 +10,8 @@ v_resources = problem.add_var("resources")
 v_ready = problem.add_var("ready")
 
 v_arrival.put((3, 855), time = 10)
-v_queue.put((1, 100))
-v_queue.put((2, 118), time = 5)
+v_queue.put((1, 100), time = 5)
+v_queue.put((2, 118), time = 10)
 v_resources.put("r1")
 
 def pre_process(job):
