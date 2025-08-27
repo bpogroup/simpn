@@ -100,4 +100,5 @@ Version 1.3.5 ()
 
 - [Minor feature] added menu in visualization.
 - [Minor feature] added continuous play functionality in visualization.
+- [Minor feature] added token showers to places.
 - [Bugfix] fixed the problem where the visualization did not quit during continuous play.

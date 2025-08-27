@@ -191,7 +191,7 @@ class TokenShower(Node):
         self._curr_time = None
         self._show_count = False
         self._show_timing = False
-
+        self._show_token_values = False
 
     def show_many_rings(self, show:bool=True) -> 'TokenShower':
         """
@@ -212,6 +212,13 @@ class TokenShower(Node):
         Sets whether to show timing info about tokens.
         """
         self._show_timing = show
+        return self
+
+    def show_token_values(self, show:bool=True) -> 'TokenShower':
+        """
+        Sets whether to show the token values.
+        """
+        self._show_token_values = show
         return self
 
     def set_pos(self, pos:Tuple[float, float]) -> 'TokenShower':
@@ -278,11 +285,11 @@ class TokenShower(Node):
                 self._pos[1]-label.get_height() * 0.5)
             )
 
+        text_x_pos = self._pos[0]
+        text_y_pos = self._pos[1] + self._half_height
         # draw labels for the timing info
         if (self._show_timing):
             last_time = None 
-            text_x_pos = self._pos[0]
-            text_y_pos = self._pos[1] + self._half_height
             first_time = None
             if self._count > 0:
                 first_time = round(self._first_token.time,2) 
@@ -296,6 +303,13 @@ class TokenShower(Node):
                 label = bold_font.render(mstr, True, TUE_RED)
                 text_y_pos += LINE_WIDTH + int(label.get_height())
                 screen.blit(label, (text_x_pos - label.get_width()/2, text_y_pos)) 
+
+        # draw labels for token values
+        if (self._show_token_values):
+            for token in self._visualable_tokens:
+                label = bold_font.render(str(token.value) + "@" + str(token.time), True, TUE_RED)
+                text_y_pos += LINE_WIDTH + int(label.get_height())
+                screen.blit(label, (text_x_pos - label.get_width()/2, text_y_pos))
 
 class PlaceViz(Node):
     def __init__(self, model_node):
@@ -319,7 +333,7 @@ class PlaceViz(Node):
             .set_pos(self._pos) \
             .set_time(self._curr_time) \
             .show_token_count() \
-            .show_timing_info() \
+            .show_token_values() \
             .draw(screen)    
 
 class TransitionViz(Node):
@@ -376,13 +390,13 @@ class Visualisation:
     - layout_file (str): the file path to the layout file (optional)
     - grid_spacing (int): the spacing between grid lines (default: 50)
     - node_spacing (int): the spacing between nodes (default: 100)
-    - layout_algorithm (str): the layout algorithm to use (default: "auto"), possible values: auto, sugiyama, davidson_harel, grid
+    - layout_algorithm (str): the layout algorithm to use (default: "sugiyama"), possible values: auto, sugiyama, davidson_harel, grid
 
     Methods:
     - save_layout(self, filename): saves the layout to a file
     - show(self): shows the visualisation
     """
-    def __init__(self, sim_problem, layout_file=None, grid_spacing=50, node_spacing=100, layout_algorithm="auto"):
+    def __init__(self, sim_problem, layout_file=None, grid_spacing=50, node_spacing=100, layout_algorithm="sugiyama"):
         pygame.init()
         pygame.font.init()
         pygame.display.set_caption('Petri Net Visualisation')
