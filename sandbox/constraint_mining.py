@@ -1,6 +1,8 @@
 from simpn.simulator import SimProblem, SimToken
 from simpn.visualisation import Visualisation
 import random
+from simpn.reporters import BindingEventLogReporter
+
 
 problem = SimProblem()
 
@@ -23,6 +25,9 @@ def handle(job, resource):
     return [SimToken(job, delay=7), SimToken(resource, delay=7)]
 problem.add_event([v_queue, v_resources], [v_ready, v_resources], handle)
 
-v = Visualisation(problem, layout_algorithm="sugiyama", grid_spacing=100, node_spacing=200, layout_file="./temp/layout_constraint.txt")
-v.show()
-v.save_layout("./temp/layout_constraint.txt")
+# v = Visualisation(problem, layout_algorithm="sugiyama", grid_spacing=100, node_spacing=200, layout_file="./temp/layout_constraint.txt")
+# v.show()
+# v.save_layout("./temp/layout_constraint.txt")
+reporter = BindingEventLogReporter("./temp/constraint_mining_log.csv", separator=";")
+problem.simulate(50, reporter)
+reporter.close()

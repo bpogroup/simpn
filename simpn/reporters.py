@@ -180,6 +180,7 @@ class ProcessReporter(Reporter):
         for resource_id in self.resource_busy_times.keys():
             print("Resource", resource_id, "utilization:", round(self.resource_busy_times[resource_id]/(self.__last_time - self.warmup_time), 2))
 
+
 class EventLogReporter(Reporter):
     """
     A reporter that heavily depends on the process prototypes (task, start_event, intermediate_event, end_event) to report on what happens.
@@ -269,3 +270,54 @@ class EventLogReporter(Reporter):
 
     def close(self):
         self.logfile.close()
+
+
+class BindingEventLogReporter(Reporter):
+    """
+    A reporter that exports an event log based on the timed bindings that occur during the simulation.
+    Each binding is of the form (binding, time, event), where binding is a tuple of (variable, value).
+    The event log that is produced has the columns: event, time, variable_1, variable_2, ...
+    For each binding, a new row is added to the log with the corresponding event, time, and variable values.
+
+    :param filename: the name of the file in which the event log must be stored.
+    :param separator: the separator to use in the log.
+    """
+    def __init__(self, filename, separator=","):
+        self._filename = filename
+        self._separator = separator
+        self._events = []
+        self._times = []
+        self._data_fields = dict() # maps variable names to their values
+
+    def callback(self, timed_binding):
+        (binding, time, event) = timed_binding
+        self._events.append(event.get_id())
+        self._times.append(time)        
+        # add variables that are in the binding (i.e., have a value)
+        for (var, token) in binding:
+            if var.get_id() not in self._data_fields.keys():
+                self._data_fields[var.get_id()] = [None] * (len(self._events)-1)
+            self._data_fields[var.get_id()].append(token.value)
+        # add None values for variables that are not in the binding (i.e., do not have a value)
+        # since all all variables must have the same length, we add None values for any missing entries
+        for var in self._data_fields.keys():
+            if len(self._data_fields[var]) != len(self._events):
+                self._data_fields[var].append(None)
+
+    def close(self):
+        with open(self._filename, "wt") as logfile:
+            logfile.write("event"+self._separator+"time")
+            for var in self._data_fields.keys():
+                logfile.write(self._separator + var)
+            logfile.write("\n")
+            for i in range(len(self._events)):
+                logfile.write("\"" + str(self._events[i]) + "\"" + self._separator + str(self._times[i]))
+                for var in self._data_fields.keys():
+                    logfile.write(self._separator)
+                    if i < len(self._data_fields[var]):
+                        val = self._data_fields[var][i]
+                        # if val is a str, surround it with quotes
+                        if isinstance(val, str):
+                            val = "\"" + val + "\""
+                        logfile.write(str(val))
+                logfile.write("\n")
