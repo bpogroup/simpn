@@ -95,9 +95,10 @@ Version 1.3.4 (2025-08-11)
 - [Minor feature] enabled visualization of specific node edges (rather than all or none).
 - [Minor feature] enabled zooming in and out.
 
-Version 1.3.5 ()
+Version 1.3.5 (2025-08-28)
 ---------------------------
 
+- [Major feature] added support for guard alignments in the analysis module.
 - [Minor feature] added menu in visualization.
 - [Minor feature] added continuous play functionality in visualization.
 - [Minor feature] added token showers to places.

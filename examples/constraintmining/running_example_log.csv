@@ -1,0 +1,8 @@
+event;time;queue;resources;arrival
+"pre_process";10;None;None;(3, 855)
+"pre_process";15;None;None;(4, 801)
+"handle";15;(3, 855);"r1";None
+"pre_process";20;None;None;(5, 146)
+"handle";22;(4, 801);"r1";None
+"pre_process";25;None;None;(6, 222)
+"pre_process";30;None;None;(7, 317)

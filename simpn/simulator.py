@@ -446,6 +446,28 @@ class SimProblem:
         self.events.append(event)
         self.id2node[name] = event
 
+    def event(self, name):
+        """
+        Returns the SimEvent with the given name.
+        Raises an exception if no such SimEvent exists.
+
+        :param name: the name of the SimEvent.
+        :return: the SimEvent with the given name or an Error.
+        """
+        if name in self.id2node:
+            if isinstance(self.id2node[name], SimEvent):
+                return self.id2node[name]
+            else:
+                raise TypeError(name + " is not a SimEvent.")
+        else:
+            raise LookupError("SimEvent " + name + ": does not exist.")
+    def transition(*args, **kwargs):
+        """
+        Returns the SimEvent with the given name. This function is a wrapper around event for people with a Petri-net background.
+        """
+        self = args[0]
+        return self.event(*(args[1:]), **kwargs)
+
 
     def var(self, name):
         """

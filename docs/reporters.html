@@ -53,26 +53,69 @@
 <p><strong>Classes:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.EventLogReporter" title="simpn.reporters.EventLogReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EventLogReporter</span></code></a>(filename[, timeunit, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.BindingEventLogReporter" title="simpn.reporters.BindingEventLogReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BindingEventLogReporter</span></code></a>(filename[, separator])</p></td>
+<td><p>A reporter that exports an event log based on the timed bindings that occur during the simulation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.EventLogReporter" title="simpn.reporters.EventLogReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EventLogReporter</span></code></a>(filename[, timeunit, ...])</p></td>
 <td><p>A reporter that heavily depends on the process prototypes (task, start_event, intermediate_event, end_event) to report on what happens.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter" title="simpn.reporters.ProcessReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProcessReporter</span></code></a>([warmup_time])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter" title="simpn.reporters.ProcessReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProcessReporter</span></code></a>([warmup_time])</p></td>
 <td><p>A reporter that heavily depends on the process prototypes (task, start_event, intermediate_event, end_event) to report on what happens.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.Reporter" title="simpn.reporters.Reporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reporter</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.Reporter" title="simpn.reporters.Reporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reporter</span></code></a>()</p></td>
 <td><p>A reporter can be passed to the simpn.simulator.SimProblem.simulate function to report on what happens during the simulator.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.SimpleReporter" title="simpn.reporters.SimpleReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimpleReporter</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.SimpleReporter" title="simpn.reporters.SimpleReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimpleReporter</span></code></a>()</p></td>
 <td><p>A simple reporter that just prints the occurring events to the standard output.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.TimeUnit" title="simpn.reporters.TimeUnit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TimeUnit</span></code></a>(value[, names, module, qualname, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.TimeUnit" title="simpn.reporters.TimeUnit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TimeUnit</span></code></a>(value[, names, module, qualname, ...])</p></td>
 <td><p>An enumeration for the unit in which simulation time is measured.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.WarmupReporter" title="simpn.reporters.WarmupReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WarmupReporter</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.WarmupReporter" title="simpn.reporters.WarmupReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WarmupReporter</span></code></a>()</p></td>
 <td><p>A reporter that reports on the warmup period of a simulation by computing the average cycle times over time.</p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.reporters.BindingEventLogReporter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">BindingEventLogReporter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">','</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.BindingEventLogReporter" title="Link to this definition">¶</a></dt>
+<dd><p>A reporter that exports an event log based on the timed bindings that occur during the simulation.
+Each binding is of the form (binding, time, event), where binding is a tuple of (variable, value).
+The event log that is produced has the columns: event, time, variable_1, variable_2, …
+For each binding, a new row is added to the log with the corresponding event, time, and variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – the name of the file in which the event log must be stored.</p></li>
+<li><p><strong>separator</strong> – the separator to use in the log.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.BindingEventLogReporter.callback" title="simpn.reporters.BindingEventLogReporter.callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">callback</span></code></a>(timed_binding)</p></td>
+<td><p>A function that is invoked by a simpn.simulator.SimProblem each time a event happened.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.BindingEventLogReporter.callback">
+<span class="sig-name descname"><span class="pre">callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.BindingEventLogReporter.callback" title="Link to this definition">¶</a></dt>
+<dd><p>A function that is invoked by a simpn.simulator.SimProblem each time a event happened.
+It receives a timed_binding, which is a triple (binding, time, event):
+- binding = [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), …] of the variable values that caused the event.
+- time is the simulation time at which the event happened.
+- event: SimEvent is the event that happened.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timed_binding</strong> – the triple (binding, time, event) that described the event that happened with its variable values and the time at which it happened.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.reporters.EventLogReporter">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">EventLogReporter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeunit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">TimeUnit.MINUTES</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.datetime(2020,</span> <span class="pre">1,</span> <span class="pre">1,</span> <span class="pre">0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'%Y-%m-%d</span> <span class="pre">%H:%M:%S.%f'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">','</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.EventLogReporter" title="Link to this definition">¶</a></dt>

@@ -282,6 +282,9 @@ class BindingEventLogReporter(Reporter):
     :param filename: the name of the file in which the event log must be stored.
     :param separator: the separator to use in the log.
     """
+    EVENT_COLUMN_LABEL = "event"
+    TIME_COLUMN_LABEL = "time"
+
     def __init__(self, filename, separator=","):
         self._filename = filename
         self._separator = separator
@@ -306,7 +309,7 @@ class BindingEventLogReporter(Reporter):
 
     def close(self):
         with open(self._filename, "wt") as logfile:
-            logfile.write("event"+self._separator+"time")
+            logfile.write(self.EVENT_COLUMN_LABEL + self._separator + self.TIME_COLUMN_LABEL)
             for var in self._data_fields.keys():
                 logfile.write(self._separator + var)
             logfile.write("\n")

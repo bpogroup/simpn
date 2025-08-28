@@ -1,5 +1,9 @@
+import inspect
+from simpn.simulator import SimToken, SimVar, SimVarQueue
 from simpn.reporters import EventLogReporter
 from tempfile import NamedTemporaryFile
+from simpn.utils import seds
+
 
 class Conformance:
     """
@@ -165,3 +169,166 @@ class Conformance:
         :return: A float representing the precision value.
         """
         return self.calculate_fit(self.traces_sampled_from_process, self.traces_extracted_from_log)
+
+
+class GuardedAlignment:
+    """
+    A class that returns the guarded alignment of traces to a binding event log.
+    A binding event log consists of one row for each transition that fired.
+    Each row contains the label of the transition that fired, the time at which it fired, and the binding of variables at that time.
+    It can be produced using the `reporters.BindingEventLogReporter` class.
+    The guarded alignment tries to replay each event in the event log. An event can be replayed, if the binding it represents can be fired in the current marking of the Petri net.
+    In any case the binding will fired, removing all tokens for which there is an equivalent in the current marking of the net and producing the output token.
+    Note that, due to randomness, matching of tokens from the event to the tokens in the net may not be possible based on equivalence. Consequently, matching will be based on similarity and the 'most similar' token will be matched.
+    The output is an alignment table, with columns for the event label, the time of the event, and an aligned column that is true or false depending on whether the event was aligned (and fired).
+    If the event can be replayed, it will be included in the alignment table with aligned==True.
+    If the event cannot be replayed, a row will be included in the alignment table for each transition that is enabled with aligned==False.
+    """
+    INITIAL_STATE = "INITIAL_STATE"
+
+    def __init__(self, sim_problem, event_log, separator=",", event_column="event", time_column="time"):
+        """
+        Initializes the GuardedAlignment class with a SimProblem and an event log.
+
+        :param sim_problem: An instance of SimProblem containing the process model.
+        :param event_log: The filename of an event log.
+        :param separator: The separator used in the event log file (default is comma).
+        :param event_column_label: The name of the column in the event log that contains the event labels (default is "event").
+        :param time_column: The name of the column in the event log that contains the event timestamps (default is "time").
+        """
+        self.sim_problem = sim_problem
+        self.event_log = event_log
+        self.separator = separator
+        self.events = [] # a tuple (event, time, binding), where binding is a dictionary of variable -> value
+
+        # read the event log from file.
+        # check if the event log is valid, meaning:
+        # - it contains the event_column and the time_column
+        # - each of the remaining columns is a variable in the sim_problem
+        with open(event_log, 'r') as file:
+            header = file.readline().strip().split(separator)
+            if event_column not in header:
+                raise ValueError(f"Event log does not contain the event column '{event_column}'")
+            if time_column not in header:
+                raise ValueError(f"Event log does not contain the time column '{time_column}'")
+            for var in [col for col in header if col != event_column and col != time_column]:
+                if sim_problem.var(var) is None:
+                    raise ValueError(f"Variable '{var}' in event log is not a variable in the SimProblem")
+
+            index2label = {i: col for i, col in enumerate(header) if col != event_column and col != time_column}
+
+            for line in file:
+                if line.strip():
+                    parts = line.strip().split(separator)
+                    event = None
+                    time = None
+                    binding = {}
+                    for i in range(len(parts)):
+                        if header[i] == event_column:
+                            event = eval(parts[i])
+                        elif header[i] == time_column:
+                            time = float(parts[i])
+                        else:
+                            binding[index2label[i]] = eval(parts[i])
+                    self.events.append((event, time, binding))
+
+    def evaluate(self, binding, function):
+        """
+        Evaluated the given function, with the parameters of the function bounds to the corresponding values of the binding.
+        """
+        # Get the function signature
+        sig = inspect.signature(function)
+        # Create a dictionary of parameter names to values
+        params = {}
+        for k in sig.parameters:
+            if k.endswith("_queue"):
+                queue_content = self.sim_problem.var(k[:-6]).marking
+                token_values = [token.value for token in queue_content]
+                params[k] = token_values
+            else:
+                params[k] = binding[k]
+        # Call the function with the bound parameters
+        return function(**params)
+
+    def alignment(self, functions=[]):
+        """
+        Computes the alignment between the event log and the process model.
+        The alignment is computed by replaying the event log on the process model and checking for matching bindings in the model.
+        If there is a matching binding, the event is considered aligned, the alignment is added, and the event is fired on the model.
+        If there is no matching binding, a line is added for each enabled model binding with 'aligned' set to False. The event is still fired on the model.
+        On each line, the functions are also executed on the current state of the model, 
+        where each parameter of the function is bound to the corresponding variable value in the model.
+
+        :return: A list of tuples (event, time, aligned, values)
+        """
+        alignment = []
+        self.sim_problem.store_checkpoint(self.INITIAL_STATE)  # Store the initial state of the process model
+
+        for log_binding in self.events:
+            model_bindings = self.sim_problem.bindings()
+            # we need to evaluate the functions on each model binding before firing the transition, otherwise we use the wrong values (the ones after the decision was already made)
+            # TODO: check if we indeed evaluate the functions before firing the transitions
+            function_results = []
+            for model_binding in model_bindings:
+                binding_dict = log_binding[2].copy() # TODO: Currently we set the binding value with the log binding, but override it with the model binding value. Is that correct? Alternatively, only do this if the model binding value is not None. Alternatively, start with the model binding value and override with the log binding value.
+                for var, token in model_binding[0]:
+                    binding_dict[var.get_id()] = token.value
+                function_results.append([self.evaluate(binding_dict, f) for f in functions])
+
+            # there is a matching binding if the event with the same label can be fired in the log
+            matching_binding_exists = len([event for (_, _, event) in model_bindings if event.get_id() == log_binding[0]]) > 0
+            # fire the log binding
+            self.fire_log_binding(log_binding)
+            # if a matching binding exists, add the fired event, the firing time (which is the current model clock), and True to the alignment
+            if matching_binding_exists:
+                alignment.append([log_binding[0], self.sim_problem.clock, True] + function_results[0])  # TODO: we take the result of the first model binding, not sure if that is correct
+            # if a matching binding does not exist, for each model binding, add the event, the firing time, and False to the alignment
+            else:
+                for i in range(len(model_bindings)):
+                    alignment.append([model_bindings[i][2].get_id(), self.sim_problem.clock, False] + function_results[i])
+
+        self.sim_problem.restore_checkpoint(self.INITIAL_STATE)  # Restore the initial state after generating traces
+        return alignment
+        
+    def fire_log_binding(self, log_binding):
+        """
+        Fires the given log binding on the process model as follows:
+        - for each incoming variable to the event, find the token with the closest value and remove that,
+          where the closest value is determined by the mean string edit similarity on the variable's token values.
+        - construct a timed binding from the log binding and use that to fire the transition,
+          where the timed binding is constructed by setting the value for each incoming variable to the transition to the value of the log_binding.
+        """
+        (event, time, binding) = log_binding
+        model_transition = self.sim_problem.transition(event)
+        variable_assignment = [] # a list of token values constructed from the log_binding
+        for var in model_transition.incoming:
+            # find the token in the model that is closest to the value and remove it
+            token = self.closest_token(var, binding.get(var.get_id()))
+            var.remove_token(token)
+            # instead, construct the assignment from the log binding
+            variable_assignment.append(binding.get(var.get_id()))
+        #fire the transition and process the result
+        result = model_transition.behavior(*variable_assignment)
+        for i in range(len(result)):
+            if result[i] is not None:
+                if isinstance(model_transition.outgoing[i], SimVarQueue):
+                    model_transition.outgoing[i].add_token(result[i])
+                else:
+                    token = SimToken(result[i].value, time=self.sim_problem.clock + result[i].delay)
+                    model_transition.outgoing[i].add_token(token)
+
+    def closest_token(self, var: SimVar, value):
+        """
+        Finds the token in the model's incoming variables that is closest to the given value.
+        The closeness is determined by the mean string edit similarity.
+        """
+
+        str_value = str(value)
+        best_match = None
+        best_similarity = -1.0
+        for token in var.marking:
+            similarity = seds(str_value, str(token.value))
+            if similarity > best_similarity:
+                best_similarity = similarity
+                best_match = token
+        return best_match
