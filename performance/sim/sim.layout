@@ -1,0 +1,18 @@
+version 2.0
+0.9999999999999998
+1718,1408
+claim issued,100,300
+which way,300,300
+check ticket,450,150
+clear ticket,450,450
+join-a,600,300
+sent update,800,300
+claim handled,1000,300
+resources,450,300
+start,200,300
+left,300,150
+checked,600,150
+right,300,450
+cleared,600,450
+waiting to send,700,300
+sent,900,300

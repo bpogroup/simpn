@@ -1,5 +1,6 @@
 import inspect
 from sortedcontainers import SortedList
+from itertools import product
 import simpn.visualisation as vis
 
 
@@ -637,6 +638,54 @@ class SimProblem:
             bindings = new_bindings
         return bindings
 
+    # def event_bindings(self, event):
+    #     """
+    #     Calculates the set of bindings that enables the given event.
+    #     Each binding is a tuple ([(place, token), (place, token), ...], time) that represents a single enabling binding.
+    #     A binding is
+    #     a possible token combination (see token_combinations), for which the event's
+    #     guard function evaluates to True. In case there is no guard function, any combination is also a binding.
+    #     The time is the time at which the latest token is available.
+    #     For example, if a event has incoming SimVar a and b with tokens 1@2 on a and 2@3, 3@1 on b,
+    #     the possible bindings are ([(a, 1@2), (b, 2@3)], 3) and ([(a, 1@2), (b, 3@1)], 2)
+
+    #     :param event: the event for which to calculate the enabling bindings.
+    #     :return: list of tuples ([(place, token), (place, token), ...], time)
+    #     """
+    #     if len(event.incoming) == 0:
+    #         raise Exception("Though it is strictly speaking possible, we do not allow events like '" + str(self) + "' without incoming arcs.")
+
+    #     bindings = self.tokens_combinations(event)
+
+    #     # a binding must have all incoming places
+    #     nr_incoming_places = len(event.incoming)
+    #     new_bindings = []
+    #     for binding in bindings:
+    #         if len(binding) == nr_incoming_places:
+    #             new_bindings.append(binding)
+    #     bindings = new_bindings
+
+    #     # if a event has a guard, only bindings are enabled for which the guard evaluates to True
+    #     result = []
+    #     for binding in bindings:
+    #         variable_values = []
+    #         time = None
+    #         for (place, token) in binding:
+    #             variable_values.append(token.value)
+    #             if time is None or token.time > time:
+    #                 time = token.time
+    #         enabled = True
+    #         if event.guard is not None:
+    #             try:
+    #                 enabled = event.guard(*variable_values)
+    #             except Exception as e:
+    #                 raise TypeError("Event " + event + ": guard generates exception for values " + str(variable_values) + ".") from e
+    #             if self._debugging and not isinstance(enabled, bool):
+    #                 raise TypeError("Event " + event + ": guard does evaluate to a Boolean for values " + str(variable_values) + ".")
+    #         if enabled:
+    #             result.append((binding, time))
+    #     return result
+    
     def event_bindings(self, event):
         """
         Calculates the set of bindings that enables the given event.
@@ -651,39 +700,79 @@ class SimProblem:
         :param event: the event for which to calculate the enabling bindings.
         :return: list of tuples ([(place, token), (place, token), ...], time)
         """
-        if len(event.incoming) == 0:
+        nr_incoming_places = len(event.incoming)
+        if nr_incoming_places == 0:
             raise Exception("Though it is strictly speaking possible, we do not allow events like '" + str(self) + "' without incoming arcs.")
 
-        bindings = self.tokens_combinations(event)
-
-        # a binding must have all incoming places
-        nr_incoming_places = len(event.incoming)
-        new_bindings = []
-        for binding in bindings:
-            if len(binding) == nr_incoming_places:
-                new_bindings.append(binding)
-        bindings = new_bindings
-
-        # if a event has a guard, only bindings are enabled for which the guard evaluates to True
-        result = []
-        for binding in bindings:
+        bindings = [[]]
+        place_token_products = [
+            list(product([place], [ tok  for tok  in place.marking ]))
+            for place in event.incoming
+        ]
+        bindings = product(*place_token_products)
+        
+        def handle(binding):
             variable_values = []
             time = None
             for (place, token) in binding:
-                variable_values.append(token.value)
+                if (event.guard is not None):
+                    variable_values.append(token.value)
                 if time is None or token.time > time:
                     time = token.time
-            enabled = True
-            if event.guard is not None:
-                try:
-                    enabled = event.guard(*variable_values)
-                except Exception as e:
-                    raise TypeError("Event " + event + ": guard generates exception for values " + str(variable_values) + ".") from e
-                if self._debugging and not isinstance(enabled, bool):
-                    raise TypeError("Event " + event + ": guard does evaluate to a Boolean for values " + str(variable_values) + ".")
-            if enabled:
-                result.append((binding, time))
+            return (binding, time, variable_values)
+
+        # a binding must have all incoming places
+        
+        new_bindings = [
+            handle(binding)
+            for binding in bindings
+            if len(binding) == nr_incoming_places
+        ]
+        bindings = new_bindings
+
+        # if a event has a guard, only bindings are enabled for which the guard evaluates to True
+        if event.guard is not None:
+            result = [
+                (binding, time)
+                for (binding, time, variable_values)
+                in new_bindings
+                if event.guard(*variable_values)
+            ]
+        else :
+            result = [
+                (binding, time)
+                for (binding, time, _)
+                in new_bindings
+            ]
         return result
+
+    # def bindings(self):
+    #     """
+    #     Calculates the set of timed bindings that is enabled over all events in the problem.
+    #     Each binding is a tuple ([(place, token), (place, token), ...], time, event) that represents a single enabling binding.
+    #     If no timed binding is enabled at the current clock time, updates the current clock time to the earliest time at which there is.
+    #     :return: list of tuples ([(place, token), (place, token), ...], time, event)
+    #     """
+    #     timed_bindings = []
+    #     min_enabling_time = None
+    #     for t in self.events:
+    #         for (binding, time) in self.event_bindings(t):
+    #             timed_bindings.append((binding, time, t))
+    #             if min_enabling_time is None or time < min_enabling_time:
+    #                 min_enabling_time = time
+    #     # timed bindings are only enabled if they have time <= clock
+    #     # if there are no such bindings, set the clock to the earliest time at which there are
+    #     if min_enabling_time is not None and min_enabling_time > self.clock:
+    #         self.clock = min_enabling_time
+    #         # We now also need to update the bindings, because the SimVarTime may have changed and needs to be updated.
+    #         # TODO This is inefficient, because we are recalculating all bindings, while we only need to recalculate the ones that have SimVarTime in their inflow.
+    #         timed_bindings = [] 
+    #         for t in self.events:
+    #             for (binding, time) in self.event_bindings(t):
+    #                 timed_bindings.append((binding, time, t))
+
+    #     # now return the untimed bindings + the timed bindings that have time <= clock
+    #     return [(binding, time, t) for (binding, time, t) in timed_bindings if time <= self.clock]
 
     def bindings(self):
         """
@@ -692,26 +781,56 @@ class SimProblem:
         If no timed binding is enabled at the current clock time, updates the current clock time to the earliest time at which there is.
         :return: list of tuples ([(place, token), (place, token), ...], time, event)
         """
-        timed_bindings = []
         min_enabling_time = None
-        for t in self.events:
-            for (binding, time) in self.event_bindings(t):
-                timed_bindings.append((binding, time, t))
-                if min_enabling_time is None or time < min_enabling_time:
-                    min_enabling_time = time
+
+        # find the smallest largest enabling time for an event's
+        # incoming markings
+        timings = dict()
+        for ev in self.events:
+            smallest = []
+            skip = False
+            added = False
+            
+            # identify when the earlier token could be used from places of the event
+            for place in ev.incoming:
+                try:
+                    smallest.append(place.marking[0].time)
+                    added = True
+                except:
+                    skip = True
+            
+            if (skip or not added):
+                timings[ev] = 0
+                continue
+            
+            # only keep the latest of the set of early tokens across places
+            smallest_largest = max(smallest)
+            timings[ev] = smallest_largest
+
+            if (smallest_largest == 0):
+                continue
+
+            # keep track of the smallest next possible clock
+            if (smallest_largest is not None) \
+                and (min_enabling_time is None \
+                        or smallest_largest < min_enabling_time):
+                min_enabling_time = smallest_largest 
+
         # timed bindings are only enabled if they have time <= clock
         # if there are no such bindings, set the clock to the earliest time at which there are
         if min_enabling_time is not None and min_enabling_time > self.clock:
             self.clock = min_enabling_time
-            # We now also need to update the bindings, because the SimVarTime may have changed and needs to be updated.
-            # TODO This is inefficient, because we are recalculating all bindings, while we only need to recalculate the ones that have SimVarTime in their inflow.
-            timed_bindings = [] 
-            for t in self.events:
-                for (binding, time) in self.event_bindings(t):
+        # We generate bindings and only do so if an event would produce a 
+        # binding before the current clock
+        timed_bindings = [] 
+        for t, earlist in timings.items():
+            if earlist > self.clock:
+                continue
+            for (binding, time) in self.event_bindings(t):
+                if (time <= self.clock):
                     timed_bindings.append((binding, time, t))
-
         # now return the untimed bindings + the timed bindings that have time <= clock
-        return [(binding, time, t) for (binding, time, t) in timed_bindings if time <= self.clock]
+        return timed_bindings
 
     def fire(self, timed_binding):
         """
