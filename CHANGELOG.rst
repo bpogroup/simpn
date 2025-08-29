@@ -103,3 +103,8 @@ Version 1.3.5 (2025-08-28)
 - [Minor feature] added continuous play functionality in visualization.
 - [Minor feature] added token showers to places.
 - [Bugfix] fixed the problem where the visualization did not quit during continuous play.
+
+Version 1.3.6 ()
+---------------------------
+
+- [Minor feature] added support for customizable playback speed in visualization.
