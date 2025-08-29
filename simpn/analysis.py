@@ -174,15 +174,16 @@ class Conformance:
 class GuardedAlignment:
     """
     A class that returns the guarded alignment of traces to a binding event log.
-    A binding event log consists of one row for each transition that fired.
-    Each row contains the label of the transition that fired, the time at which it fired, and the binding of variables at that time.
+    A binding event log consists of one row for each transition that fired, 
+    where each row contains the label of the transition that fired, the time at which it fired, and the binding of variables for which it was fired.
     It can be produced using the `reporters.BindingEventLogReporter` class.
-    The guarded alignment tries to replay each event in the event log. An event can be replayed, if the binding it represents can be fired in the current marking of the Petri net.
-    In any case the binding will fired, removing all tokens for which there is an equivalent in the current marking of the net and producing the output token.
+    The guarded alignment is a replay of each event in the event log. An event can be replayed, if it can be fired in the current marking of the Petri net.
     Note that, due to randomness, matching of tokens from the event to the tokens in the net may not be possible based on equivalence. Consequently, matching will be based on similarity and the 'most similar' token will be matched.
-    The output is an alignment table, with columns for the event label, the time of the event, and an aligned column that is true or false depending on whether the event was aligned (and fired).
-    If the event can be replayed, it will be included in the alignment table with aligned==True.
+    The output is an alignment table, with columns for the event label, the time of the event, an aligned column that is true or false depending on whether the event was aligned,
+    and columns for variable values at the time just before firing the event. The variable values are calculated by functions that are provided as parameters.
+    If the event can be replayed, a row will be included in the alignment table with aligned==True.
     If the event cannot be replayed, a row will be included in the alignment table for each transition that is enabled with aligned==False.
+    In any case the binding will be fired, removing all tokens for which there is an equivalent in the current marking of the net and producing the output token.
     """
     INITIAL_STATE = "INITIAL_STATE"
 
@@ -252,14 +253,13 @@ class GuardedAlignment:
 
     def alignment(self, functions=[]):
         """
-        Computes the alignment between the event log and the process model.
-        The alignment is computed by replaying the event log on the process model and checking for matching bindings in the model.
-        If there is a matching binding, the event is considered aligned, the alignment is added, and the event is fired on the model.
-        If there is no matching binding, a line is added for each enabled model binding with 'aligned' set to False. The event is still fired on the model.
-        On each line, the functions are also executed on the current state of the model, 
-        where each parameter of the function is bound to the corresponding variable value in the model.
+        Computes the alignment between the event log and the process model and returns the alignment table.
+        For each event in the log, the table contains either: (1) a row for the event with aligned==True, if the event can be fired; or (2) one row for each enabled model binding with aligned==False, in case the event cannot be fired.
+        Each row also contains the values of the specified functions at the time just before firing the event. These functions can be specified as parameters.
+        Each function must have arguments that refer to variable names in the SimProblem. If a function has an argument that ends on '_queue', the content of the corresponding variable is provided as a list of all its token values.
 
-        :return: A list of tuples (event, time, aligned, values)
+        :param functions: A list of functions to be executed on the current state of the model.
+        :return: A list of tuples (event, time, aligned, function values)
         """
         alignment = []
         self.sim_problem.store_checkpoint(self.INITIAL_STATE)  # Store the initial state of the process model
