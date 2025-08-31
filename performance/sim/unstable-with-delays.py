@@ -104,9 +104,9 @@ end = time() - start
 
 print(f"finished simulation of 250 ticks in :: {end:.2f} seconds")
 
-# vis = Visualisation(problem, LAYOUT_FILE)
-# vis.show()
-# vis.save_layout(LAYOUT_FILE)
+vis = Visualisation(problem, LAYOUT_FILE)
+vis.show()
+vis.save_layout(LAYOUT_FILE)
 
 
 
