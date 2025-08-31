@@ -3,7 +3,20 @@ import pygame
 from simpn.simulator import SimToken, SimVar, SimEvent
 import simpn.visualisation as vis
 import math
+import re
 
+# matplotlib set1 colormap
+TASK_TOKEN_SHOW_COLOURS = [
+    pygame.Color("#E41A1C"),
+    pygame.Color("#377EB8"),
+    pygame.Color("#4DAF4A"),
+    pygame.Color("#984EA3"),
+    pygame.Color("#FF7F00"),
+    pygame.Color("#FFFF33"),
+    pygame.Color("#A65628"),
+    pygame.Color("#F781BF"),
+    pygame.Color("#999999"),
+]
 
 class Prototype:
     """
@@ -57,6 +70,125 @@ class Prototype:
                 raise ValueError("Edge (" + str(a) + ", " + str(b) + ") is not a valid incoming edge for event " + str(self) + ".")
 
         self.visualization_of_edges = edges
+
+class TaskTokenShower(vis.Node):
+    """
+    A helper drawer that captures the in-flights tokens that are being 
+    processed by a BPMN prototype. The shower creates a group of tokens 
+    above the task, colouring them by the prefix of the tokens to highlight
+    what tokens are being processed in the groups.
+    """
+
+    def __init__(self, model_node):
+        super().__init__(model_node)
+        self._task = None 
+        self._token_radius = 3
+        self._token_dia = self._token_radius * 2
+        self._seen_token_types = {}
+        self._next_tok_colour = 0
+        self._max_rows = 3
+
+    def set_task(self, task) -> 'TaskTokenShower':
+        self._task = task 
+        return self 
+    
+    def set_pos(self, pos) -> 'TaskTokenShower':
+        self._pos = pos 
+        return self 
+    
+    def set_rows(self, rows:int) -> 'TaskTokenShower':
+        self._max_rows = rows 
+        return self
+    
+    def set_time(self, clock:float) -> 'TaskTokenShower':
+        self._curr_time = clock
+        return self 
+    
+    def get_token_colour(self, token):
+        # handle the token
+        if isinstance(token, tuple):
+            name = token[0]
+        else:
+            if not isinstance(token, str):
+                name = str(token)
+            else:
+                name = token
+        # it would be nice if we did not have to do this to find the general
+        # family that the token comes from
+        cut = re.compile("[0-9]").search(name).span()[0]
+        name = name[:cut]
+        # find a colour
+        if name not in self._seen_token_types:
+            colour = TASK_TOKEN_SHOW_COLOURS[self._next_tok_colour]
+            self._next_tok_colour += 1 
+            if (self._next_tok_colour >= len(TASK_TOKEN_SHOW_COLOURS)):
+                self._next_tok_colour = 0 
+            self._seen_token_types[name] = colour 
+        else:
+            colour = self._seen_token_types[name]
+        return colour
+    
+    def draw(self, screen:pygame.Surface):
+        """
+        Draws the groups of tokens being processed above the current task
+        """
+        if (self._task is not None):
+            tokens = []
+            node = self._task._model_node
+            if hasattr(node, '_busyvar'):
+                tokens = node._busyvar.marking
+            elif hasattr(node, '_marking'):
+                tokens = node._marking
+            else:
+                raise ValueError(f"Could not identify the in-flight tokens for the given task :: {self._task=}")
+
+            # start from the top left of the node
+            group_height = self._token_dia * 2
+            curr_x = self._pos[0] - self._task._half_width 
+            padding_x = self._token_radius
+            curr_y = self._pos[1] \
+                - self._task._half_height - group_height - self._token_radius
+            padding_y = self._token_radius
+            start_x = curr_x
+            row_end_x = start_x + self._task._width 
+            rows = 1
+
+            # loop through token groups
+            for group in tokens:
+                group_width = self._token_dia * (len(group.value) + 1)
+                
+                group_rect = pygame.Rect(
+                    curr_x, curr_y,
+                    group_width, group_height
+                )
+
+                pygame.draw.rect(
+                    screen, vis.TUE_LIGHTBLUE, group_rect, vis.LINE_WIDTH,
+                    int(group_width * 0.25)
+                )
+
+                tok_x = curr_x + self._token_radius
+                tok_y = curr_y + self._token_radius
+                # loop through values of the group
+                for tok in group.value:
+                    tok_circle = pygame.draw.circle(
+                        screen, self.get_token_colour(tok),
+                        (tok_x + self._token_radius, 
+                         tok_y + self._token_radius),
+                        self._token_radius,
+                    )
+                    tok_x += self._token_dia
+
+                # handle moving to a new row
+                curr_x += padding_x + group_width
+                if (curr_x >= row_end_x):
+                    curr_x = start_x
+                    curr_y -= padding_y + group_height
+                    rows += 1 
+                
+                # to prevent drawing a million groups
+                if (rows >= self._max_rows):
+                    break
 
 
 class BPMNStartEvent(Prototype):  
@@ -186,6 +318,7 @@ class BPMNTask(Prototype):
             self._height = vis.STANDARD_NODE_HEIGHT
             self._half_width =  self._width / 2
             self._half_height = self._height / 2
+            self._token_shower = TaskTokenShower(None)
 
         def draw(self, screen):
             x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
@@ -199,6 +332,12 @@ class BPMNTask(Prototype):
             text_x_pos = int((self._width - label.get_width())/2) + x_pos
             text_y_pos = int((self._height - label.get_height())/2) + y_pos
             screen.blit(label, (text_x_pos, text_y_pos))
+
+            # draw tokens above the task being processed
+            self._token_shower \
+                .set_task(self) \
+                .set_pos(self.get_pos()) \
+                .draw(screen)
 
             # draw marking
             mstr = "["
