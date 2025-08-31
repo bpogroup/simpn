@@ -101,6 +101,8 @@ class SimVarQueue(SimVar):
     def __init__(self, simvar):
         self._id = simvar._id + SimVarQueue.QUEUE_SUFFIX
         self.simvar = simvar
+        self.visualize = True
+        self.visualize_edges = True
 
     @property
     def marking(self):
@@ -149,6 +151,7 @@ class SimVarTime(SimVar):
         self.checkpoints = dict()
         self.problem = problem
         self.visualize = True
+        self.visualize_edges = True
 
     @property
     def marking(self):
