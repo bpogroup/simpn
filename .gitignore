@@ -1,7 +1,6 @@
 .idea/
-**/temp/
-.DS_Store
 /temp/
+.DS_Store
 
 # dotenv
 .env
