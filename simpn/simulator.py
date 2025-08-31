@@ -1,7 +1,7 @@
 import inspect
 from sortedcontainers import SortedList
 import simpn.visualisation as vis
-
+from random import choice
 
 class SimVar:
     """
@@ -337,9 +337,11 @@ class SimProblem:
     it can happen on any of these values.
 
     :param debugging: if set to True, produces more information for debugging purposes (defaults to True).
-    :param binding_priority: a function that takes a list of binding as input and returns the binding that will be selected in case there are multiple possible bindings to fire.
+    :param binding_priority: a function that takes a list of binding as input and returns the binding that will be selected in case there are multiple possible bindings to fire (defaults to random selection).
     """
-    def __init__(self, debugging=True, binding_priority=lambda bindings: bindings[0]):
+    DEFAULT_PRIORITY = lambda bindings: choice(bindings)
+
+    def __init__(self, debugging=True, binding_priority=DEFAULT_PRIORITY):
         self.places = []
         self.events = []
         self.prototypes = []
