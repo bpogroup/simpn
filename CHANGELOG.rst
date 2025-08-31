@@ -108,3 +108,6 @@ Version 1.3.6 ()
 ---------------------------
 
 - [Minor feature] added support for customizable playback speed in visualization.
+- [Minor feature] added token showers to BPMN tasks.
+- [Bugfix] fixed issue with SimVarQueues not being visualizable.
+- [Minor feature] added helper classes for different/ easier modeling.
