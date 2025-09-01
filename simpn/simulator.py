@@ -655,7 +655,7 @@ class SimProblem:
                     variable_values.append(token.value)
                 if time is None or token.time > time:
                     time = token.time
-            return (binding, time, variable_values)
+            return (list(binding), time, variable_values)
 
         # a binding must have all incoming places
         
