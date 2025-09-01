@@ -632,14 +632,29 @@ class SimProblem:
         """
         # create all possible combinations of incoming token values
         bindings = [[]]
-        for place in event.incoming:
-            new_bindings = []
-            for token in place.marking:  # get set of colors in incoming place
-                for binding in bindings:
-                    new_binding = binding.copy()
-                    new_binding.append((place, token))
-                    new_bindings.append(new_binding)
-            bindings = new_bindings
+        place_token_products = [
+            list(product([place], [ tok  for tok  in place.marking ]))
+            for place in event.incoming
+        ]
+        bindings = product(*place_token_products)
+        
+        def handle(binding):
+            variable_values = []
+            time = None
+            for (place, token) in binding:
+                if (event.guard is not None):
+                    variable_values.append(token.value)
+                if time is None or token.time > time:
+                    time = token.time
+            return (list(binding), time, variable_values)
+
+        # a binding must have all incoming places
+        
+        bindings = [
+            handle(binding)
+            for binding in bindings
+            if len(binding) == nr_incoming_places
+        ]
         return bindings
 
     def event_bindings(self, event):
