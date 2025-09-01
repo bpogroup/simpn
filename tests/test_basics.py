@@ -495,7 +495,7 @@ class TestPriorities(unittest.TestCase):
         start2_count = 0
         while test_problem.clock <= 50:
             bindings = test_problem.bindings()
-            (binding, time, event) = bindings[0]
+            (binding, time, event) = test_problem.binding_priority(bindings)
             test_problem.fire((binding, time, event))
 
             # tokens with higher priority must always start first
