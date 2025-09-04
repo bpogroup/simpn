@@ -448,7 +448,7 @@ class TestPriorities(unittest.TestCase):
         completion_count = 0
         while test_problem.clock <= 20:
             bindings = test_problem.bindings()
-            (binding, time, event) = test_problem.binding_priority(bindings)
+            (binding, time, event) = bindings[0]
             test_problem.fire((binding, time, event))
 
             # we check if the tokens in the queues always have time <= the global clock
@@ -463,10 +463,8 @@ class TestPriorities(unittest.TestCase):
             if event._id == "task2<task:complete>":
                 completion_count += 1
                 completion = int(binding[0][1].value[0][0])
-                # so is the expectation of the bindings return that it 
-                # is sorted by FIFO?
-                # if last_completion is not None:
-                #     self.assertGreaterEqual(completion, last_completion, "jobs are completed in the order of their arrival")
+                if last_completion is not None:
+                    self.assertGreaterEqual(completion, last_completion, "jobs are completed in the order of their arrival")
                 last_completion = completion
             
         self.assertGreater(completion_count, 10, "there are at least 10 completions")
@@ -495,7 +493,7 @@ class TestPriorities(unittest.TestCase):
         start2_count = 0
         while test_problem.clock <= 50:
             bindings = test_problem.bindings()
-            (binding, time, event) = test_problem.binding_priority(bindings)
+            (binding, time, event) = bindings[0]
             test_problem.fire((binding, time, event))
 
             # tokens with higher priority must always start first

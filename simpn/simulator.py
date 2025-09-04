@@ -760,16 +760,36 @@ class SimProblem:
         # We generate bindings and only do so if an event would produce a 
         # binding before the current clock
         timed_bindings = [] 
-        for t, earlist in timings.items():
+        earlist_seen = None
+        added = False
+        for t, earlist in sorted(timings.items(), key=lambda x: x[1]):
             # skip events with no chance of producing bindings before the 
-            # clock
-            if earlist > self.clock:
-                continue
-            # now return the untimed bindings + the timed bindings that have 
-            # time <= clock
+            # current clock, but update the clock if no previous version
+            # has added yet
+            if earlist > self.clock and not added:
+                self.clock = earlist
+            elif earlist > self.clock and added:
+                break
+            # check and compute event bindings from this event
             for (binding, time) in self.event_bindings(t):
                 if (time <= self.clock):
-                    timed_bindings.append((binding, time, t))
+                    # while generating bindings that meet the current clock
+                    # check that we have found a valid firing before
+                    if earlist_seen is None:
+                        # if not then this is the earlist
+                        earlist_seen = time
+                    elif time < earlist_seen:
+                        # if we have added before then check to see 
+                        # if this binding would occur earlier
+                        earlist_seen = time 
+                        timed_bindings = []
+                    if time <= earlist_seen:
+                        # double-check before adding that time is the earlist
+                        # see so far before adding
+                        timed_bindings.append((binding, time, t))
+                        added = True
+        # set the clock to the earlist valid binding time seen
+        self.clock = earlist_seen
         return timed_bindings
     
     def fire(self, timed_binding):
