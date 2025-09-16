@@ -717,7 +717,7 @@ class BPMN:
                     if val in cls.model.id2node.keys():
                         cls.outgoing[i] = cls.model.id2node[val]
                     else:
-                        cls.outgoing[i] = cls.model.add_var(val)
+                        cls.outgoing[i] = BPMNFlow(cls.model, val)# cls.model.add_var(val)
         # handle incoming strings
         if hasattr(cls, 'incoming') and cls.incoming != None:
             for i,val in enumerate(cls.incoming):
@@ -725,7 +725,7 @@ class BPMN:
                     if val in cls.model.id2node.keys():
                         cls.incoming[i] = cls.model.id2node[val]
                     else:
-                        cls.incoming[i] = cls.model.add_var(val)
+                        cls.incoming[i] = BPMNFlow(cls.model, val)
         tasker = TYPES[cls.type]
         tasker(cls)
 
