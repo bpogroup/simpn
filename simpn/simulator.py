@@ -19,8 +19,13 @@ class SimVar:
     :param priority: a function that takes a token as input and returns a value that is used to sort the tokens in the order in which they will be processed (lower values first). The default is processing in the order of the time of the token.
     """
 
-    def __init__(self, _id, priority=lambda token: token.time):
+    def __init__(self, _id, priority=None):
         self._id = _id
+        if priority == None:
+            priority = lambda token: token.time
+            self._sorted_by_time = True
+        else:
+            self._sorted_by_time = False
         self.marking = SortedList(key=priority)
         self.checkpoints = dict()
         self.queue = SimVarQueue(self)
@@ -646,6 +651,8 @@ class SimProblem:
             raise Exception("Though it is strictly speaking possible, we do not allow events like '" + str(self) + "' without incoming arcs.")
 
         bindings = [[]]
+        # note: the marking has a totally ordered set of tokens
+        # we need to respect the ordering from place.marking
         place_token_products = [
             list(product([place], [ tok  for tok  in place.marking ]))
             for place in event.incoming
@@ -691,7 +698,8 @@ class SimProblem:
 
         bindings = self.tokens_combinations(event)
 
-        # if a event has a guard, only bindings are enabled for which the guard evaluates to True
+        # if a event has a guard, only bindings are enabled for which the 
+        # guard evaluates to True
         if event.guard is not None:
             result = [
                 (binding, time)
@@ -727,13 +735,29 @@ class SimProblem:
             added = False
             
             # identify when the earlier token could be used from places 
-            # of the event
+            # of the event; note: place.marking may not be ordered by
+            # time, need to check for each place and otherwise walk the 
+            # place's marking
             for place in ev.incoming:
-                try:
-                    smallest.append(place.marking[0].time)
-                    added = True
-                except:
-                    skip = True
+                if (hasattr(place, '_sorted_by_time') and place._sorted_by_time):
+                    try:
+                        smallest.append(place.marking[0].time)
+                        added = True
+                    except:
+                        skip = True
+                else:
+                    # fallback to find earliest time in place
+                    small = None
+                    for mark in place.marking:
+                        if small is None:
+                            small = mark.time 
+                        elif mark.time < small:
+                            small = mark.time 
+                    if small == None:
+                        skip = True 
+                    else:
+                        added = True
+                        smallest.append(small)
             
             if (skip or not added):
                 timings[ev] = 0
@@ -790,6 +814,10 @@ class SimProblem:
                         added = True
         # set the clock to the earlist valid binding time seen
         self.clock = earlist_seen
+        # note: it is assumed that the returned bindings are grouped by the
+        # event producing them, and that they are following the ordering 
+        # produced by the place.marking of the event. Not having this 
+        # property can lead to follow on behaviours being 
         return timed_bindings
     
     def fire(self, timed_binding):
