@@ -648,7 +648,7 @@ class SimProblem:
         """
         nr_incoming_places = len(event.incoming)
         if nr_incoming_places == 0:
-            raise Exception("Though it is strictly speaking possible, we do not allow events like '" + str(self) + "' without incoming arcs.")
+            raise Exception("Though it is strictly speaking possible, we do not allow events without incoming arcs.")
 
         bindings = [[]]
         # note: the marking has a totally ordered set of tokens
