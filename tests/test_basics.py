@@ -422,13 +422,10 @@ class TestTimeVariable(unittest.TestCase):
 
         self.assertEqual(time_var.marking, [SimToken(2)], "There is one token with value 2")
 
-from random import choice
 class TestPriorities(unittest.TestCase):
 
     def test_time_driven_prio(self):
-        test_problem = SimProblem(
-            binding_priority= lambda x: choice(x)
-        )
+        test_problem = SimProblem()
 
         task1_queue = test_problem.add_var("task1_queue")
         task2_queue = test_problem.add_var("task2_queue")
