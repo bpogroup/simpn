@@ -3,7 +3,8 @@
 
 name: Python 3.[9,10,11,12,13]
 
-on:
+on: 
+  workflow_dispatch:
   push:
     branches: [ "main" ]
   pull_request:
