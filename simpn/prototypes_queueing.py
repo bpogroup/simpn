@@ -73,12 +73,14 @@ class QueueingGenerator(prototypes.Prototype):
 
 
 class QueueingQueue(SimVar):
-    def __init__(self, model, _id, priority=lambda token: token.time):
+    def __init__(self, model, _id, priority=None):
         """
         A SimVar that represents a queue in a queueing system.
         It is just a SimVar with a different visualisation.
+        By default FCFS selection within a queue and random selection between queues.
         """
         super().__init__(_id, priority)
+        model.set_binding_priority(model.PRIORITY_QUEUE_BINDING)
 
         model.add_prototype_var(self)
 
@@ -220,12 +222,14 @@ class QueueingServer(prototypes.Prototype):
 
 
 class QueueingSink(SimVar):
-    def __init__(self, model, _id, priority=lambda token: token.time):
+    def __init__(self, model, _id, priority=None):
         """
         A SimVar that represents a sink.
         It is just a SimVar with a different visualisation.
         """
         super().__init__(_id, priority)
+        if priority is not None:
+            model.set_binding_priority(model.PRIORITY_BINDING)
 
         model.add_prototype_var(self)
 

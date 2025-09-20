@@ -177,6 +177,10 @@ class TestBasics(unittest.TestCase):
         self.assertEqual(test_problem.bindings(), [([(a, SimToken("a1", 0)), (b, SimToken("a1", 0))], 0, ta),  ([(a, SimToken("a2", 0)), (b, SimToken("a2", 0))], 0, ta)], "correct token combinations")
 
     def test_bindings_timing(self):
+        # starting at time 0, with four possible token combinations a1, b1; a1, b2; a2, b1; a2, b2
+        # no token combination is possible at time 0, because neither a1 nor a2 is available at time 0
+        # the earliest possible time is 1, this should then become the enabling time of the transition
+        # at time 1, only a2 is available, so only the combinations a2, b1 and a2, b2 are possible
         test_problem = SimProblem()
         a = test_problem.add_var("a")
         a.put("a1", 2)
@@ -187,6 +191,27 @@ class TestBasics(unittest.TestCase):
         ta = test_problem.add_event([a, b], [], lambda c, d: [], name="ta")
         self.assertEqual(test_problem.bindings(), [([(a, SimToken("a2", 1)), (b, SimToken("b1", 0))], 1, ta),  ([(a, SimToken("a2", 1)), (b, SimToken("b2", 1))], 1, ta)], "correct token combinations")
 
+    def test_bindings_timing_complex(self):
+        # just for completeness, a more complex example with 3 places
+        # earliest time is 5 because of c1, at this time there are four possible combinations: a1, b1, c1; a1, b2, c1; a2, b1, c1; a2, b2, c1
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put("a1", 1)
+        a.put("a2", 2)
+        b = test_problem.add_var("b")
+        b.put("b2", 4)
+        b.put("b1", 3)
+        c = test_problem.add_var("c")
+        c.put("c1", 5)
+        c.put("c2", 6)
+        ta = test_problem.add_event([a, b, c], [], lambda d, e, f: [], name="ta")
+        self.compare_two_binding_sets(
+            [([(a, SimToken("a1", 1)), (b, SimToken("b1", 3)), (c, SimToken("c1", 5))], 5, ta), 
+             ([(a, SimToken("a1", 1)), (b, SimToken("b2", 4)), (c, SimToken("c1", 5))], 5, ta), 
+             ([(a, SimToken("a2", 2)), (b, SimToken("b1", 3)), (c, SimToken("c1", 5))], 5, ta),
+             ([(a, SimToken("a2", 2)), (b, SimToken("b2", 4)), (c, SimToken("c1", 5))], 5, ta)]
+            , test_problem.bindings())
+        
     def test_fire_result(self):
         test_problem = SimProblem()
         a = test_problem.add_var("a")
@@ -422,9 +447,91 @@ class TestTimeVariable(unittest.TestCase):
 
         self.assertEqual(time_var.marking, [SimToken(2)], "There is one token with value 2")
 
+
 class TestPriorities(unittest.TestCase):
 
-    def test_time_driven_prio(self):
+    def test_basic_time_driven_prio(self):
+        # this is a version of the test_bindings_timing test, but just double checking that the priority function returns the correct binding.
+        # we have one place a with time-driven priority (lowest time first) with tokens with times 1, 2, 3, ... (in the place in random order)
+        # and one place b without priority (random) with times 3, 6, 9 (in the place in random order)
+        # current time is 0, so earliest possible time is 3
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put("a7", 7); a.put("a2", 2); a.put("a9", 9); a.put("a4", 4); a.put("a1", 1); a.put("a6", 6); a.put("a3", 3); a.put("a8", 8); a.put("a5", 5)
+        b = test_problem.add_var("b", priority=lambda token: 1/token.time) # we invert the time priority to double-check that still 3 goes first
+        b.put("b9", 9)
+        b.put("b6", 6)
+        b.put("b3", 3)
+        ta = test_problem.add_event([a, b], [], lambda c, d: [], name="ta")
+        # on a single queue, the tokens are always in time order
+        self.assertEqual(test_problem.bindings(), 
+                         [([(a, SimToken("a1", 1)), (b, SimToken("b3", 3))], 3, ta), 
+                          ([(a, SimToken("a2", 2)), (b, SimToken("b3", 3))], 3, ta),
+                          ([(a, SimToken("a3", 3)), (b, SimToken("b3", 3))], 3, ta),
+                          ],
+                         "correct token combinations")
+
+    def test_basic_time_driven_prio_multiple_transitions(self):
+        # if there are two queues, by default tokens within a single queue are always in time order
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put("a7", 7); a.put("a2", 2); a.put("a9", 9); a.put("a4", 4); a.put("a1", 1); a.put("a6", 6); a.put("a3", 3); a.put("a8", 8); a.put("a5", 5)
+        b = test_problem.add_var("b", priority=lambda token: 1/token.time) # we invert the time priority to double-check that still 3 goes first
+        b.put("b9", 9); b.put("b6", 6); b.put("b3", 3)
+        ta = test_problem.add_event([a, b], [], lambda c, d: [], name="ta")
+        c = test_problem.add_var("c")
+        c.put("c7", 7); c.put("c2", 2); c.put("c9", 9); c.put("c4", 4); c.put("c1", 1); c.put("c6", 6); c.put("c3", 3); c.put("c8", 8); c.put("c5", 5)
+        d = test_problem.add_var("d", priority=lambda token: 1/token.time) # we invert the time priority to double-check that still 3 goes first
+        d.put("d9", 9); d.put("d6", 6); d.put("d3", 3)
+        tb = test_problem.add_event([c, d], [], lambda e, f: [], name="tb")
+
+        # on a single queue, the tokens are always in time order
+        self.assertEqual([(binding_vals, binding_time, binding_event) for (binding_vals, binding_time, binding_event) in test_problem.bindings() if binding_event == ta], 
+                         [([(a, SimToken("a1", 1)), (b, SimToken("b3", 3))], 3, ta), 
+                          ([(a, SimToken("a2", 2)), (b, SimToken("b3", 3))], 3, ta),
+                          ([(a, SimToken("a3", 3)), (b, SimToken("b3", 3))], 3, ta),
+                          ],
+                         "correct token combinations on ta")
+        self.assertEqual([(binding_vals, binding_time, binding_event) for (binding_vals, binding_time, binding_event) in test_problem.bindings() if binding_event == tb], 
+                         [([(c, SimToken("c1", 1)), (d, SimToken("d3", 3))], 3, tb), 
+                          ([(c, SimToken("c2", 2)), (d, SimToken("d3", 3))], 3, tb),
+                          ([(c, SimToken("c3", 3)), (d, SimToken("d3", 3))], 3, tb),
+                          ],
+                         "correct token combinations on tb")
+
+    def test_basic_time_driven_prio_random_transition(self):
+        test_problem = SimProblem(binding_priority=SimProblem.PRIORITY_QUEUE_BINDING)
+        a = test_problem.add_var("a")
+        a.put("a7", 7); a.put("a2", 2); a.put("a9", 9); a.put("a4", 4); a.put("a1", 1); a.put("a6", 6); a.put("a3", 3); a.put("a8", 8); a.put("a5", 5)
+        b = test_problem.add_var("b", priority=lambda token: 1/token.time) # we invert the time priority to double-check that still 3 goes first
+        b.put("b9", 9); b.put("b6", 6); b.put("b3", 3)
+        ta = test_problem.add_event([a, b], [], lambda c, d: [], name="ta")
+        c = test_problem.add_var("c")
+        c.put("c7", 7); c.put("c2", 2); c.put("c9", 9); c.put("c4", 4); c.put("c1", 1); c.put("c6", 6); c.put("c3", 3); c.put("c8", 8); c.put("c5", 5)
+        d = test_problem.add_var("d", priority=lambda token: 1/token.time) # we invert the time priority to double-check that still 3 goes first
+        d.put("d9", 9); d.put("d6", 6); d.put("d3", 3)
+        tb = test_problem.add_event([c, d], [], lambda e, f: [], name="tb")
+
+        # we do this 20 times to account for randomness
+        count_ta = 0
+        count_tb = 0
+        for _ in range(20):
+            binding = test_problem.binding_priority(test_problem.bindings())
+            if binding[2] == ta:
+                count_ta += 1
+                # the binding must be fired for the first item in the queue, which is a1
+                self.assertEqual(binding[0], [(a, SimToken("a1", 1)), (b, SimToken("b3", 3))], "the binding must be fired for the first item in the queue, which is a1")
+            elif binding[2] == tb:
+                count_tb += 1
+                # the binding must be fired for the first item in the queue, which is c1
+                self.assertEqual(binding[0], [(c, SimToken("c1", 1)), (d, SimToken("d3", 3))], "the binding must be fired for the first item in the queue, which is c1")
+            else:
+                self.fail("binding must be for either ta or tb")
+        # because of randomness, each of the two transitions should be chosen at least once
+        self.assertGreater(count_ta, 0, "ta must be chosen at least once, it is possible - though unlikely - that this test fails due to randomness")
+        self.assertGreater(count_tb, 0, "tb must be chosen at least once, it is possible - though unlikely - that this test fails due to randomness")
+
+    def test_bpmn_time_driven_prio(self):
         test_problem = SimProblem()
 
         task1_queue = test_problem.add_var("task1_queue")
@@ -445,7 +552,7 @@ class TestPriorities(unittest.TestCase):
         completion_count = 0
         while test_problem.clock <= 20:
             bindings = test_problem.bindings()
-            (binding, time, event) = bindings[0]
+            (binding, time, event) = test_problem.binding_priority(bindings)
             test_problem.fire((binding, time, event))
 
             # we check if the tokens in the queues always have time <= the global clock
@@ -466,7 +573,7 @@ class TestPriorities(unittest.TestCase):
             
         self.assertGreater(completion_count, 10, "there are at least 10 completions")
 
-    def test_priority_driven_prio(self):
+    def test_bpmn_priority_driven_prio(self):
         test_problem = SimProblem()
 
         def priority(token):
@@ -490,7 +597,7 @@ class TestPriorities(unittest.TestCase):
         start2_count = 0
         while test_problem.clock <= 50:
             bindings = test_problem.bindings()
-            (binding, time, event) = bindings[0]
+            (binding, time, event) = test_problem.binding_priority(bindings)
             test_problem.fire((binding, time, event))
 
             # tokens with higher priority must always start first

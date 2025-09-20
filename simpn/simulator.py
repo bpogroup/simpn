@@ -350,9 +350,21 @@ class SimProblem:
     :param debugging: if set to True, produces more information for debugging purposes (defaults to True).
     :param binding_priority: a function that takes a list of binding as input and returns the binding that will be selected in case there are multiple possible bindings to fire (defaults to random selection).
     """
-    DEFAULT_PRIORITY = lambda bindings: choice(bindings)
+    RANDOM_BINDING = lambda bindings: choice(bindings)
+    def PRIORITY_BINDING(bindings):
+        """ Prioritized bindings per event, and prioritized selection between events. """
+        return bindings[0]
+    def PRIORITY_QUEUE_BINDING(bindings):
+        """ Prioritized bindings per event, but random selection between events. """
+        first_items = []
+        processed_events = set()
+        for (binding, time, event) in bindings:
+            if event not in processed_events:
+                first_items.append((binding, time, event))
+                processed_events.add(event)
+        return choice(first_items)
 
-    def __init__(self, debugging=True, binding_priority=DEFAULT_PRIORITY):
+    def __init__(self, debugging=True, binding_priority=RANDOM_BINDING):
         self.places = []
         self.events = []
         self.prototypes = []
@@ -410,7 +422,7 @@ class SimProblem:
         result += "}"                
         return result
 
-    def add_var(self, name, priority=lambda token: token.time):
+    def add_var(self, name, priority=None):
         """
         Creates a new SimVar with the specified name as identifier. Adds the SimVar to the problem and returns it.
 
