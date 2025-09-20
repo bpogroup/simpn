@@ -1,6 +1,6 @@
 import inspect
 import pygame
-from simpn.simulator import SimToken, SimVar, SimEvent
+from simpn.simulator import SimToken, SimVar, SimEvent, SimProblem
 import simpn.visualisation as vis
 import math
 import re
@@ -208,6 +208,7 @@ class BPMNStartEvent(Prototype):
 
     def __init__(self, model, incoming, outgoing, name, interarrival_time, behavior=None):
         super().__init__(model, incoming, outgoing, name)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)  # We process tokens in BPMN models FCFS
 
         if len(incoming) != 0:
             raise TypeError("Start event " + name + ": cannot have any incoming.")
@@ -276,6 +277,7 @@ class BPMNTask(Prototype):
 
     def __init__(self, model, incoming, outgoing, name, behavior, guard=None, outgoing_behavior=None):
         super().__init__(model, incoming, outgoing, name)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)  # We process tokens in BPMN models FCFS
 
         if len(incoming) < 2:
             raise TypeError("Task event " + name + ": must have at least two input parameters; the first for cases and the second for resources.")
@@ -373,6 +375,7 @@ class BPMNIntermediateEvent(Prototype):
 
     def __init__(self, model, incoming, outgoing, name, behavior, guard=None):
         super().__init__(model, incoming, outgoing, name)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)  # We process tokens in BPMN models FCFS
 
         if len(incoming) < 1:
             raise TypeError("Event " + name + ": must have at least one input parameter for cases.")
@@ -425,6 +428,7 @@ class BPMNEndEvent(Prototype):
 
     def __init__(self, model, incoming, outgoing, name):
         super().__init__(model, incoming, outgoing, name)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)  # We process tokens in BPMN models FCFS
 
         if len(incoming) != 1:
             raise TypeError("Event " + name + ": must have one input parameter for cases.")
@@ -474,10 +478,17 @@ class BPMNFlow(SimVar):
     """
     A SimVar that represents a BPMN Flow.
     It is just a SimVar with a different visualisation.
+    The flow can have a priority, which makes sense if the flow is the single flow into a BPMN task,
+    the priority then determines the order in which cases are processed by the task. Default is FCFS.
+
+    :param model: the SimProblem to which the event composition must be added.
+    :param _id: the id of the flow.
+    :param priority: the priority with which tokens on the flow are processed, defaults to FCFS.
     """
 
-    def __init__(self, model, _id):
-        super().__init__(_id)
+    def __init__(self, model, _id, priority=None):
+        super().__init__(_id, priority=priority)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)  # We process tokens in BPMN models FCFS
 
         model.add_prototype_var(self)
 
@@ -524,6 +535,7 @@ class BPMNExclusiveSplitGateway(Prototype):
 
     def __init__(self, model, incoming, outgoing, label, behavior):
         super().__init__(model, incoming, outgoing, label)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)  # We process tokens in BPMN models FCFS
 
         if len(incoming) != 1:
             raise TypeError("Gateway " + label + ": must have at exactly one input parameter for cases.")
@@ -591,6 +603,7 @@ class BPMNExclusiveJoinGateway(Prototype):
 
     def __init__(self, model, incoming, outgoing, label):
         super().__init__(model, incoming, outgoing, label)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)  # We process tokens in BPMN models FCFS
 
         if len(incoming) < 2:
             raise TypeError("Gateway " + label + ": must have multiple input parameter for cases.")
@@ -660,6 +673,7 @@ class BPMNParallelSplitGateway(SimEvent):
 
     def __init__(self, model, incoming, outgoing, label):
         super().__init__(label)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)  # We process tokens in BPMN models FCFS
 
         if len(incoming) != 1:
             raise TypeError("Gateway " + label + ": must have at exactly one input parameter for cases.")
@@ -708,6 +722,7 @@ class BPMNParallelJoinGateway(SimEvent):
 
     def __init__(self, model, incoming, outgoing, label, behavior=None):
         super().__init__(label)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)  # We process tokens in BPMN models FCFS
 
         if len(incoming) < 2:
             raise TypeError("Gateway " + label + ": must have at least two input parameter for cases.")
