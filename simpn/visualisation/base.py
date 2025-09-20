@@ -397,7 +397,12 @@ class Visualisation:
     - save_layout(self, filename): saves the layout to a file
     - show(self): shows the visualisation
     """
-    def __init__(self, sim_problem, layout_file=None, grid_spacing=50, node_spacing=100, layout_algorithm="sugiyama"):
+    def __init__(self, sim_problem, 
+                 layout_file=None, 
+                 grid_spacing=50, 
+                 node_spacing=100, 
+                 layout_algorithm="sugiyama",
+                 extra_modules:List=None):
         pygame.init()
         pygame.font.init()
         pygame.display.set_caption('Petri Net Visualisation')
@@ -421,6 +426,15 @@ class Visualisation:
         self._zoom_level = 1.0
         self._size = MAX_SIZE
         self.buttons = []
+
+        # default modules used in the visualisation process
+        from .modules.base import ModuleInterface
+        from .modules.ui import UIClockModule
+        self._modules:List[ModuleInterface] = [
+            UIClockModule(3)
+        ]
+        if extra_modules != None and isinstance(extra_modules, list):
+            self._modules = self._modules + extra_modules
 
         self.__create_buttons_closed_menu()
 
@@ -490,6 +504,9 @@ class Visualisation:
         if not layout_loaded:
             self.__layout()        
 
+        for mod in self._modules:
+            mod.create(self._problem)
+
         self.__win = pygame.display.set_mode(self._size, pygame.RESIZABLE) # the window
     
     def __create_buttons_open_menu(self):
@@ -521,7 +538,12 @@ class Visualisation:
     def play(self):
         self.__playing = True
         while self.__playing:
-            self._problem.step()
+            fired_binding = self._problem.step()
+            
+            if fired_binding != None:
+                for mod in self._modules:
+                    mod.firing(fired_binding, self._problem)
+
             pygame.time.delay(self._play_step_delay)
 
     def action_faster(self):
@@ -547,11 +569,19 @@ class Visualisation:
             shape._curr_time = self._problem.clock
             shape.draw(self.__screen)
         # scale the entire screen using the self._zoom_level and draw it in the window
+        
+        for mod in self._modules:
+            mod.render_sim(self.__screen)
+
         self.__screen.get_width()
         self.__win.blit(pygame.transform.smoothscale(self.__screen, (self._size[0], self._size[1])), (0, 0))
         # draw buttons
         for button in self.buttons:
             button.draw(self.__win)
+        
+        for mod in self._modules:
+            mod.render_ui(self.__win)
+
         # flip
         pygame.display.flip()
 
@@ -675,6 +705,9 @@ class Visualisation:
             else:
                 self.zoom("decrease")
 
+        for mod in self._modules:
+            mod.handle_event(event)
+
     def zoom(self, action):
         """
         Zooms the model. Action can be one of: increase, decrease, reset.
@@ -689,6 +722,13 @@ class Visualisation:
             self._zoom_level *= 1.1
         self._zoom_level = max(0.3, min(self._zoom_level, 3.0))  # clamp zoom level
 
+    def close(self):
+        """
+        Triggers the game loop showing the visualisation to close.
+        """
+        self.__running = False
+        self.__playing = False
+
     def show(self):
         """
         Displays the Petri net visualisation in a window.
@@ -702,6 +742,10 @@ class Visualisation:
         
         self.__running = True
         while self.__running:
+
+            for mod in self._modules:
+                mod.pre_event_loop(self._problem)
+
             for event in pygame.event.get():
                 self.__handle_event(event)
             try:
@@ -710,8 +754,14 @@ class Visualisation:
                 print("Error while drawing the visualisation.")
                 print(traceback.format_exc())
                 self.__running = False
+
+            for mod in self._modules:
+                mod.post_event_loop(self._problem)
+
             clock.tick(30)
         
         self.__playing = False
         pygame.time.delay(self._play_step_delay)
+        pygame.display.quit()
         pygame.quit()
+
