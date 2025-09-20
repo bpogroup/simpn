@@ -1,7 +1,7 @@
 import unittest
 from time import time, sleep
 import threading
-from utils import mock_click_event_with_button
+from tests.utils import mock_click_event_with_button
 
 import pygame
 
@@ -57,25 +57,25 @@ class PipelineTests(unittest.TestCase):
                 
             ]
         )
-        self.assertEqual(len(vis._modules), 0)
-
-        vis = Visualisation(
-            self.problem,
-            extra_modules=[
-                CheckerModule(),
-            ]
-        )
         self.assertEqual(len(vis._modules), 1)
 
-
         vis = Visualisation(
             self.problem,
             extra_modules=[
-                CheckerModule(),
                 CheckerModule(),
             ]
         )
         self.assertEqual(len(vis._modules), 2)
+
+
+        vis = Visualisation(
+            self.problem,
+            extra_modules=[
+                CheckerModule(),
+                CheckerModule(),
+            ]
+        )
+        self.assertEqual(len(vis._modules), 3)
 
     def test_create_hook(self):
         checker = CheckerModule()
