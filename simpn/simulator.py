@@ -825,7 +825,8 @@ class SimProblem:
                         timed_bindings.append((binding, time, t))
                         added = True
         # set the clock to the earlist valid binding time seen
-        self.clock = earlist_seen
+        if earlist_seen != None:
+            self.clock = earlist_seen
         # note: it is assumed that the returned bindings are grouped by the
         # event producing them, and that they are following the ordering 
         # produced by the place.marking of the event. Not having this 
