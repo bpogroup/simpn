@@ -112,3 +112,9 @@ Version 1.3.6 (2025-09-20)
 - [Minor feature] added token showers to BPMN tasks.
 - [Bugfix] fixed issue with SimVarQueues not being visualizable.
 - [Minor feature] added helper classes for different/ easier modeling.
+
+Version 1.3.7 ()
+---------------------------
+
+- [Minor feature] added simulation clock visualization.
+- [Minor feature] added visualization modules.
