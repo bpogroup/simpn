@@ -62,7 +62,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNExclusiveSplitGateway" title="simpn.prototypes.BPMNExclusiveSplitGateway"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNExclusiveSplitGateway</span></code></a>(model, incoming, ...)</p></td>
 <td><p>Generates a composition of SimVar and SimEvent that represents a BPMN exclusive split gateway.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNFlow" title="simpn.prototypes.BPMNFlow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNFlow</span></code></a>(model, _id)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNFlow" title="simpn.prototypes.BPMNFlow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNFlow</span></code></a>(model, _id[, priority])</p></td>
 <td><p>A SimVar that represents a BPMN Flow.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNIntermediateEvent" title="simpn.prototypes.BPMNIntermediateEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNIntermediateEvent</span></code></a>(model, incoming, ...)</p></td>
@@ -82,6 +82,9 @@
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.Prototype" title="simpn.prototypes.Prototype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prototype</span></code></a>(model, incoming, outgoing, name)</p></td>
 <td><p>Superclass for all prototypes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.TaskTokenShower" title="simpn.prototypes.TaskTokenShower"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TaskTokenShower</span></code></a>(model_node)</p></td>
+<td><p>A helper drawer that captures the in-flights tokens that are being  processed by a BPMN prototype.</p></td>
 </tr>
 </tbody>
 </table>
@@ -155,9 +158,20 @@ The behavior function must return a list of SimToken, which are put on the outgo
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.prototypes.BPMNFlow">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNFlow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNFlow" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNFlow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNFlow" title="Link to this definition">¶</a></dt>
 <dd><p>A SimVar that represents a BPMN Flow.
-It is just a SimVar with a different visualisation.</p>
+It is just a SimVar with a different visualisation.
+The flow can have a priority, which makes sense if the flow is the single flow into a BPMN task,
+the priority then determines the order in which cases are processed by the task. Default is FCFS.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – the SimProblem to which the event composition must be added.</p></li>
+<li><p><strong>_id</strong> – the id of the flow.</p></li>
+<li><p><strong>priority</strong> – the priority with which tokens on the flow are processed, defaults to FCFS.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
@@ -269,6 +283,29 @@ Precondition: for each edge (a, self), a must be in self.incoming; for each edge
 <dd class="field-odd"><p><strong>edges</strong> – a list of edges to visualize.</p>
 </dd>
 </dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.TaskTokenShower">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">TaskTokenShower</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.TaskTokenShower" title="Link to this definition">¶</a></dt>
+<dd><p>A helper drawer that captures the in-flights tokens that are being 
+processed by a BPMN prototype. The shower creates a group of tokens 
+above the task, colouring them by the prefix of the tokens to highlight
+what tokens are being processed in the groups.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.TaskTokenShower.draw" title="simpn.prototypes.TaskTokenShower.draw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">draw</span></code></a>(screen)</p></td>
+<td><p>Draws the groups of tokens being processed above the current task</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.TaskTokenShower.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.TaskTokenShower.draw" title="Link to this definition">¶</a></dt>
+<dd><p>Draws the groups of tokens being processed above the current task</p>
 </dd></dl>
 
 </dd></dl>

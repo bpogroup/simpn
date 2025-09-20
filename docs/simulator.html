@@ -197,13 +197,19 @@ it can happen on any of these values.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>debugging</strong> – if set to True, produces more information for debugging purposes (defaults to True).</p></li>
-<li><p><strong>binding_priority</strong> – a function that takes a list of binding as input and returns the binding that will be selected in case there are multiple possible bindings to fire.</p></li>
+<li><p><strong>binding_priority</strong> – a function that takes a list of binding as input and returns the binding that will be selected in case there are multiple possible bindings to fire (defaults to random selection).</p></li>
 </ul>
 </dd>
 </dl>
 <p><strong>Methods:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.PRIORITY_BINDING" title="simpn.simulator.SimProblem.PRIORITY_BINDING"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PRIORITY_BINDING</span></code></a>()</p></td>
+<td><p>Prioritized bindings per event, and prioritized selection between events.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.PRIORITY_QUEUE_BINDING" title="simpn.simulator.SimProblem.PRIORITY_QUEUE_BINDING"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PRIORITY_QUEUE_BINDING</span></code></a>()</p></td>
+<td><p>Prioritized bindings per event, but random selection between events.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_event" title="simpn.simulator.SimProblem.add_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_event</span></code></a>(inflow, outflow, behavior[, name, ...])</p></td>
 <td><p>Creates a new SimEvent with the specified parameters (also see SimEvent).</p></td>
 </tr>
@@ -223,7 +229,7 @@ it can happen on any of these values.</p>
 <td><p>Creates a new SimVar with the specified name as identifier.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.bindings" title="simpn.simulator.SimProblem.bindings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bindings</span></code></a>()</p></td>
-<td><p>Calculates the set of timed bindings that is enabled over all events in the problem.</p></td>
+<td><p>Calculates the set of timed bindings that is enabled over all  events in the problem.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.event" title="simpn.simulator.SimProblem.event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">event</span></code></a>(name)</p></td>
 <td><p>Returns the SimEvent with the given name.</p></td>
@@ -263,6 +269,18 @@ it can happen on any of these values.</p>
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.PRIORITY_BINDING">
+<span class="sig-name descname"><span class="pre">PRIORITY_BINDING</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.PRIORITY_BINDING" title="Link to this definition">¶</a></dt>
+<dd><p>Prioritized bindings per event, and prioritized selection between events.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.PRIORITY_QUEUE_BINDING">
+<span class="sig-name descname"><span class="pre">PRIORITY_QUEUE_BINDING</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.PRIORITY_QUEUE_BINDING" title="Link to this definition">¶</a></dt>
+<dd><p>Prioritized bindings per event, but random selection between events.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_event">
 <span class="sig-name descname"><span class="pre">add_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_event" title="Link to this definition">¶</a></dt>
@@ -309,7 +327,7 @@ it can happen on any of these values.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_var">
-<span class="sig-name descname"><span class="pre">add_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority=&lt;function</span> <span class="pre">SimProblem.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_var" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_var" title="Link to this definition">¶</a></dt>
 <dd><p>Creates a new SimVar with the specified name as identifier. Adds the SimVar to the problem and returns it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -327,10 +345,16 @@ it can happen on any of these values.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.bindings">
 <span class="sig-name descname"><span class="pre">bindings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.bindings" title="Link to this definition">¶</a></dt>
-<dd><p>Calculates the set of timed bindings that is enabled over all events in the problem.
-Each binding is a tuple ([(place, token), (place, token), …], time, event) that represents a single enabling binding.
-If no timed binding is enabled at the current clock time, updates the current clock time to the earliest time at which there is.
-:return: list of tuples ([(place, token), (place, token), …], time, event)</p>
+<dd><p>Calculates the set of timed bindings that is enabled over all 
+events in the problem. Each binding is a tuple ([(place, token), 
+(place, token), …], time, event) that represents a single enabling 
+binding. If no timed binding is enabled at the current clock time, 
+updates the current clock time to the earliest time at which there is.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of tuples ([(place, token), (place, token), …], time, event)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -434,7 +458,7 @@ Returns the binding that happened, or None if no event could happen.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.tokens_combinations">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tokens_combinations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.tokens_combinations" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tokens_combinations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#simpn.simulator.SimProblem.tokens_combinations" title="Link to this definition">¶</a></dt>
 <dd><p>Creates a list of token combinations that are available to the specified event.
 These are combinations of tokens that are on the incoming SimVar of the event.
 For example, if a event has incoming SimVar a and b with tokens 1&#64;0 on a and 2&#64;0, 3&#64;0 on b,
@@ -444,9 +468,10 @@ the possible combinations are [(a, 1&#64;0), (b, 2&#64;0)] and [(a, 1&#64;0), (b
 <dd class="field-odd"><p><strong>event</strong> – the event to return the token combinations for.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a list of lists, each of which is a token combination.</p>
+<dd class="field-even"><p>a list of triples, where each triple describes the binding,</p>
 </dd>
 </dl>
+<p>the activation time, and the variable values of the binding.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -491,7 +516,7 @@ The value will then be available at &lt;time of event&gt; + &lt;delay&gt;.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimVar">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority=&lt;function</span> <span class="pre">SimVar.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar" title="Link to this definition">¶</a></dt>
 <dd><p>A simulation variable SimVar has an identifier and a marking.
 A simulation variable can have multiple values. These values are available at particular times.
 For example, a variable van have the value 1 at time 0 (denoted as 1&#64;0) and also 2&#64;0.

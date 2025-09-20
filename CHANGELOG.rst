@@ -104,9 +104,10 @@ Version 1.3.5 (2025-08-28)
 - [Minor feature] added token showers to places.
 - [Bugfix] fixed the problem where the visualization did not quit during continuous play.
 
-Version 1.3.6 ()
+Version 1.3.6 (2025-09-20)
 ---------------------------
 
+- [Minor feature] speed-up of simulation engine.
 - [Minor feature] added support for customizable playback speed in visualization.
 - [Minor feature] added token showers to BPMN tasks.
 - [Bugfix] fixed issue with SimVarQueues not being visualizable.
