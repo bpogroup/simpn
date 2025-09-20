@@ -34,7 +34,7 @@ class ModuleInterface():
     :firing(fired,sim,...):
         called once in the play loop when the next step of the simulation
         is decided. Useful for creating diagnostic ui elements.
-    :post_event_loop(...): 
+    :post_event_loop(sim,...): 
         called once per cycle of game loop
     """
 
