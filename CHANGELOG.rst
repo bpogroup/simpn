@@ -118,3 +118,4 @@ Version 1.3.7 ()
 
 - [Minor feature] added simulation clock visualization.
 - [Minor feature] added visualization modules.
+- [Minor feature] made binding priority functions static methods to prevent potential issues with instance variables.

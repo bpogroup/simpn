@@ -350,10 +350,17 @@ class SimProblem:
     :param debugging: if set to True, produces more information for debugging purposes (defaults to True).
     :param binding_priority: a function that takes a list of binding as input and returns the binding that will be selected in case there are multiple possible bindings to fire (defaults to random selection).
     """
-    RANDOM_BINDING = lambda bindings: choice(bindings)
+    @staticmethod
+    def RANDOM_BINDING(bindings):
+        """ Random selection between all bindings. """
+        return choice(bindings)
+    
+    @staticmethod
     def PRIORITY_BINDING(bindings):
         """ Prioritized bindings per event, and prioritized selection between events. """
         return bindings[0]
+
+    @staticmethod
     def PRIORITY_QUEUE_BINDING(bindings):
         """ Prioritized bindings per event, but random selection between events. """
         first_items = []
