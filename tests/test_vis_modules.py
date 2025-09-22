@@ -34,7 +34,7 @@ class PipelineTests(unittest.TestCase):
                 ]
     
     @staticmethod
-    def quick_close(vis, wait_time=0.2):
+    def quick_close(vis, wait_time=0.4):
         start = time()
 
         vis.action_play()
