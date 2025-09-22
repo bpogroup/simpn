@@ -371,7 +371,7 @@ class SimProblem:
                 processed_events.add(event)
         return choice(first_items)
 
-    def __init__(self, debugging=True, binding_priority=RANDOM_BINDING):
+    def __init__(self, debugging=True, binding_priority=None):
         self.places = []
         self.events = []
         self.prototypes = []
@@ -379,7 +379,10 @@ class SimProblem:
         self.clock = 0
         self._debugging = debugging
         self.clock_checkpoints = dict()
-        self.binding_priority = binding_priority
+        if binding_priority is None:
+            self.binding_priority = self.RANDOM_BINDING
+        else:
+            self.binding_priority = binding_priority
 
     def __str__(self):
         result = ""
