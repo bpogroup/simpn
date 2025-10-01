@@ -4,6 +4,7 @@ import traceback
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import simpn.assets as assets
+from simpn.visualisation.events import create_event, NODE_CLICKED, SELECTION_CLEAR
 from enum import Enum, auto
 from typing import List, Tuple
 import threading
@@ -681,8 +682,20 @@ class Visualisation:
             node = self.__get_node_at(event.pos)
             if node is not None:
                 self._selected_nodes = [node], event.pos
+                pygame.event.post(
+                    create_event(
+                        NODE_CLICKED,
+                        { 'node' : node }
+                    )
+                )
             else:
                 self._selected_nodes = self._nodes.values(), event.pos
+                pygame.event.post(
+                    create_event(
+                        SELECTION_CLEAR,
+                        {}
+                    )
+                )
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self._selected_nodes is not None:
             self.__drag(snap=True)
             self._selected_nodes = None
