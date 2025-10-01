@@ -32,6 +32,5 @@ def check_event(event:Event, type:str) -> bool:
     type.
     """
     if event.type == USEREVENT +1 :
-        print(f"Checking event :: {event}")
         return event.named_type == type    
     return False
