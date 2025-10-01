@@ -143,6 +143,7 @@ class HelperBPMNStart(BPMNStartEvent):
         outgoing = getattr(cls, 'outgoing', None)
         name = getattr(cls, 'name', None)
         amount = getattr(cls, 'amount', 1)
+        behaviour = getattr(cls, 'behaviour', None)
         if model is None or outgoing is None or name is None:
             if cls.__name__ == 'HelperBPMNStart':
                 return
@@ -151,7 +152,7 @@ class HelperBPMNStart(BPMNStartEvent):
         if interarrival_time is None or not callable(interarrival_time):
             raise NotImplementedError("You must implement a static/class method 'interarrival_time()' in your HelperBPMNStart subclass.")
         # Register the start event with the model by instantiating BPMNStartEvent
-        HelperBPMNStart(model, [], outgoing, name, interarrival_time)
+        HelperBPMNStart(model, [], outgoing, name, interarrival_time, behaviour)
 
     def __init_subclass__(cls, **kwargs):
         model = getattr(cls, 'model', None)
