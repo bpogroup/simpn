@@ -109,6 +109,8 @@ class UIClockModule(ModuleInterface):
                 elif event.button == 3:
                     self._precision = max(1, self._precision - 1)
 
+        return True
+
 @dataclass
 class UIPanelDescription():
     title:str="foobar"
@@ -219,23 +221,25 @@ class UISidePanelModule(ModuleInterface):
     
     def handle_event(self, event, *args, **kwargs):
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.orect.collidepoint(event.pos) and not self._opened:
-                # on left click increase precision
-                if event.button == 1:
-                    self._opened = True
-                    self._push_out = 0
-            elif self.crect.collidepoint(event.pos) and self._opened:
-                if event.button == 1:
-                    self._opened = False
+            if self.panel.collidepoint(event.pos):
+                print(event)
+                if self.orect.collidepoint(event.pos) and not self._opened:
+                    if event.button == 1:
+                        self._opened = True
+                        self._push_out = 0
+                elif self.crect.collidepoint(event.pos) and self._opened:
+                    if event.button == 1:
+                        self._opened = False
+                return False
+            
         if check_event(event, NODE_CLICKED):
-            print(f"side panel saw a node click :: {event.node}")
             model_node = event.node._model_node
             self._selected = model_node
             self.create_description_from_node(self._selected)
         elif check_event(event, SELECTION_CLEAR):
             self.reset_and_hide_description()
 
-        return super().handle_event(event, *args, **kwargs)
+        return True
     
     def render_ui(self, window, *args, **kwargs):
         right = window.get_width()

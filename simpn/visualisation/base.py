@@ -673,6 +673,10 @@ class Visualisation:
         self._selected_nodes = nodes, new_pos
 
     def __handle_event(self, event):
+        for mod in self._modules:
+            propagate = mod.handle_event(event)
+            if not propagate:
+                return
         if event.type == pygame.QUIT:
             self.__running = False
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -718,8 +722,6 @@ class Visualisation:
             else:
                 self.zoom("decrease")
 
-        for mod in self._modules:
-            mod.handle_event(event)
 
     def zoom(self, action):
         """
