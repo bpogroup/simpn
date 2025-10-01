@@ -10,6 +10,7 @@ from simpn.helpers import Place, Transition
 from simpn.visualisation import Visualisation
 from simpn.visualisation.modules.testers import CheckerModule
 from simpn.visualisation.modules.ui import UIClockModule
+from simpn.visualisation.modules.ui import UISidePanelModule
 
 
 class PipelineTests(unittest.TestCase):
@@ -350,9 +351,119 @@ class UIClockTests(unittest.TestCase):
         self.assertEqual(mod._precision, 3)
 
 
-    
+class UISidePanelTests(unittest.TestCase):
+    """
+    Tests the functionality of the module for the side panel.
+    """
 
+    def setUp(self):
+        from random import uniform
+        self.problem = SimProblem()
 
+        class Start(Place):
+            model=self.problem
+            name="start"
+            amount=5
 
+        class Resource(Place):
+            model=self.problem
+            name="resource"
+            amount=1
+
+        class Action(Transition):
+            model=self.problem
+            name="Task One"
+            incoming = ["start", "resource"]
+            outgoing = ["end", "resource"]
+
+            def behaviour(c, r):
+                return [
+                    SimToken(c, delay=1),
+                    SimToken(r, delay=uniform(1,5))
+                ]
+            
+    @staticmethod
+    def quick_close(vis, wait_time=2):
+        start = time()
+
+        vis.action_play()
+
+        while (time() - start) <= wait_time:
+            sleep(0.02)
+
+        vis.close()
+
+    @staticmethod
+    def trigger_click(mod, rect_name, button, wait=0.25):
+        sleep(wait)
+        rect = getattr(mod, rect_name)
+        mock_click_event_with_button(rect, button)
+            
+    def test_no_crash(self):
+        mod = UISidePanelModule()
+        vis = Visualisation(
+            self.problem,
+            extra_modules=[
+                mod
+            ]
+        )
+
+        thread = threading.Thread(target=self.quick_close, args=([vis]))
+        thread.start()
+        vis.show()
+        thread.join()
+
+    def test_open_panel(self):
+        mod = UISidePanelModule()
+        vis = Visualisation(
+            self.problem,
+            extra_modules=[
+                mod
+            ]
+        )
+
+        thread = threading.Thread(target=self.quick_close, args=([vis, 1]))
+        hit_thread = threading.Thread(
+            target=self.trigger_click, args=([mod, 'orect', 1])
+        )
+        thread.start()
+        hit_thread.start()
+        vis.show()
+        hit_thread.join()
+        self.assertTrue(
+            mod._opened
+        )
+        thread.join()
+
+    def test_close_panel(self):
+        mod = UISidePanelModule()
+        vis = Visualisation(
+            self.problem,
+            extra_modules=[
+                mod
+            ]
+        )
+
+        thread = threading.Thread(target=self.quick_close, args=([vis, 1.5]))
+        hit_thread = threading.Thread(
+            target=self.trigger_click, args=([mod, 'orect', 1])
+        )
+        hit_thread2 = threading.Thread(
+            target=self.trigger_click, args=([mod, 'crect', 1, 0.5])
+        )
+        thread.start()
+        hit_thread.start()
+        hit_thread2.start()
+        vis.show()
+        hit_thread.join()
+        hit_thread2.join()
+        self.assertFalse(
+            mod._opened
+        )
+        thread.join()
+
+    def test_description(self):
+        #TODO
+        pass
         
 

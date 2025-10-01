@@ -222,7 +222,6 @@ class UISidePanelModule(ModuleInterface):
     def handle_event(self, event, *args, **kwargs):
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.panel.collidepoint(event.pos):
-                print(event)
                 if self.orect.collidepoint(event.pos) and not self._opened:
                     if event.button == 1:
                         self._opened = True
