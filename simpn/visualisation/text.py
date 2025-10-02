@@ -30,8 +30,8 @@ def prevent_overflow_while_rendering(
                 break 
 
         text=text[curr:]
-        pos_y += rendered_text.get_height() / 2.0
         surface.blit(rendered_text, (pos_x, pos_y))
+        pos_y += rendered_text.get_height()
         if len(text) > 0 :
             pos_y += line_offset
     

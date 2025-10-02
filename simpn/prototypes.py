@@ -1,6 +1,6 @@
 import inspect
 import pygame
-from simpn.simulator import SimToken, SimVar, SimEvent, SimProblem
+from simpn.simulator import SimToken, SimVar, SimEvent, SimProblem, Describable
 import simpn.visualisation as vis
 import math
 import re
@@ -18,7 +18,7 @@ TASK_TOKEN_SHOW_COLOURS = [
     pygame.Color("#999999"),
 ]
 
-class Prototype:
+class Prototype(Describable):
     """
     Superclass for all prototypes. Contains the basic structure of a prototype, which is a composition of SimVar and SimEvent.
     A prototype must subclass this class.
@@ -70,6 +70,7 @@ class Prototype:
                 raise ValueError("Edge (" + str(a) + ", " + str(b) + ") is not a valid incoming edge for event " + str(self) + ".")
 
         self.visualization_of_edges = edges
+
 
 class TaskTokenShower(vis.Node):
     """

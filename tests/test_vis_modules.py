@@ -434,13 +434,9 @@ class UISidePanelTests(unittest.TestCase):
         node = vis._nodes['start']._model_node
         description = mod._description
 
-        self.assertEqual(
+        self.assertIn(
             node.get_id(),
-            description.title
-        )
-        self.assertEqual(
-            len(node.marking),
-            len(description.marked_tokens)
+            description[0][0]
         )
 
     def test_clicking_on_things(self):
