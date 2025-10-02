@@ -25,7 +25,7 @@ LINE_WIDTH = 2
 ARROW_WIDTH, ARROW_HEIGHT = 12, 10
 TEXT_SIZE = 16
 BUTTON_POSITION = (16, 16)
-BUTTON_SIZE = (32, 32)
+BUTTON_SIZE = (50, 50)
 
 
 class Shape(Enum):
@@ -335,7 +335,6 @@ class PlaceViz(Node):
             .set_pos(self._pos) \
             .set_time(self._curr_time) \
             .show_token_count() \
-            .show_token_values() \
             .draw(screen)    
 
 class TransitionViz(Node):

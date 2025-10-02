@@ -23,7 +23,7 @@ class UIClockModule(ModuleInterface):
         The preicision of the clock to show in the UI.
     """
 
-    CLOCK_SIZE = (64, 64)
+    CLOCK_SIZE = (50, 50)
     OFFSET = 16
 
     def __init__(self, precision:int=2):
@@ -53,14 +53,14 @@ class UIClockModule(ModuleInterface):
 
     def render_ui(self, window:Surface, *args, **kwargs):
         self._clock_rect.center = (
-            window.get_width() - self.OFFSET- self._clock_rect.width // 2, 
-            self.OFFSET + self._clock_rect.height // 2
+            self.OFFSET + self._clock_rect.width // 2, 
+            window.get_height() - self.OFFSET - self._font_size - self._clock_rect.height // 2
         )
 
         # draw holder for text
         clock_text_rect = pygame.Rect(
-            window.get_width() - self.OFFSET - self._clock_rect.width,
-            self.OFFSET + self._clock_rect.height - 5,
+            self.OFFSET,
+            window.get_height() - self.OFFSET - self._font_size,
             self._clock_rect.width,
             24
         )
@@ -124,7 +124,7 @@ class UISidePanelModule(ModuleInterface):
     PANEL_SIZE = (300,0)
     PUSH_OUT_SPEED = 20
     PUSH_OUT_MAX = PANEL_SIZE[0] - 20
-    PANEL_Y_POS = 120
+    PANEL_Y_POS = 0
 
     TITLE_FONT_SIZE = 18
     SUBTITLE_FONT_SIZE = 16
