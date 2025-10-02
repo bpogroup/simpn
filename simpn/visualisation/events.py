@@ -19,7 +19,7 @@ def create_event(type:str, context:Dict[str,object]) -> Event:
     """
     Creates a custom pygame event to throw into the event que.
     """
-    context = deepcopy(context)
+    context = context
     context['named_type'] = type
     return Event(
         USEREVENT + 1,
