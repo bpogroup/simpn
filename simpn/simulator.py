@@ -5,8 +5,29 @@ import simpn.visualisation as vis
 from random import choice
 from typing import List, Tuple 
 from itertools import product
+from enum import Enum, auto
 
-class SimVar:
+
+class Describable:
+    """
+    A class that can provide a description of itself for visualisation purposes.
+    """
+    class Style(Enum):
+        HEADING = auto()
+        NORMAL = auto()
+        BOLD = auto()
+        BOXED = auto()
+
+    def get_description(self):
+        """
+        Returns a description of the object. This is can be used for visualisation purposes.
+        The description is a list of tuples, where each tuple has the form ('text', styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
+        :return: a list of tuples.
+        """
+        return []
+
+
+class SimVar(Describable):
     """
     A simulation variable SimVar has an identifier and a marking.
     A simulation variable can have multiple values. These values are available at particular times.
@@ -97,6 +118,14 @@ class SimVar:
     def set_invisible_edges(self):
         self.visualize_edges = False
     
+    def get_description(self):
+        description = [(self._id + ": SimVar", Describable.Style.HEADING) ]        
+        description.append( (" ", Describable.Style.NORMAL) )
+        description.append( ("Marking:", Describable.Style.NORMAL) )
+        for token in self.marking:
+            description.append( (str(token), Describable.Style.BOXED) )
+        return description
+
 
 class SimVarQueue(SimVar):
     """
@@ -182,7 +211,7 @@ class SimVarTime(SimVar):
         return self.__str__()
 
 
-class SimEvent:
+class SimEvent(Describable):
     """
     A simulation event SimEvent that can happen when tokens are available on all of its
     incoming SimVar and its guard evaluates to True. When it happens, it consumes a token from each
@@ -283,6 +312,10 @@ class SimEvent:
                 raise ValueError("Edge (" + str(a) + ", " + str(b) + ") is not a valid incoming edge for event " + str(self) + ".")
 
         self.visualization_of_edges = edges
+
+    def get_description(self):
+        description = [(self._id + ": SimEvent", Describable.Style.HEADING)]
+        return description
 
 
 class SimToken:
@@ -932,30 +965,3 @@ class SimProblem:
                         reporter.callback(timed_binding)
             else:
                 active_model = False
-
-
-def event(sim_problem: SimProblem, inflow: list, outflow: list, guard=None):
-    """
-    A decorator that can be used to turn a Python function into a SimEvent.
-    The event will be added to the specified sim_problem.
-    If they do not yet exist, SimVar will be added for each parameter of the Python function and for each element in outflow.
-    The parameters of the function will be treated as inflow variables of the SimEvent (by name).
-    The elements of outflow must be names of SimVar and will be treated as outflow variables of the SimEvent (by name).
-    The name of the SimEvent will be the name of the Python function.
-
-    :param sim_problem: the SimProblem to which to add the SimEvent.
-    :param inflow: a list of names of inflow variables. Just there for documentation purposes, it is not being used.
-    :param outflow: a list of names of outflow variables.
-    :param guard: an optional guard for the SimEvent.
-    :return: the Python function.
-    """
-    def decorator_event(func):
-        parameters = inspect.signature(func).parameters
-        for parameter in list(parameters.keys()) + outflow:
-            if parameter not in sim_problem.id2node:
-                sim_problem.add_var(parameter)
-        inflow_svars = [sim_problem.id2node[parameter] for parameter in parameters]
-        outflow_svars = [sim_problem.id2node[parameter] for parameter in outflow]
-        sim_problem.add_event(inflow_svars, outflow_svars, func, guard=guard)
-        return func
-    return decorator_event

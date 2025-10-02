@@ -4,6 +4,7 @@ import traceback
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import simpn.assets as assets
+from simpn.visualisation.events import create_event, NODE_CLICKED, SELECTION_CLEAR
 from enum import Enum, auto
 from typing import List, Tuple
 import threading
@@ -24,7 +25,7 @@ LINE_WIDTH = 2
 ARROW_WIDTH, ARROW_HEIGHT = 12, 10
 TEXT_SIZE = 16
 BUTTON_POSITION = (16, 16)
-BUTTON_SIZE = (32, 32)
+BUTTON_SIZE = (50, 50)
 
 
 class Shape(Enum):
@@ -334,7 +335,6 @@ class PlaceViz(Node):
             .set_pos(self._pos) \
             .set_time(self._curr_time) \
             .show_token_count() \
-            .show_token_values() \
             .draw(screen)    
 
 class TransitionViz(Node):
@@ -672,6 +672,10 @@ class Visualisation:
         self._selected_nodes = nodes, new_pos
 
     def __handle_event(self, event):
+        for mod in self._modules:
+            propagate = mod.handle_event(event)
+            if not propagate:
+                return
         if event.type == pygame.QUIT:
             self.__running = False
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -681,8 +685,20 @@ class Visualisation:
             node = self.__get_node_at(event.pos)
             if node is not None:
                 self._selected_nodes = [node], event.pos
+                pygame.event.post(
+                    create_event(
+                        NODE_CLICKED,
+                        { 'node' : node }
+                    )
+                )
             else:
                 self._selected_nodes = self._nodes.values(), event.pos
+                pygame.event.post(
+                    create_event(
+                        SELECTION_CLEAR,
+                        {}
+                    )
+                )
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self._selected_nodes is not None:
             self.__drag(snap=True)
             self._selected_nodes = None
@@ -705,8 +721,6 @@ class Visualisation:
             else:
                 self.zoom("decrease")
 
-        for mod in self._modules:
-            mod.handle_event(event)
 
     def zoom(self, action):
         """

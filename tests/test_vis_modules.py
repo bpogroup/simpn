@@ -2,6 +2,7 @@ import unittest
 from time import time, sleep
 import threading
 from tests.utils import mock_click_event_with_button
+from tests.dummy_problems import create_dummy_bpmn, create_dummy_pn
 
 import pygame
 
@@ -10,28 +11,13 @@ from simpn.helpers import Place, Transition
 from simpn.visualisation import Visualisation
 from simpn.visualisation.modules.testers import CheckerModule
 from simpn.visualisation.modules.ui import UIClockModule
+from simpn.visualisation.modules.ui import UISidePanelModule
 
 
 class PipelineTests(unittest.TestCase):
 
     def setUp(self):
-        self.problem = SimProblem()
-
-        class Start(Place):
-            model=self.problem
-            name="start"
-            amount=1
-
-        class Action(Transition):
-            model=self.problem
-            name="Task One"
-            incoming = ["start"]
-            outgoing = ["end"]
-
-            def behaviour(c):
-                return [
-                    SimToken(c, delay=1)
-                ]
+        self.problem = create_dummy_pn()
     
     @staticmethod
     def quick_close(vis, wait_time=0.4):
@@ -184,30 +170,7 @@ class UIClockTests(unittest.TestCase):
     """
 
     def setUp(self):
-        from random import uniform
-        self.problem = SimProblem()
-
-        class Start(Place):
-            model=self.problem
-            name="start"
-            amount=5
-
-        class Resource(Place):
-            model=self.problem
-            name="resource"
-            amount=1
-
-        class Action(Transition):
-            model=self.problem
-            name="Task One"
-            incoming = ["start", "resource"]
-            outgoing = ["end", "resource"]
-
-            def behaviour(c, r):
-                return [
-                    SimToken(c, delay=1),
-                    SimToken(r, delay=uniform(1,5))
-                ]
+        self.problem = create_dummy_pn()
     
     @staticmethod
     def quick_close(vis, wait_time=0.75):
@@ -349,10 +312,191 @@ class UIClockTests(unittest.TestCase):
 
         self.assertEqual(mod._precision, 3)
 
+class UISidePanelTests(unittest.TestCase):
+    """
+    Tests the functionality of the module for the side panel.
+    """
 
-    
+    def setUp(self):
+        self.problem = create_dummy_pn()
+        self.bpmn_problem = create_dummy_bpmn()
+            
+    @staticmethod
+    def quick_close(vis, wait_time=2):
+        start = time()
 
+        vis.action_play()
 
+        while (time() - start) <= wait_time:
+            sleep(0.02)
 
+        vis.close()
+
+    @staticmethod
+    def trigger_click(mod, rect_name, button, wait=0.25):
+        sleep(wait)
+        rect = getattr(mod, rect_name)
+        mock_click_event_with_button(rect, button)
+
+    @staticmethod
+    def trigger_node_click(vis, node_name, button, wait=0.5):
+        sleep(wait)
+        node = vis._nodes[node_name]
+        mock_click_event_with_button(node, button)
+            
+    def test_no_crash(self):
+        mod = UISidePanelModule()
+        vis = Visualisation(
+            self.problem,
+            extra_modules=[
+                mod
+            ]
+        )
+
+        thread = threading.Thread(target=self.quick_close, args=([vis]))
+        thread.start()
+        vis.show()
+        thread.join()
+
+    def test_open_panel(self):
+        mod = UISidePanelModule()
+        vis = Visualisation(
+            self.problem,
+            extra_modules=[
+                mod
+            ]
+        )
+
+        thread = threading.Thread(target=self.quick_close, args=([vis, 1]))
+        hit_thread = threading.Thread(
+            target=self.trigger_click, args=([mod, 'orect', 1])
+        )
+        thread.start()
+        hit_thread.start()
+        vis.show()
+        hit_thread.join()
+        self.assertTrue(
+            mod._opened
+        )
+        thread.join()
+
+    def test_close_panel(self):
+        mod = UISidePanelModule()
+        vis = Visualisation(
+            self.problem,
+            extra_modules=[
+                mod
+            ]
+        )
+
+        thread = threading.Thread(target=self.quick_close, args=([vis, 1.5]))
+        hit_thread = threading.Thread(
+            target=self.trigger_click, args=([mod, 'orect', 1])
+        )
+        hit_thread2 = threading.Thread(
+            target=self.trigger_click, args=([mod, 'crect', 1, 0.75])
+        )
+        thread.start()
+        hit_thread.start()
+        hit_thread2.start()
+        vis.show()
+        hit_thread.join()
+        hit_thread2.join()
+        self.assertFalse(
+            mod._opened
+        )
+        thread.join()
+
+    def test_description(self):
+        mod = UISidePanelModule()
+        vis = Visualisation(
+            self.problem,
+            extra_modules=[
+                mod
+            ]
+        )
+
+        thread = threading.Thread(target=self.quick_close, args=([vis, 1.5]))
+        hit_thread = threading.Thread(
+            target=self.trigger_click, args=([mod, 'orect', 1,  0.5])
+        )
+        hit_thread2 = threading.Thread(
+            target=self.trigger_node_click, args=([vis, 'start', 1, 0.5])
+        )
+        thread.start()
+        hit_thread.start()
+        hit_thread2.start()
+        vis.show()
+        hit_thread.join()
+        hit_thread2.join()
+        thread.join()
+
+        node = vis._nodes['start']._model_node
+        description = mod._description
+
+        self.assertIn(
+            node.get_id(),
+            description[0][0]
+        )
+
+    def test_clicking_on_things(self):
+        mod = UISidePanelModule()
+        vis = Visualisation(
+            self.problem,
+            extra_modules=[
+                mod
+            ]
+        )
+
+        def clicker(vis, wait):
+            sleep(wait)
+            for node in vis._nodes.values():
+                sleep(0.2)
+                mock_click_event_with_button(node, 1)
+
+        thread = threading.Thread(target=self.quick_close, args=([vis, 1.5]))
+        hit_thread = threading.Thread(
+            target=self.trigger_click, args=([mod, 'orect', 1,  0.2])
+        )
+        hit_thread2 = threading.Thread(
+            target=clicker, args=([vis, 0.3])
+        )
+        thread.start()
+        hit_thread.start()
+        hit_thread2.start()
+        vis.show()
+        hit_thread.join()
+        hit_thread2.join()
+        thread.join()
+
+    def test_clicking_on_bpmn_things(self):
+        mod = UISidePanelModule()
+        vis = Visualisation(
+            self.bpmn_problem,
+            extra_modules=[
+                mod
+            ]
+        )
+
+        def clicker(vis, wait):
+            sleep(wait)
+            for node in vis._nodes.values():
+                sleep(0.1)
+                mock_click_event_with_button(node, 1)
+
+        thread = threading.Thread(target=self.quick_close, args=([vis, len(vis._nodes.values())*0.1 + 0.3]))
+        hit_thread = threading.Thread(
+            target=self.trigger_click, args=([mod, 'orect', 1,  0.2])
+        )
+        hit_thread2 = threading.Thread(
+            target=clicker, args=([vis, 0.3])
+        )
+        thread.start()
+        hit_thread.start()
+        hit_thread2.start()
+        vis.show()
+        hit_thread.join()
+        hit_thread2.join()
+        thread.join()
         
 

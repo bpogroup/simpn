@@ -2,7 +2,7 @@ import random
 from simpn.simulator import SimProblem, SimToken
 import simpn.prototypes as prototype
 from simpn.visualisation import Visualisation
-
+from simpn.visualisation.modules.ui import UISidePanelModule
 
 my_problem = SimProblem()
 
@@ -24,6 +24,6 @@ prototype.BPMNTask(my_problem, [and_split_to_b, resource], [b_to_join, resource]
 prototype.BPMNParallelJoinGateway(my_problem, [a_to_join, b_to_join], [join_to_end], "and join")
 prototype.BPMNEndEvent(my_problem, [join_to_end], [], name="end")
 
-vis = Visualisation(my_problem, "./temp/parallel_layout.txt")
+vis = Visualisation(my_problem, "./temp/parallel_layout.txt", extra_modules=[UISidePanelModule()])
 vis.show()
 vis.save_layout("./temp/parallel_layout.txt")

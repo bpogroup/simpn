@@ -1,6 +1,6 @@
 import inspect
 import pygame
-from simpn.simulator import SimToken, SimVar, SimEvent, SimProblem
+from simpn.simulator import SimToken, SimVar, SimEvent, SimProblem, Describable
 import simpn.visualisation as vis
 import math
 import re
@@ -18,7 +18,7 @@ TASK_TOKEN_SHOW_COLOURS = [
     pygame.Color("#999999"),
 ]
 
-class Prototype:
+class Prototype(Describable):
     """
     Superclass for all prototypes. Contains the basic structure of a prototype, which is a composition of SimVar and SimEvent.
     A prototype must subclass this class.
@@ -70,6 +70,7 @@ class Prototype:
                 raise ValueError("Edge (" + str(a) + ", " + str(b) + ") is not a valid incoming edge for event " + str(self) + ".")
 
         self.visualization_of_edges = edges
+
 
 class TaskTokenShower(vis.Node):
     """
@@ -237,6 +238,10 @@ class BPMNStartEvent(Prototype):
 
         model.add_prototype(self)
 
+    def get_description(self):
+        description = [(super().get_id() + ": BPMNStartEvent", Describable.Style.HEADING)]
+        return description
+
     class BPMNStartEventViz(vis.Node):
         def __init__(self, model_node):
             super().__init__(model_node)
@@ -313,6 +318,14 @@ class BPMNTask(Prototype):
 
         model.add_prototype(self)
 
+    def get_description(self):
+        description = [(super().get_id() + ": BPMNTask", Describable.Style.HEADING)]
+        description.append( (" ", Describable.Style.NORMAL) )
+        description.append( ("Marking:", Describable.Style.NORMAL) )
+        for token in self._busyvar.marking:
+            description.append( (str(token), Describable.Style.BOXED) )
+        return description
+
     class BPMNTaskViz(vis.Node):
         def __init__(self, model_node):
             super().__init__(model_node)
@@ -340,21 +353,6 @@ class BPMNTask(Prototype):
                 .set_task(self) \
                 .set_pos(self.get_pos()) \
                 .draw(screen)
-
-            # draw marking
-            mstr = "["
-            ti = 0
-            for token in self._model_node._busyvar.marking:
-                mstr += str(token.value) + "@" + str(round(token.time, 2))
-                if ti < len(self._model_node._busyvar.marking) - 1:
-                    mstr += ", "
-                ti += 1
-            mstr += "]"
-            label = bold_font.render(mstr, True, vis.TUE_RED)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))        
-
 
     def get_visualisation(self):
         return self.BPMNTaskViz(self)
@@ -395,6 +393,10 @@ class BPMNIntermediateEvent(Prototype):
         self.add_event(result)
 
         model.add_prototype(self)
+
+    def get_description(self):
+        description = [(super().get_id() + ": BPMNIntermediateEvent", Describable.Style.HEADING)]
+        return description
 
     class BPMNIntermediateEventViz(vis.Node):
         def __init__(self, model_node):
@@ -448,6 +450,14 @@ class BPMNEndEvent(Prototype):
         self._marking.append(SimToken(c))
         return []
 
+    def get_description(self):
+        description = [(super().get_id() + ": BPMNEndEvent", Describable.Style.HEADING)]
+        description.append( (" ", Describable.Style.NORMAL) )
+        description.append( ("Marking:", Describable.Style.NORMAL) )
+        for token in self._marking:
+            description.append( (str(token), Describable.Style.BOXED) )
+        return description
+    
     class BPMNEndEventViz(vis.Node):
         def __init__(self, model_node):
             super().__init__(model_node)
@@ -507,7 +517,6 @@ class BPMNFlow(SimVar):
 
             # draw tokens 
             vis.TokenShower(self._model_node.marking) \
-                .show_timing_info() \
                 .show_token_count() \
                 .set_pos(self._pos) \
                 .set_time(self._curr_time) \
@@ -564,6 +573,10 @@ class BPMNExclusiveSplitGateway(Prototype):
         self.add_event(result)
 
         model.add_prototype(self)
+
+    def get_description(self):
+        description = [(super().get_id() + ": BPMNExclusiveSplitGateway", Describable.Style.HEADING)]
+        return description
 
     class BPMNExclusiveSplitGatewayViz(vis.Node):
         def __init__(self, model_node):
@@ -623,6 +636,10 @@ class BPMNExclusiveJoinGateway(Prototype):
 
         model.add_prototype(self)
 
+    def get_description(self):
+        description = [(super().get_id() + ": BPMNExclusiveJoinGateway", Describable.Style.HEADING)]
+        return description
+    
     class BPMNExclusiveJoinGatewayViz(vis.Node):
         def __init__(self, model_node):
             super().__init__(model_node)
@@ -687,6 +704,10 @@ class BPMNParallelSplitGateway(SimEvent):
 
         model.add_prototype_event(self)
 
+    def get_description(self):
+        description = [(super().get_id() + ": BPMNParallelSplitGateway", Describable.Style.HEADING)]
+        return description
+
     class BPMNParallelSplitGatewayViz(vis.Node):
         def __init__(self, model_node):
             super().__init__(model_node)
@@ -741,6 +762,10 @@ class BPMNParallelJoinGateway(SimEvent):
         self.set_guard(lambda *args: all([args[i][0] == args[0][0] for i in range(1,len(args))]))
 
         model.add_prototype_event(self)
+
+    def get_description(self):
+        description = [(super().get_id() + ": BPMNParallelJoinGateway", Describable.Style.HEADING)]
+        return description
 
     class BPMNParallelJoinGatewayViz(vis.Node):
         def __init__(self, model_node):

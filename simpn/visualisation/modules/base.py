@@ -56,15 +56,18 @@ class ModuleInterface():
         """
         pass 
 
-    def handle_event(self, event:Event, *args, **kwargs):
+    def handle_event(self, event:Event, *args, **kwargs) -> bool:
         """
         This hook is called once for each event produced in the game loop
-        of the visualisation.
+        of the visualisation. Returns a truthy value to say that the event
+        should propagate to other modules and the base visualisation.
 
         :param event: 
             the event to consider
+        :return bool:
+            whether the event should be propagated.
         """
-        pass
+        return True
 
     def render_sim(self, screen:Surface, *args, **kwargs):
         """
