@@ -243,7 +243,7 @@ class UISidePanelModule(ModuleInterface):
             _, pos_y = prevent_overflow_while_rendering(
                 info_surface,
                 lambda t: font.render(t, True, TUE_BLUE),
-                self.panel.width - 96,
+                self.panel.width - 106,
                 text,
                 (pos_x, pos_y) if not style == Describable.Style.BOXED else (pos_x + line_offset/2, pos_y + line_offset/2),
                 line_offset
