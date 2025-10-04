@@ -429,9 +429,10 @@ class Visualisation:
 
         # default modules used in the visualisation process
         from .modules.base import ModuleInterface
-        from .modules.ui import UIClockModule
+        from .modules.ui import UIClockModule, UISidePanelModule
         self._modules:List[ModuleInterface] = [
-            UIClockModule(3)
+            UIClockModule(3),
+            UISidePanelModule()
         ]
         if extra_modules != None and isinstance(extra_modules, list):
             self._modules = self._modules + extra_modules

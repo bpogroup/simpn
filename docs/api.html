@@ -52,7 +52,13 @@
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="simulator.html">Simulator</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="simulator.html#simpn.simulator.Describable"><code class="docutils literal notranslate"><span class="pre">Describable</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.Describable.Style"><code class="docutils literal notranslate"><span class="pre">Describable.Style</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.Describable.get_description"><code class="docutils literal notranslate"><span class="pre">Describable.get_description()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="simulator.html#simpn.simulator.SimEvent"><code class="docutils literal notranslate"><span class="pre">SimEvent</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimEvent.get_description"><code class="docutils literal notranslate"><span class="pre">SimEvent.get_description()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimEvent.set_behavior"><code class="docutils literal notranslate"><span class="pre">SimEvent.set_behavior()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimEvent.set_guard"><code class="docutils literal notranslate"><span class="pre">SimEvent.set_guard()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimEvent.set_inflow"><code class="docutils literal notranslate"><span class="pre">SimEvent.set_inflow()</span></code></a></li>
@@ -63,6 +69,7 @@
 <li class="toctree-l2"><a class="reference internal" href="simulator.html#simpn.simulator.SimProblem"><code class="docutils literal notranslate"><span class="pre">SimProblem</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimProblem.PRIORITY_BINDING"><code class="docutils literal notranslate"><span class="pre">SimProblem.PRIORITY_BINDING()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimProblem.PRIORITY_QUEUE_BINDING"><code class="docutils literal notranslate"><span class="pre">SimProblem.PRIORITY_QUEUE_BINDING()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimProblem.RANDOM_BINDING"><code class="docutils literal notranslate"><span class="pre">SimProblem.RANDOM_BINDING()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimProblem.add_event"><code class="docutils literal notranslate"><span class="pre">SimProblem.add_event()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimProblem.add_place"><code class="docutils literal notranslate"><span class="pre">SimProblem.add_place()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimProblem.add_prototype_event"><code class="docutils literal notranslate"><span class="pre">SimProblem.add_prototype_event()</span></code></a></li>
@@ -87,6 +94,7 @@
 <li class="toctree-l2"><a class="reference internal" href="simulator.html#simpn.simulator.SimToken"><code class="docutils literal notranslate"><span class="pre">SimToken</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="simulator.html#simpn.simulator.SimVar"><code class="docutils literal notranslate"><span class="pre">SimVar</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimVar.add_token"><code class="docutils literal notranslate"><span class="pre">SimVar.add_token()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimVar.get_description"><code class="docutils literal notranslate"><span class="pre">SimVar.get_description()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimVar.put"><code class="docutils literal notranslate"><span class="pre">SimVar.put()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimVar.remove_token"><code class="docutils literal notranslate"><span class="pre">SimVar.remove_token()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimVar.restore_checkpoint"><code class="docutils literal notranslate"><span class="pre">SimVar.restore_checkpoint()</span></code></a></li>
@@ -105,7 +113,6 @@
 <li class="toctree-l3"><a class="reference internal" href="simulator.html#simpn.simulator.SimVarTime.remove_token"><code class="docutils literal notranslate"><span class="pre">SimVarTime.remove_token()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="simulator.html#simpn.simulator.event"><code class="docutils literal notranslate"><span class="pre">event()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="reporters.html">Reporters</a><ul>
@@ -145,16 +152,38 @@
 <li class="toctree-l1"><a class="reference internal" href="prototypes.html">Prototypes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNEndEvent"><code class="docutils literal notranslate"><span class="pre">BPMNEndEvent</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNEndEvent.behaviour"><code class="docutils literal notranslate"><span class="pre">BPMNEndEvent.behaviour()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNEndEvent.get_description"><code class="docutils literal notranslate"><span class="pre">BPMNEndEvent.get_description()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNExclusiveJoinGateway"><code class="docutils literal notranslate"><span class="pre">BPMNExclusiveJoinGateway</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNExclusiveSplitGateway"><code class="docutils literal notranslate"><span class="pre">BPMNExclusiveSplitGateway</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNExclusiveJoinGateway"><code class="docutils literal notranslate"><span class="pre">BPMNExclusiveJoinGateway</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNExclusiveJoinGateway.get_description"><code class="docutils literal notranslate"><span class="pre">BPMNExclusiveJoinGateway.get_description()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNExclusiveSplitGateway"><code class="docutils literal notranslate"><span class="pre">BPMNExclusiveSplitGateway</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNExclusiveSplitGateway.get_description"><code class="docutils literal notranslate"><span class="pre">BPMNExclusiveSplitGateway.get_description()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNFlow"><code class="docutils literal notranslate"><span class="pre">BPMNFlow</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNIntermediateEvent"><code class="docutils literal notranslate"><span class="pre">BPMNIntermediateEvent</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNParallelJoinGateway"><code class="docutils literal notranslate"><span class="pre">BPMNParallelJoinGateway</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNParallelSplitGateway"><code class="docutils literal notranslate"><span class="pre">BPMNParallelSplitGateway</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNStartEvent"><code class="docutils literal notranslate"><span class="pre">BPMNStartEvent</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNTask"><code class="docutils literal notranslate"><span class="pre">BPMNTask</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNIntermediateEvent"><code class="docutils literal notranslate"><span class="pre">BPMNIntermediateEvent</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNIntermediateEvent.get_description"><code class="docutils literal notranslate"><span class="pre">BPMNIntermediateEvent.get_description()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNParallelJoinGateway"><code class="docutils literal notranslate"><span class="pre">BPMNParallelJoinGateway</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNParallelJoinGateway.get_description"><code class="docutils literal notranslate"><span class="pre">BPMNParallelJoinGateway.get_description()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNParallelSplitGateway"><code class="docutils literal notranslate"><span class="pre">BPMNParallelSplitGateway</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNParallelSplitGateway.get_description"><code class="docutils literal notranslate"><span class="pre">BPMNParallelSplitGateway.get_description()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNStartEvent"><code class="docutils literal notranslate"><span class="pre">BPMNStartEvent</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNStartEvent.get_description"><code class="docutils literal notranslate"><span class="pre">BPMNStartEvent.get_description()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNTask"><code class="docutils literal notranslate"><span class="pre">BPMNTask</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="prototypes.html#simpn.prototypes.BPMNTask.get_description"><code class="docutils literal notranslate"><span class="pre">BPMNTask.get_description()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="prototypes.html#simpn.prototypes.Prototype"><code class="docutils literal notranslate"><span class="pre">Prototype</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="prototypes.html#simpn.prototypes.Prototype.set_visualization_of_edges"><code class="docutils literal notranslate"><span class="pre">Prototype.set_visualization_of_edges()</span></code></a></li>
 </ul>

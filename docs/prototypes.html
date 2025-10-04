@@ -108,12 +108,23 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNEndEvent.behaviour" title="simpn.prototypes.BPMNEndEvent.behaviour"><code class="xref py py-obj docutils literal notranslate"><span class="pre">behaviour</span></code></a>(c)</p></td>
 <td><p>wrapper to count tokens that made it to the end event.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNEndEvent.get_description" title="simpn.prototypes.BPMNEndEvent.get_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_description</span></code></a>()</p></td>
+<td><p>Returns a description of the object.</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.prototypes.BPMNEndEvent.behaviour">
 <span class="sig-name descname"><span class="pre">behaviour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNEndEvent.behaviour" title="Link to this definition">¶</a></dt>
 <dd><p>wrapper to count tokens that made it to the end event.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNEndEvent.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNEndEvent.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a description of the object. This is can be used for visualisation purposes.
+The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
+:return: a list of tuples.</p>
 </dd></dl>
 
 </dd></dl>
@@ -133,6 +144,22 @@ A join gateway has multiple incoming flows and one outgoing flow.</p>
 </ul>
 </dd>
 </dl>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNExclusiveJoinGateway.get_description" title="simpn.prototypes.BPMNExclusiveJoinGateway.get_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_description</span></code></a>()</p></td>
+<td><p>Returns a description of the object.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNExclusiveJoinGateway.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNExclusiveJoinGateway.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a description of the object. This is can be used for visualisation purposes.
+The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
+:return: a list of tuples.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -154,6 +181,22 @@ The behavior function must return a list of SimToken, which are put on the outgo
 </ul>
 </dd>
 </dl>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNExclusiveSplitGateway.get_description" title="simpn.prototypes.BPMNExclusiveSplitGateway.get_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_description</span></code></a>()</p></td>
+<td><p>Returns a description of the object.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNExclusiveSplitGateway.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNExclusiveSplitGateway.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a description of the object. This is can be used for visualisation purposes.
+The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
+:return: a list of tuples.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -191,6 +234,22 @@ The intermediate event can make changes to the data of a case and can generate w
 </ul>
 </dd>
 </dl>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNIntermediateEvent.get_description" title="simpn.prototypes.BPMNIntermediateEvent.get_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_description</span></code></a>()</p></td>
+<td><p>Returns a description of the object.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNIntermediateEvent.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNIntermediateEvent.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a description of the object. This is can be used for visualisation purposes.
+The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
+:return: a list of tuples.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -200,6 +259,22 @@ The intermediate event can make changes to the data of a case and can generate w
 It is just a SimEvent with a different visualisation.
 It must have multiple incoming places and a single outgoing place.
 Its behavior takes the data from one of the source places and passes it to the outgoing place.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNParallelJoinGateway.get_description" title="simpn.prototypes.BPMNParallelJoinGateway.get_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_description</span></code></a>()</p></td>
+<td><p>Returns a description of the object.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNParallelJoinGateway.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNParallelJoinGateway.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a description of the object. This is can be used for visualisation purposes.
+The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
+:return: a list of tuples.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -209,6 +284,22 @@ Its behavior takes the data from one of the source places and passes it to the o
 It is just a SimEvent with a different visualisation.
 It must have a single incoming place and multiple outgoing places.
 Its behavior takes the data from the source place and passes it to each of its outgoing places.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNParallelSplitGateway.get_description" title="simpn.prototypes.BPMNParallelSplitGateway.get_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_description</span></code></a>()</p></td>
+<td><p>Returns a description of the object.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNParallelSplitGateway.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNParallelSplitGateway.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a description of the object. This is can be used for visualisation purposes.
+The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
+:return: a list of tuples.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -230,6 +321,22 @@ Case_data will be generated according to the specified behavior, or unspecified 
 </ul>
 </dd>
 </dl>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNStartEvent.get_description" title="simpn.prototypes.BPMNStartEvent.get_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_description</span></code></a>()</p></td>
+<td><p>Returns a description of the object.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNStartEvent.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNStartEvent.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a description of the object. This is can be used for visualisation purposes.
+The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
+:return: a list of tuples.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -255,6 +362,22 @@ The behavior must take input parameters according to the incoming variables and 
 </ul>
 </dd>
 </dl>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNTask.get_description" title="simpn.prototypes.BPMNTask.get_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_description</span></code></a>()</p></td>
+<td><p>Returns a description of the object.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNTask.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNTask.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a description of the object. This is can be used for visualisation purposes.
+The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
+:return: a list of tuples.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">

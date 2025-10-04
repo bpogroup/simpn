@@ -113,10 +113,10 @@ Version 1.3.6 (2025-09-20)
 - [Bugfix] fixed issue with SimVarQueues not being visualizable.
 - [Minor feature] added helper classes for different/ easier modeling.
 
-Version 1.3.7 ()
+Version 1.4.0 (2025-10-04)
 ---------------------------
 
 - [Minor feature] added simulation clock visualization.
 - [Minor feature] added visualization modules.
 - [Minor feature] made binding priority functions static methods to prevent potential issues with instance variables.
-- [Minor feature] added sidebar for detailed node information in visualization.
+- [Major feature] added sidebar for detailed node information in visualization; detailed information no longer showing on SimVars directly.
