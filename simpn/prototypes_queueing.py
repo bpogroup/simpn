@@ -1,6 +1,6 @@
 import inspect
 import pygame
-from simpn.simulator import SimToken, SimVar
+from simpn.simulator import SimToken, SimVar, SimProblem
 import random
 import simpn.prototypes as prototypes
 import simpn.visualisation as vis
@@ -23,6 +23,7 @@ class QueueingGenerator(prototypes.Prototype):
         :param behavior: an optional behavior describing how case_data is produced.
         """
         super().__init__(model, incoming, outgoing, name)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)
 
         if len(incoming) != 0:
             raise TypeError("Generator " + name + ": cannot have any incoming.")
@@ -80,13 +81,13 @@ class QueueingQueue(SimVar):
         By default FCFS selection within a queue and random selection between queues.
         """
         super().__init__(_id, priority)
-        model.set_binding_priority(model.PRIORITY_QUEUE_BINDING)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)
 
         model.add_prototype_var(self)
 
     class QueueingQueueViz(vis.Node):
         def __init__(self, model_node):
-            super().__init__(model_node)
+            super().__init__(model_node)            
         
         def draw(self, screen):
             x, y = self._pos
@@ -145,6 +146,7 @@ class QueueingServer(prototypes.Prototype):
         :param c: the number of resources of the server.
         """
         super().__init__(model, incoming, outgoing, name)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)
 
         if len(incoming) != 1:
             raise TypeError("Server " + name + ": must have one input parameter for the case taken from the queue.")
@@ -228,8 +230,7 @@ class QueueingSink(SimVar):
         It is just a SimVar with a different visualisation.
         """
         super().__init__(_id, priority)
-        if priority is not None:
-            model.set_binding_priority(model.PRIORITY_BINDING)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)
 
         model.add_prototype_var(self)
 
@@ -277,6 +278,7 @@ class QueueingChoice(prototypes.Prototype):
         :param weights: a list of weights that sum up to 1.0.
         """
         super().__init__(model, incoming, outgoing, name)
+        model.set_binding_priority(SimProblem.PRIORITY_QUEUE_BINDING)
 
         if len(incoming) != 1:
             raise TypeError("Choice " + name + ": must have exacly one incoming SimVar.")

@@ -458,7 +458,7 @@ class TestPriorities(unittest.TestCase):
         test_problem = SimProblem()
         a = test_problem.add_var("a")
         a.put("a7", 7); a.put("a2", 2); a.put("a9", 9); a.put("a4", 4); a.put("a1", 1); a.put("a6", 6); a.put("a3", 3); a.put("a8", 8); a.put("a5", 5)
-        b = test_problem.add_var("b", priority=lambda token: 1/token.time) # we invert the time priority to double-check that still 3 goes first
+        b = test_problem.add_var("b") # the default queue priority is time-driven, lowest time first
         b.put("b9", 9)
         b.put("b6", 6)
         b.put("b3", 3)
@@ -470,18 +470,23 @@ class TestPriorities(unittest.TestCase):
                           ([(a, SimToken("a3", 3)), (b, SimToken("b3", 3))], 3, ta),
                           ],
                          "correct token combinations")
+        
+        # if the SimProblem is set to use priority-based binding, the first binding must be the one with the lowest time
+        test_problem.binding_priority = SimProblem.PRIORITY_QUEUE_BINDING
+        binding = test_problem.binding_priority(test_problem.bindings())
+        self.assertEqual(binding, ([(a, SimToken("a1", 1)), (b, SimToken("b3", 3))], 3, ta), "the binding must be fired for the first item in the queue, which is a1")
 
     def test_basic_time_driven_prio_multiple_transitions(self):
         # if there are two queues, by default tokens within a single queue are always in time order
         test_problem = SimProblem()
         a = test_problem.add_var("a")
         a.put("a7", 7); a.put("a2", 2); a.put("a9", 9); a.put("a4", 4); a.put("a1", 1); a.put("a6", 6); a.put("a3", 3); a.put("a8", 8); a.put("a5", 5)
-        b = test_problem.add_var("b", priority=lambda token: 1/token.time) # we invert the time priority to double-check that still 3 goes first
+        b = test_problem.add_var("b") # the default queue priority is time-driven, lowest time first
         b.put("b9", 9); b.put("b6", 6); b.put("b3", 3)
         ta = test_problem.add_event([a, b], [], lambda c, d: [], name="ta")
         c = test_problem.add_var("c")
         c.put("c7", 7); c.put("c2", 2); c.put("c9", 9); c.put("c4", 4); c.put("c1", 1); c.put("c6", 6); c.put("c3", 3); c.put("c8", 8); c.put("c5", 5)
-        d = test_problem.add_var("d", priority=lambda token: 1/token.time) # we invert the time priority to double-check that still 3 goes first
+        d = test_problem.add_var("d") # the default queue priority is time-driven, lowest time first
         d.put("d9", 9); d.put("d6", 6); d.put("d3", 3)
         tb = test_problem.add_event([c, d], [], lambda e, f: [], name="tb")
 
@@ -503,12 +508,12 @@ class TestPriorities(unittest.TestCase):
         test_problem = SimProblem(binding_priority=SimProblem.PRIORITY_QUEUE_BINDING)
         a = test_problem.add_var("a")
         a.put("a7", 7); a.put("a2", 2); a.put("a9", 9); a.put("a4", 4); a.put("a1", 1); a.put("a6", 6); a.put("a3", 3); a.put("a8", 8); a.put("a5", 5)
-        b = test_problem.add_var("b", priority=lambda token: 1/token.time) # we invert the time priority to double-check that still 3 goes first
+        b = test_problem.add_var("b") # the default queue priority is time-driven, lowest time first
         b.put("b9", 9); b.put("b6", 6); b.put("b3", 3)
         ta = test_problem.add_event([a, b], [], lambda c, d: [], name="ta")
         c = test_problem.add_var("c")
         c.put("c7", 7); c.put("c2", 2); c.put("c9", 9); c.put("c4", 4); c.put("c1", 1); c.put("c6", 6); c.put("c3", 3); c.put("c8", 8); c.put("c5", 5)
-        d = test_problem.add_var("d", priority=lambda token: 1/token.time) # we invert the time priority to double-check that still 3 goes first
+        d = test_problem.add_var("d") # the default queue priority is time-driven, lowest time first
         d.put("d9", 9); d.put("d6", 6); d.put("d3", 3)
         tb = test_problem.add_event([c, d], [], lambda e, f: [], name="tb")
 
