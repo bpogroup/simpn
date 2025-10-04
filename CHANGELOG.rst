@@ -120,3 +120,8 @@ Version 1.4.0 (2025-10-04)
 - [Minor feature] added visualization modules.
 - [Minor feature] made binding priority functions static methods to prevent potential issues with instance variables.
 - [Major feature] added sidebar for detailed node information in visualization; detailed information no longer showing on SimVars directly.
+
+Version 1.5.0 (2025-10-04)
+---------------------------
+
+- [Major feature] changed the default binding selection to be based on time priorities within queues and random between queues.

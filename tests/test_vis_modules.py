@@ -43,25 +43,25 @@ class PipelineTests(unittest.TestCase):
                 
             ]
         )
-        self.assertEqual(len(vis._modules), 1)
-
-        vis = Visualisation(
-            self.problem,
-            extra_modules=[
-                CheckerModule(),
-            ]
-        )
         self.assertEqual(len(vis._modules), 2)
 
-
         vis = Visualisation(
             self.problem,
             extra_modules=[
-                CheckerModule(),
                 CheckerModule(),
             ]
         )
         self.assertEqual(len(vis._modules), 3)
+
+
+        vis = Visualisation(
+            self.problem,
+            extra_modules=[
+                CheckerModule(),
+                CheckerModule(),
+            ]
+        )
+        self.assertEqual(len(vis._modules), 4)
 
     def test_create_hook(self):
         checker = CheckerModule()
@@ -339,18 +339,21 @@ class UISidePanelTests(unittest.TestCase):
         mock_click_event_with_button(rect, button)
 
     @staticmethod
+    def get_side_panel_module(vis):
+        for m in vis._modules:
+            if isinstance(m, UISidePanelModule):
+                return m
+        return None
+
+    @staticmethod
     def trigger_node_click(vis, node_name, button, wait=0.5):
         sleep(wait)
         node = vis._nodes[node_name]
         mock_click_event_with_button(node, button)
             
     def test_no_crash(self):
-        mod = UISidePanelModule()
         vis = Visualisation(
-            self.problem,
-            extra_modules=[
-                mod
-            ]
+            self.problem
         )
 
         thread = threading.Thread(target=self.quick_close, args=([vis]))
@@ -359,13 +362,10 @@ class UISidePanelTests(unittest.TestCase):
         thread.join()
 
     def test_open_panel(self):
-        mod = UISidePanelModule()
         vis = Visualisation(
-            self.problem,
-            extra_modules=[
-                mod
-            ]
+            self.problem
         )
+        mod = self.get_side_panel_module(vis)
 
         thread = threading.Thread(target=self.quick_close, args=([vis, 1]))
         hit_thread = threading.Thread(
@@ -381,13 +381,10 @@ class UISidePanelTests(unittest.TestCase):
         thread.join()
 
     def test_close_panel(self):
-        mod = UISidePanelModule()
         vis = Visualisation(
-            self.problem,
-            extra_modules=[
-                mod
-            ]
+            self.problem
         )
+        mod = self.get_side_panel_module(vis)
 
         thread = threading.Thread(target=self.quick_close, args=([vis, 1.5]))
         hit_thread = threading.Thread(
@@ -408,13 +405,10 @@ class UISidePanelTests(unittest.TestCase):
         thread.join()
 
     def test_description(self):
-        mod = UISidePanelModule()
         vis = Visualisation(
-            self.problem,
-            extra_modules=[
-                mod
-            ]
+            self.problem
         )
+        mod = self.get_side_panel_module(vis)
 
         thread = threading.Thread(target=self.quick_close, args=([vis, 1.5]))
         hit_thread = threading.Thread(
@@ -440,13 +434,10 @@ class UISidePanelTests(unittest.TestCase):
         )
 
     def test_clicking_on_things(self):
-        mod = UISidePanelModule()
         vis = Visualisation(
-            self.problem,
-            extra_modules=[
-                mod
-            ]
+            self.problem
         )
+        mod = self.get_side_panel_module(vis)
 
         def clicker(vis, wait):
             sleep(wait)
@@ -470,13 +461,10 @@ class UISidePanelTests(unittest.TestCase):
         thread.join()
 
     def test_clicking_on_bpmn_things(self):
-        mod = UISidePanelModule()
         vis = Visualisation(
-            self.bpmn_problem,
-            extra_modules=[
-                mod
-            ]
+            self.bpmn_problem
         )
+        mod = self.get_side_panel_module(vis)
 
         def clicker(vis, wait):
             sleep(wait)

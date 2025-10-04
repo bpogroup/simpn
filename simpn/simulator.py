@@ -413,7 +413,7 @@ class SimProblem:
         self._debugging = debugging
         self.clock_checkpoints = dict()
         if binding_priority is None:
-            self.binding_priority = self.RANDOM_BINDING
+            self.binding_priority = self.PRIORITY_QUEUE_BINDING
         else:
             self.binding_priority = binding_priority
 

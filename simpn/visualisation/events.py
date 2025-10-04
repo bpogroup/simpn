@@ -32,5 +32,8 @@ def check_event(event:Event, type:str) -> bool:
     type.
     """
     if event.type == USEREVENT +1 :
-        return event.named_type == type    
+        try:
+            return event.named_type == type
+        except AttributeError:
+            return False
     return False
