@@ -96,6 +96,8 @@ jobs:
     steps:
       - name: Get version from wheel filename
         run: |
-          version=$(ls dist/*.whl | sed -E 's/.*-(.*)-py3-none-any\.whl/\1/')
-          echo "The new version of the package can be found at: https://test.pypi.org/project/simpn/$version/" >> $GITHUB_STEP_SUMMARY
+          echo "VERSION=$(ls dist/*.whl | sed -E 's/.*-(.*)-py3-none-any\.whl/\1/')" >> $GITHUB_ENV
+      - name: Make job summary
+        run: |
+          echo "The new version of the package can be found at: https://test.pypi.org/project/simpn/$VERSION/" >> $GITHUB_STEP_SUMMARY
 
