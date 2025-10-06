@@ -52,15 +52,23 @@ jobs:
         with:
           python-version: '>=3.9 <3.14'
 
-      - name: Get short SHA and modify version
+      - name: Get version components
+        id: get-components
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          PVERSION=$(grep -Po "(?<=version = \")(.*)(?=\")" pyproject.toml)
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+          echo "PVERSION=$PVERSION" >> $GITHUB_ENV
+      
+      - name: Create new version and modify files
         id: version
         run: |
-          echo "SHORT_SHA=$(git rev-parse --short HEAD)"  >> $GITHUB_ENV
-          echo "PVERSION=$(grep -Po "(?<=version = \")(.*)(?=\")" pyproject.toml)" >> $GITHUB_ENV
-          echo "NVZERSION=$(echo "$PVERSION+g$SHORT_SHA")" >> $GITHUB_ENV
+          NVZERSION="${PVERSION}+dev.${SHORT_SHA}"
+          echo "NVZERSION=$NVZERSION" >> $GITHUB_ENV
           echo "using version :: $NVZERSION"
           echo "version=$NVZERSION" >> $GITHUB_OUTPUT
           echo "Using the following version for the test build: $NVZERSION" >> $GITHUB_STEP_SUMMARY
+          
           # modify version in pyproject.toml
           sed -i "s/version = \"\([^\"]*\)\"/version = \"$NVZERSION\"/" pyproject.toml
 
