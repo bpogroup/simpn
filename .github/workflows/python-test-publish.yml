@@ -57,11 +57,11 @@ jobs:
         run: |
           echo "SHORT_SHA=$(git rev-parse --short HEAD)"  >> $GITHUB_ENV
           echo "PVERSION=$(grep -Po "(?<=version = \")(.*)(?=\")" pyproject.toml)" >> $GITHUB_ENV
-          echo "NVZERSION=$(echo "$PVERSION+g$SHORT_SHA")" >> $GITHUB_ENV
+          echo "NVZERSION=$PVERSION+g$SHORT_SHA" >> $GITHUB_ENV
           echo "version=$NVZERSION" >> $GITHUB_OUTPUT
+          echo "Using the following version for the test build: $NVZERSION" >> $GITHUB_STEP_SUMMARY
           # modify version in pyproject.toml
           sed -i "s/version = \"\([^\"]*\)\"/version = \"$NVZERSION\"/" pyproject.toml
-          echo "Using the following version for the test build: $NVZERSION" >> $GITHUB_STEP_SUMMARY
 
       - name: Build release distributions
         run: |
