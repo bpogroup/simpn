@@ -55,7 +55,7 @@ jobs:
       - name: Get version components
         id: get-components
         run: |
-          SHORT_SHA=$(git rev-parse --short HEAD)
+          SHORT_SHA=${GITHUB_RUN_NUMBER}
           PVERSION=$(grep -Po "(?<=version = \")(.*)(?=\")" pyproject.toml)
           echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
           echo "PVERSION=$PVERSION" >> $GITHUB_ENV
@@ -63,7 +63,7 @@ jobs:
       - name: Create new version and modify files
         id: version
         run: |
-          NVZERSION="${PVERSION}+dev.${SHORT_SHA}"
+          NVZERSION="${PVERSION}.dev${SHORT_SHA}"
           echo "NVZERSION=$NVZERSION" >> $GITHUB_ENV
           echo "using version :: $NVZERSION"
           echo "version=$NVZERSION" >> $GITHUB_OUTPUT
