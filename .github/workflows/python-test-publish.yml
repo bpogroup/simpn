@@ -94,16 +94,8 @@ jobs:
     needs:
       - pypi-publish
     steps:
-      - name: Extract PyPI URL from publish step log
+      - name: Get version from wheel filename
         run: |
-          # Find the last line containing the PyPI URL
-          grep -o 'https://test.pypi.org/project/.*' $GITHUB_WORKSPACE/log.txt | tail -1 > pypi_url.txt
-        # If your workflow does not save the log, you can pipe the publish output to a file:
-        # e.g. python -m twine upload ... 2>&1 | tee $GITHUB_WORKSPACE/log.txt
-      
-      - name: Upload PyPI URL as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pypi-url
-          path: pypi_url.txt
+          version=$(ls dist/*.whl | sed -E 's/.*-(.*)-py3-none-any\.whl/\1/')
+          echo "The new version of the package can be found at: https://test.pypi.org/project/simpn/$version/" >> $GITHUB_STEP_SUMMARY
 
