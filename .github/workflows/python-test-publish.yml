@@ -88,3 +88,22 @@ jobs:
           packages-dir: dist/
           password: ${{ secrets.PYPITEST }}
           repository-url: https://test.pypi.org/legacy/
+  
+  extract-pypi-url:
+    runs-on: ubuntu-latest
+    needs:
+      - pypi-publish
+    steps:
+      - name: Extract PyPI URL from publish step log
+        run: |
+          # Find the last line containing the PyPI URL
+          grep -o 'https://test.pypi.org/project/.*' $GITHUB_WORKSPACE/log.txt | tail -1 > pypi_url.txt
+        # If your workflow does not save the log, you can pipe the publish output to a file:
+        # e.g. python -m twine upload ... 2>&1 | tee $GITHUB_WORKSPACE/log.txt
+      
+      - name: Upload PyPI URL as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pypi-url
+          path: pypi_url.txt
+
