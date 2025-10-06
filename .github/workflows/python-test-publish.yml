@@ -94,6 +94,11 @@ jobs:
     needs:
       - pypi-publish
     steps:
+      - name: Retrieve release distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
       - name: Get version from wheel filename
         run: |
           echo "VERSION=$(ls dist/*.whl | sed -E 's/.*-(.*)-py3-none-any\.whl/\1/')" >> $GITHUB_ENV
