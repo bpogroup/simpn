@@ -578,6 +578,26 @@ class TestPriorities(unittest.TestCase):
             
         self.assertGreater(completion_count, 8, "there are at least 8 completions")
 
+    def test_priority_driven_prio(self):
+        test_problem = SimProblem()
+
+        a = test_problem.add_var("a", priority=lambda token: -token.value)
+        a.put(9, 15); a.put(2, 20); a.put(1, 5); a.put(5, 10)
+
+        test_problem.clock = 15
+        test_problem.add_event([a], [], lambda _: [], name="ta")
+        bindings = test_problem.bindings()
+
+        # there must be 3 bindings, for tokens with value 9, 5, and 1; the token with value 2 is not yet available
+        self.assertEqual(len(bindings), 3, "there must be three bindings")
+        # they must be in order 9, 5, 1, because of the priority function
+        self.assertEqual(bindings[0][0][0][1].value, 9, "the first binding must be for the token with value 9")
+        self.assertEqual(bindings[1][0][0][1].value, 5, "the second binding must be for the token with value 5")
+        self.assertEqual(bindings[2][0][0][1].value, 1, "the third binding must be for the token with value 1")
+
+        binding = test_problem.binding_priority(bindings)
+        self.assertEqual(binding[0][0][1].value, 9, "the binding must be fired for the first item in the queue, which is 9")
+
     def test_bpmn_priority_driven_prio(self):
         test_problem = SimProblem()
 
