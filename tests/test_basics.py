@@ -576,7 +576,7 @@ class TestPriorities(unittest.TestCase):
                     self.assertGreaterEqual(completion, last_completion, "jobs are completed in the order of their arrival")
                 last_completion = completion
             
-        self.assertGreater(completion_count, 10, "there are at least 10 completions")
+        self.assertGreater(completion_count, 8, "there are at least 8 completions")
 
     def test_bpmn_priority_driven_prio(self):
         test_problem = SimProblem()

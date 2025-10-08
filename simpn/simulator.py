@@ -794,25 +794,11 @@ class SimProblem:
             # time, need to check for each place and otherwise walk the 
             # place's marking
             for place in ev.incoming:
-                if (hasattr(place, '_sorted_by_time') and place._sorted_by_time):
-                    try:
-                        smallest.append(place.marking[0].time)
-                        added = True
-                    except:
-                        skip = True
-                else:
-                    # fallback to find earliest time in place
-                    small = None
-                    for mark in place.marking:
-                        if small is None:
-                            small = mark.time 
-                        elif mark.time < small:
-                            small = mark.time 
-                    if small == None:
-                        skip = True 
-                    else:
-                        added = True
-                        smallest.append(small)
+                try:
+                    smallest.append(place.marking[0].time)
+                    added = True
+                except:
+                    skip = True
             
             if (skip or not added):
                 timings[ev] = 0
@@ -839,7 +825,6 @@ class SimProblem:
         # We generate bindings and only do so if an event would produce a 
         # binding before the current clock
         timed_bindings = [] 
-        earlist_seen = None
         added = False
         for t, earlist in sorted(timings.items(), key=lambda x: x[1]):
             # skip events with no chance of producing bindings before the 
@@ -852,28 +837,9 @@ class SimProblem:
             # check and compute event bindings from this event
             for (binding, time) in self.event_bindings(t):
                 if (time <= self.clock):
-                    # while generating bindings that meet the current clock
-                    # check that we have found a valid firing before
-                    if earlist_seen is None:
-                        # if not then this is the earlist
-                        earlist_seen = time
-                    elif time < earlist_seen:
-                        # if we have added before then check to see 
-                        # if this binding would occur earlier
-                        earlist_seen = time 
-                        timed_bindings = []
-                    if time <= earlist_seen:
-                        # double-check before adding that time is the earlist
-                        # see so far before adding
-                        timed_bindings.append((binding, time, t))
-                        added = True
-        # set the clock to the earlist valid binding time seen
-        if earlist_seen != None:
-            self.clock = earlist_seen
-        # note: it is assumed that the returned bindings are grouped by the
-        # event producing them, and that they are following the ordering 
-        # produced by the place.marking of the event. Not having this 
-        # property can lead to follow on behaviours being 
+                    timed_bindings.append((binding, time, t))
+                    added = True
+
         return timed_bindings
     
     def fire(self, timed_binding):

@@ -125,3 +125,7 @@ Version 1.5.0 (2025-10-04)
 ---------------------------
 
 - [Major feature] changed the default binding selection to be based on time priorities within queues and random between queues.
+
+Version 1.5.1 (2025-10-08)
+
+- [Bugfix] fixed issue with priority-based binding selection not working correctly in some cases.
