@@ -837,7 +837,7 @@ class SimProblem:
             # check and compute event bindings from this event
             for (binding, time) in self.event_bindings(t):
                 if (time <= self.clock):
-                    timed_bindings.append((binding, time, t))
+                    timed_bindings.append((binding, self.clock, t))
                     added = True
 
         return timed_bindings

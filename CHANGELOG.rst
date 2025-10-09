@@ -127,5 +127,12 @@ Version 1.5.0 (2025-10-04)
 - [Major feature] changed the default binding selection to be based on time priorities within queues and random between queues.
 
 Version 1.5.1 (2025-10-08)
+---------------------------
 
 - [Bugfix] fixed issue with priority-based binding selection not working correctly in some cases.
+
+Version 1.5.2 ()
+---------------------------
+
+- [Bugfix] fixed issue with bindings happening before the simulation time (issue #19).
+- [Bugfix] fixed issue where if a binding after the current clock can be enabled, but there is an earlier binding that is guarded, the binding does not get enabled (issue #20).
