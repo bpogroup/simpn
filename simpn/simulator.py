@@ -683,92 +683,58 @@ class SimProblem:
         self.binding_priority = func
 
     @staticmethod
-    def tokens_combinations(event) \
-        -> List[ 
-                Tuple[
-                    List[Tuple[str,str]],
-                    float, 
-                    List
-                    ]
-            ]:
+    def bfs(values, combinations, max_time, guard=None, look_beyond=False):
+        """        
+        TODO        
+        Breadth-first search to find a combination of indices at which the tokens satisfy the guard.
+        If there is no guard, the first combination is returned.
+        Initially, look_beyond is False, meaning we only consider combinations, where each index <= max_time.
+        If no such combination is found, we set look_beyond to True and continue searching without the max_time constraint.
+        :param values: A list of lists of possible tokens. Each list represents the tokens on a specific SimVar.
+        :param combinations: A list of tuples, each representing a combination of indices into the lists in values.
+        :param guard: A function that takes values and a combination of indices, and returns True if the condition is satisfied.
+        :param max_time: The maximum index value to consider when look_beyond is False.
+        :param look_beyond: A boolean indicating whether to ignore the max_time constraint.
+        :return: The first combination of indices that satisfies the guard, or None if no such combination exists.
         """
-        Creates a list of token combinations that are available to the specified event.
-        These are combinations of tokens that are on the incoming SimVar of the event.
-        For example, if a event has incoming SimVar a and b with tokens 1@0 on a and 2@0, 3@0 on b,
-        the possible combinations are [(a, 1@0), (b, 2@0)] and [(a, 1@0), (b, 3@0)]
+        next_combinations = []
+        seen = set()
 
-        :param event: the event to return the token combinations for.
-        :return: a list of triples, where each triple describes the binding,
-        the activation time, and the variable values of the binding.
-        """
-        nr_incoming_places = len(event.incoming)
-        if nr_incoming_places == 0:
-            raise Exception("Though it is strictly speaking possible, we do not allow events without incoming arcs.")
+        for t in combinations:
+            value_tuple = tuple(values[j][t[j]] for j in range(len(values)))
+            if guard is None or guard(value_tuple):
+                return t
+            for j in range(len(t)):
+                if t[j] + 1 >= len(values[j]):
+                    continue
+                if not look_beyond and t[j]+1 > max_time:
+                    continue
+                u = (*t[:j], t[j] + 1, *t[j+1:])
+                if u not in seen:
+                    next_combinations.append(u)
+                    seen.add(u)
+        if len(next_combinations) == 0:
+            if look_beyond:
+                return None
+            else:
+                return SimProblem.bfs(values, combinations, guard, max_time, True)
+        return SimProblem.bfs(values, next_combinations, guard, max_time, look_beyond)
 
-        bindings = [[]]
-        # note: the marking has a totally ordered set of tokens
-        # we need to respect the ordering from place.marking
-        place_token_products = [
-            list(product([place], [ tok  for tok  in place.marking ]))
-            for place in event.incoming
-        ]
-        bindings = product(*place_token_products)
-        
-        def handle(binding):
-            variable_values = []
-            time = None
-            for (place, token) in binding:
-                if (event.guard is not None):
-                    variable_values.append(token.value)
-                if time is None or token.time > time:
-                    time = token.time
-            return (list(binding), time, variable_values)
-
-        # a binding must have all incoming places
-        
-        bindings = [
-            handle(binding)
-            for binding in bindings
-            if len(binding) == nr_incoming_places
-        ]
-        return bindings
-    
     def event_bindings(self, event):
         """
-        Calculates the set of bindings that enables the given event.
-        Each binding is a tuple ([(place, token), (place, token), ...], time) that represents a single enabling binding.
-        A binding is
-        a possible token combination (see token_combinations), for which the event's
-        guard function evaluates to True. In case there is no guard function, any combination is also a binding.
+        Calculates the first binding that enables the given event.
+        A binding is a tuple ([(place, token), (place, token), ...], time)
+        for which the event's guard function evaluates to True. 
+        In case there is no guard function, any combination is also a binding.
         The time is the time at which the latest token is available.
-        For example, if a event has incoming SimVar a and b with tokens 1@2 on a and 2@3, 3@1 on b,
-        the possible bindings are ([(a, 1@2), (b, 2@3)], 3) and ([(a, 1@2), (b, 3@1)], 2)
+        Which token is considered first is determined by the priority functions of the SimVar.
+        The max_time is the current clock time of the simulation.
 
-        :param event: the event for which to calculate the enabling bindings.
-        :return: list of tuples ([(place, token), (place, token), ...], time)
+        :param event: the event for which to calculate the enabling binding.
+        :return: a tuple ([(place, token), (place, token), ...], time)
         """
-        nr_incoming_places = len(event.incoming)
-        if nr_incoming_places == 0:
-            raise Exception("Though it is strictly speaking possible, we do not allow events like '" + str(self) + "' without incoming arcs.")
-
-        bindings = self.tokens_combinations(event)
-
-        # if a event has a guard, only bindings are enabled for which the 
-        # guard evaluates to True
-        if event.guard is not None:
-            result = [
-                (binding, time)
-                for (binding, time, variable_values)
-                in bindings
-                if event.guard(*variable_values)
-            ]
-        else :
-            result = [
-                (binding, time)
-                for (binding, time, _)
-                in bindings
-            ]
-        return result
+        # TODO
+        pass
 
     def bindings(self):
         """
