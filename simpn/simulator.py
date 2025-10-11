@@ -857,9 +857,7 @@ class SimProblem:
                     ]
                     timed_bindings.extend(tmp)
                     added = True
-                    assert(possible_clock >= self.clock, 
-                           "we cannot move the simulation back"
-                    )
+                    assert possible_clock >= self.clock, "we cannot move the simulation back"
                     self.clock = possible_clock
             else:
                 # we have added some bindings to timed_bindings
