@@ -335,24 +335,144 @@ class TestBasics(unittest.TestCase):
         test_problem.fire(binding)
         self.assertEqual(test_problem.clock, 4, "firing a binding does not change the clock time")
 
-    # def test_binding_time_later_token_guarded(self):
-    #     test_problem = SimProblem()
-    #     a = test_problem.add_var("a")
-    #     a.put("a1", 7)
-    #     a.put("a2", 6)
-    #     self.assertEqual(a.marking[0].value, "a2", "a2 is earlier than a1")
-    #     test_problem.add_event([a], [], lambda _: [], name="ta", guard=lambda x: x == "a1")
-    #     test_problem.clock = 4
-    #     bindings = test_problem.bindings()
-    #     self.assertEqual(len(bindings), 1, "only one binding is possible, which is the one that satisfies the guard")
-    #     # it is the binding with a1 (even though a2 is earlier), because a1 is the only one that satisfies the guard
-    #     self.assertEqual(bindings[0][0][0][1].value, "a1", "the only binding is the one with a1")
-    #     # the clock must now be 7, because a1 is only available at time 7
-    #     self.assertEqual(test_problem.clock, 7, "the clock time is now 7")
-    #     # the enabling time of the binding is 7, because a1 is available at time 7, and the clock is at time 7
-    #     self.assertEqual(bindings[0][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
-    #     test_problem.fire(bindings[0])
-    #     self.assertEqual(test_problem.clock, 7, "firing a binding does not change the clock time")
+    def test_binding_time_later_token_guarded(self):
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put("a1", 7)
+        a.put("a2", 6)
+        self.assertEqual(a.marking[0].value, "a2", "a2 is earlier than a1")
+        test_problem.add_event([a], [], lambda _: [], name="ta", guard=lambda x: x == "a1")
+        test_problem.clock = 4
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 1, "only one binding is possible, which is the one that satisfies the guard")
+        # it is the binding with a1 (even though a2 is earlier), because a1 is the only one that satisfies the guard
+        self.assertEqual(bindings[0][0][0][1].value, "a1", "the only binding is the one with a1")
+        # the clock must now be 7, because a1 is only available at time 7
+        self.assertEqual(test_problem.clock, 7, "the clock time is now 7")
+        # the enabling time of the binding is 7, because a1 is available at time 7, and the clock is at time 7
+        self.assertEqual(bindings[0][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
+        test_problem.fire(bindings[0])
+        self.assertEqual(test_problem.clock, 7, "firing a binding does not change the clock time")
+
+    def test_binding_time_later_token_guarded_between_events(self):
+        test_problem = SimProblem()
+
+        a = test_problem.add_var("a")
+        a.put("a1", 7)
+        a.put("a2", 6)
+
+        b = test_problem.add_var("b")
+        b.put("b1", 7)
+        b.put("b2", 3)
+        b.put("b3", 6)
+
+        self.assertEqual(
+            a.marking[0].value, 
+            "a2", 
+            "a2 is earlier than a1"
+        )
+        self.assertEqual(
+            b.marking[0].value, 
+            "b2", 
+            "b2 is the earliest"
+        )
+        test_problem.add_event(
+            [a], [], 
+            lambda _: [], 
+            name="ta", guard=lambda x: x == "a1"
+        )
+        test_problem.add_event(
+            [b], [], 
+            lambda _: [], 
+            name="tb", guard=lambda x: x == "b1" or x =="b2"
+        )
+        test_problem.clock = 4
+
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 
+            1, "only one binding is possible, which is the b2")
+        # it is the binding with b2 as it is ealier than the clock and allowed
+        # by the guard
+        self.assertEqual(
+            bindings[0][0][0][1].value, 
+            "b2", 
+            "the only binding is the one with b2"
+        )
+        # the clock must now be 4, because b2 before the clock
+        self.assertEqual(test_problem.clock, 4, "the clock time is now 4")
+        # the enabling time of the binding is 4, because b2 is available at 
+        # time 3, and the clock is at time 4, thus the clock must be used
+        self.assertEqual(
+            bindings[0][1], 
+            test_problem.clock, 
+            "the enabling time of a binding must be equal to the current clock time"
+        )
+        test_problem.fire(bindings[0])
+        self.assertEqual(
+            test_problem.clock, 
+            4, 
+            "firing a binding does not change the clock time"
+        )
+
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 
+            2, "two bindings are possible, one from e1 and e2 (a1, b1)")
+        self.assertEqual(
+            bindings[0][0][0][1].value, 
+            "a1", 
+            "the first binding is a1"
+        )
+        self.assertEqual(
+            bindings[1][0][0][1].value, 
+            "b1", 
+            "the second binding is b1"
+        )
+
+        # the clock must now be 7, because both a1 and b1 are timed at 7
+        self.assertEqual(test_problem.clock, 7, "the clock time must now be 7")
+        self.assertEqual(
+            bindings[0][1], 
+            test_problem.clock, 
+            "the enabling time of a binding must be equal to the current clock time"
+        )
+        self.assertEqual(
+            bindings[1][1], 
+            test_problem.clock, 
+            "the enabling time of a binding must be equal to the current clock time"
+        )
+        test_problem.fire(bindings[0])
+        self.assertEqual(
+            test_problem.clock, 
+            7, 
+            "firing a binding does not change the clock time"
+        )
+
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 
+            1, "only one binding is possible, b1")
+        self.assertEqual(
+            bindings[0][0][0][1].value, 
+            "b1", 
+            "the binding is b1"
+        )
+         # the clock must now be 7, because both a1 and b1 are timed at 7
+        self.assertEqual(test_problem.clock, 7, "the clock time must now be 7")
+        self.assertEqual(
+            bindings[0][1], 
+            test_problem.clock, 
+            "the enabling time of a binding must be equal to the current clock time"
+        )
+        test_problem.fire(bindings[0])
+        self.assertEqual(
+            test_problem.clock, 
+            7, 
+            "firing a binding does not change the clock time"
+        )
+
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 
+            0, "the problem shoud be deadlocked")
+
 
 
 class TestSimVarQueue(unittest.TestCase):

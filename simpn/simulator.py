@@ -835,10 +835,39 @@ class SimProblem:
             elif earlist > self.clock and added:
                 break
             # check and compute event bindings from this event
-            for (binding, time) in self.event_bindings(t):
-                if (time <= self.clock):
-                    timed_bindings.append((binding, self.clock, t))
+            # if we have not added to timed_bindings, we iterate
+            # through all options in the produced bindings
+            if not added:
+                tmp = []
+                for (binding, time) in self.event_bindings(t):
+                    if time < self.clock:
+                        tmp.append((binding, self.clock, t))
+                    else:
+                        tmp.append((binding, time, t))
+                # if we did produce, then we need to keep all bindings with
+                # the minimum time for enablement. update the clock to be 
+                # this enablement time.
+                if len(tmp) > 0:
+                    possible_clock = min(tmp, key=lambda x: x[1])[1]
+                    tmp = [ 
+                        (binding, time, t) 
+                        for binding, time, t 
+                        in tmp
+                        if time <= possible_clock
+                    ]
+                    timed_bindings.extend(tmp)
                     added = True
+                    assert(possible_clock >= self.clock, 
+                           "we cannot move the simulation back"
+                    )
+                    self.clock = possible_clock
+            else:
+                # we have added some bindings to timed_bindings
+                # so only add more if they are less than the set clock
+                for (binding, time) in self.event_bindings(t):
+                    if (time <= self.clock):
+                        timed_bindings.append((binding, self.clock, t))
+
 
         return timed_bindings
     
