@@ -272,14 +272,20 @@ it can happen on any of these values.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_var" title="simpn.simulator.SimProblem.add_var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_var</span></code></a>(name[, priority])</p></td>
 <td><p>Creates a new SimVar with the specified name as identifier.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.bindings" title="simpn.simulator.SimProblem.bindings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bindings</span></code></a>()</p></td>
-<td><p>Calculates the set of timed bindings that is enabled over all  events in the problem.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.bfs" title="simpn.simulator.SimProblem.bfs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bfs</span></code></a>(incoming_places, combinations, max_time, ...)</p></td>
+<td><p>Breadth-first search to find a combination of tokens that satisfy the guard.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.bindings" title="simpn.simulator.SimProblem.bindings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bindings</span></code></a>()</p></td>
+<td><p>Calculates the set of timed bindings that is enabled over all events in the problem.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.evaluate_guard" title="simpn.simulator.SimProblem.evaluate_guard"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_guard</span></code></a>(variable_values, event)</p></td>
+<td><p>Evaluates the guard condition for the given event on the given variable values.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.event" title="simpn.simulator.SimProblem.event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">event</span></code></a>(name)</p></td>
 <td><p>Returns the SimEvent with the given name.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.event_bindings" title="simpn.simulator.SimProblem.event_bindings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">event_bindings</span></code></a>(event)</p></td>
-<td><p>Calculates the set of bindings that enables the given event.</p></td>
+<td><p>Calculates the first binding that enables the given event.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.fire" title="simpn.simulator.SimProblem.fire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fire</span></code></a>(timed_binding)</p></td>
 <td><p>Fires the specified timed binding.</p></td>
@@ -302,13 +308,10 @@ it can happen on any of these values.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.store_checkpoint" title="simpn.simulator.SimProblem.store_checkpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store_checkpoint</span></code></a>(name)</p></td>
 <td><p>Stores the state of the simulator as a checkpoint with the given name.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.tokens_combinations" title="simpn.simulator.SimProblem.tokens_combinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tokens_combinations</span></code></a>(event)</p></td>
-<td><p>Creates a list of token combinations that are available to the specified event.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.transition" title="simpn.simulator.SimProblem.transition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transition</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.transition" title="simpn.simulator.SimProblem.transition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transition</span></code></a>(**kwargs)</p></td>
 <td><p>Returns the SimEvent with the given name.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.var" title="simpn.simulator.SimProblem.var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">var</span></code></a>(name)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.var" title="simpn.simulator.SimProblem.var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">var</span></code></a>(name)</p></td>
 <td><p>Returns the SimVar with the given name.</p></td>
 </tr>
 </tbody>
@@ -328,7 +331,7 @@ it can happen on any of these values.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.RANDOM_BINDING">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RANDOM_BINDING</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bindings</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.RANDOM_BINDING" title="Link to this definition">¶</a></dt>
-<dd><p>Random selection between all bindings.</p>
+<dd><p>Random selection between all bindings. Deprecated: since we now have prioritized bindings per event, this function is equivalent to PRIORITY_QUEUE_BINDING.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -393,16 +396,52 @@ it can happen on any of these values.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.bfs">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bfs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">incoming_places</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combinations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">look_beyond</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.bfs" title="Link to this definition">¶</a></dt>
+<dd><p>Breadth-first search to find a combination of tokens that satisfy the guard.
+If there is no guard, the first combination is returned.
+Initially, look_beyond is False, meaning we only consider combinations, where each token &lt;= max_time.
+If no such combination is found, we set look_beyond to True and continue searching without the max_time constraint.
+Tokens are identified by a combination of indices into the lists of tokens in the incoming places
+(a combination is a tuple (i_1, i_2, …, i_n) where i_j is the index of the token to be identified in the j-th incoming place).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>incoming_places</strong> – A list of incoming places to the event.</p></li>
+<li><p><strong>combinations</strong> – A list of tuples, each representing a combination of indices, which identify the tokens to consider as a possible binding.</p></li>
+<li><p><strong>event</strong> – The event for which to find a valid binding.</p></li>
+<li><p><strong>max_time</strong> – The maximum index value to consider when look_beyond is False.</p></li>
+<li><p><strong>look_beyond</strong> – A boolean indicating whether to ignore the max_time constraint.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The first combination of indices that satisfies the guard, or None if no such combination exists.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.bindings">
 <span class="sig-name descname"><span class="pre">bindings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.bindings" title="Link to this definition">¶</a></dt>
-<dd><p>Calculates the set of timed bindings that is enabled over all 
-events in the problem. Each binding is a tuple ([(place, token), 
-(place, token), …], time, event) that represents a single enabling 
-binding. If no timed binding is enabled at the current clock time, 
-updates the current clock time to the earliest time at which there is.</p>
+<dd><p>Calculates the set of timed bindings that is enabled over all events in the problem.
+Each binding is a tuple ([(place, token), (place, token), …], time, event) that represents a single enabling binding.
+If no timed binding is enabled at the current clock time, updates the current clock time to the earliest time at which there is.
+:return: list of tuples ([(place, token), (place, token), …], time, event)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimProblem.evaluate_guard">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">evaluate_guard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.evaluate_guard" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluates the guard condition for the given event on the given variable values.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list of tuples ([(place, token), (place, token), …], time, event)</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variable_values</strong> – the list of values for the parameters of the guard.</p></li>
+<li><p><strong>event</strong> – the event for which to evaluate the guard.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the guard evaluates to True for the given binding, False otherwise.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -425,20 +464,19 @@ Raises an exception if no such SimEvent exists.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.event_bindings">
 <span class="sig-name descname"><span class="pre">event_bindings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.event_bindings" title="Link to this definition">¶</a></dt>
-<dd><p>Calculates the set of bindings that enables the given event.
-Each binding is a tuple ([(place, token), (place, token), …], time) that represents a single enabling binding.
-A binding is
-a possible token combination (see token_combinations), for which the event’s
-guard function evaluates to True. In case there is no guard function, any combination is also a binding.
-The time is the time at which the latest token is available.
-For example, if a event has incoming SimVar a and b with tokens 1&#64;2 on a and 2&#64;3, 3&#64;1 on b,
-the possible bindings are ([(a, 1&#64;2), (b, 2&#64;3)], 3) and ([(a, 1&#64;2), (b, 3&#64;1)], 2)</p>
+<dd><p>Calculates the first binding that enables the given event.
+A binding is a tuple ([(place, token), (place, token), …], time)
+for which the event’s guard function evaluates to True. 
+In case there is no guard function, any combination is also a binding.
+The time of the binding is the time at which the latest token is available.
+Which tokens are considered first is determined by the priority functions of the SimVars.
+The max_time is the current clock time of the simulation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>event</strong> – the event for which to calculate the enabling bindings.</p>
+<dd class="field-odd"><p><strong>event</strong> – the event for which to calculate the enabling binding.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>list of tuples ([(place, token), (place, token), …], time)</p>
+<dd class="field-even"><p>a tuple ([(place, token), (place, token), …], time)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -504,24 +542,6 @@ Returns the binding that happened, or None if no event could happen.</p>
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.store_checkpoint">
 <span class="sig-name descname"><span class="pre">store_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.store_checkpoint" title="Link to this definition">¶</a></dt>
 <dd><p>Stores the state of the simulator as a checkpoint with the given name. The checkpoint can be restored later with restore_checkpoint.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="simpn.simulator.SimProblem.tokens_combinations">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tokens_combinations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#simpn.simulator.SimProblem.tokens_combinations" title="Link to this definition">¶</a></dt>
-<dd><p>Creates a list of token combinations that are available to the specified event.
-These are combinations of tokens that are on the incoming SimVar of the event.
-For example, if a event has incoming SimVar a and b with tokens 1&#64;0 on a and 2&#64;0, 3&#64;0 on b,
-the possible combinations are [(a, 1&#64;0), (b, 2&#64;0)] and [(a, 1&#64;0), (b, 3&#64;0)]</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>event</strong> – the event to return the token combinations for.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a list of triples, where each triple describes the binding,</p>
-</dd>
-</dl>
-<p>the activation time, and the variable values of the binding.</p>
 </dd></dl>
 
 <dl class="py method">
