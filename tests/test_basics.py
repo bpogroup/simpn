@@ -798,6 +798,22 @@ class TestPriorities(unittest.TestCase):
         binding = test_problem.binding_priority(bindings)
         self.assertEqual(binding[0][0][1].value, 9, "the binding must be fired for the first item in the queue, which is 9")
 
+    def test_priority_driven_prio_between_simvars(self):
+        test_problem = SimProblem()
+
+        a = test_problem.add_var("a", priority=lambda token: -token.value)
+        a.put(9, 15); a.put(2, 20); a.put(1, 5); a.put(5, 10)
+        b = test_problem.add_var("b", priority=lambda token: token.value)
+        b.put(8, 15); b.put(3, 20); b.put(4, 5); b.put(6, 10)
+
+        test_problem.clock = 15
+        test_problem.add_event([a, b], [], lambda x, y: [], name="tab")
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 9, "there must be 3x3 bindings, because the tokens at moment 20 are not yet available")
+        # the first binding must be for a=9 and b=4, because 9 has highest priority in a, and 4 has highest priority in b
+        self.assertEqual(bindings[0][0][0][1].value, 9, "the first binding must be for the token with value 9 in a")
+        self.assertEqual(bindings[0][0][1][1].value, 4, "the first binding must be for the token with value 4 in b")
+
     def test_bpmn_priority_driven_prio(self):
         test_problem = SimProblem()
 
