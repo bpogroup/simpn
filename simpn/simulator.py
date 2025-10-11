@@ -794,11 +794,25 @@ class SimProblem:
             # time, need to check for each place and otherwise walk the 
             # place's marking
             for place in ev.incoming:
-                try:
-                    smallest.append(place.marking[0].time)
-                    added = True
-                except:
-                    skip = True
+                if (hasattr(place, '_sorted_by_time') and place._sorted_by_time):
+                    try:
+                        smallest.append(place.marking[0].time)
+                        added = True
+                    except:
+                        skip = True
+                else:
+                    # fallback to find earliest time in place
+                    small = None
+                    for mark in place.marking:
+                        if small is None:
+                            small = mark.time 
+                        elif mark.time < small:
+                            small = mark.time 
+                    if small == None:
+                        skip = True 
+                    else:
+                        added = True
+                        smallest.append(small)
             
             if (skip or not added):
                 timings[ev] = 0
