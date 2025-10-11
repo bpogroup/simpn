@@ -776,7 +776,7 @@ class TestPriorities(unittest.TestCase):
                     self.assertGreaterEqual(completion, last_completion, "jobs are completed in the order of their arrival")
                 last_completion = completion
             
-        self.assertGreater(completion_count, 8, "there are at least 8 completions")
+        self.assertGreaterEqual(completion_count, 8, "there are at least 8 completions")
 
     def test_priority_driven_prio(self):
         test_problem = SimProblem()
@@ -818,7 +818,7 @@ class TestPriorities(unittest.TestCase):
         test_problem = SimProblem()
 
         def priority(token):
-            return token.value[1]
+            return token.value[1]   
         task1_queue = test_problem.add_var("task1_queue", priority=priority)
         task2_queue = test_problem.add_var("task2_queue", priority=priority)
         done = test_problem.add_var("done")
