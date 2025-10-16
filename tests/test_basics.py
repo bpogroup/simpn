@@ -6,19 +6,6 @@ from random import randint
 
 class TestBasics(unittest.TestCase):
 
-    def compare_two_binding_sets(self, produced, expected):
-        """
-        Checks whether two produced list match on elements
-        but not in the same seen order. Checks for membership
-        and length of matches. 
-        """
-        found = 0
-        for binding in produced:
-            self.assertIn(binding, expected, f"produced unexpected binding {binding} not in {produced}")
-            found += 1
-        self.assertEqual(found, len(expected), f"Did not produce all expected elements :: produced {found} elements but expected {len(expected)}.")
-
-
     def test_add_svar(self):
         test_problem = SimProblem()
         a = test_problem.add_var("a")
@@ -99,72 +86,6 @@ class TestBasics(unittest.TestCase):
         with self.assertRaises(Exception):
             test_problem.add_event([a, b], [], lambda c: 1)
 
-    def test_tokens_combinations_zero_to_one(self):
-        test_problem = SimProblem()
-        a = test_problem.add_var("a")
-        b = test_problem.add_var("b")
-        b.put("b1")
-        ta = test_problem.add_event([a, b], [], lambda c, d: 1, name="ta")
-        self.assertEqual(test_problem.tokens_combinations(ta), [], "no token combinations")
-
-    def test_tokens_combinations_one_to_one(self):
-        test_problem = SimProblem()
-        a = test_problem.add_var("a")
-        a.put("a1")
-        b = test_problem.add_var("b")
-        b.put("b1")
-        ta = test_problem.add_event([a, b], [], lambda c, d: 1, name="ta")
-        # changes to the token_combinations meant I need to depack from the 
-        # the function call
-        ret = [
-            binding 
-            for binding, _ , _
-            in test_problem.tokens_combinations(ta)
-        ]
-        self.assertEqual(ret , [[(a, SimToken("a1", 0)), (b, SimToken("b1", 0))]], "one token combination")
-
-    def test_tokens_combinations_one_to_many(self):
-        test_problem = SimProblem()
-        a = test_problem.add_var("a")
-        a.put("a1")
-        b = test_problem.add_var("b")
-        b.put("b1")
-        b.put("b2")
-        ta = test_problem.add_event([a, b], [], lambda c, d: 1, name="ta")
-        ret = [
-            binding 
-            for binding, _ , _
-            in test_problem.tokens_combinations(ta)
-        ]
-        self.assertEqual(ret, [[(a, SimToken("a1", 0)), (b, SimToken("b1", 0))], [(a, SimToken("a1", 0)), (b, SimToken("b2", 0))]], "correct token combinations")
-
-    def test_tokens_combinations_many_to_many(self):
-        test_problem = SimProblem()
-        a = test_problem.add_var("a")
-        a.put("a1")
-        a.put("a2")
-        b = test_problem.add_var("b")
-        b.put("b1")
-        b.put("b2")
-        ta = test_problem.add_event([a, b], [], lambda c, d: 1, name="ta")
-        ret = [
-            binding 
-            for binding, _ , _
-            in test_problem.tokens_combinations(ta)
-        ]
-        # the ordering of the bindings should not matter
-        # if that is the case use the following function 
-        # to compare two such lists
-        self.compare_two_binding_sets(
-            ret,
-            [
-                [(a, SimToken("a1", 0)), (b, SimToken("b1", 0))],
-                [(a, SimToken("a2", 0)), (b, SimToken("b1", 0))],
-                [(a, SimToken("a1", 0)), (b, SimToken("b2", 0))],
-                [(a, SimToken("a2", 0)), (b, SimToken("b2", 0))],
-            ]
-        )
-
     def test_transition_bindings_guard(self):
         test_problem = SimProblem()
         a = test_problem.add_var("a")
@@ -173,8 +94,8 @@ class TestBasics(unittest.TestCase):
         b = test_problem.add_var("b")
         b.put("a1")
         b.put("a2")
-        ta = test_problem.add_event([a, b], [], lambda c, d: 1, name="ta", guard=lambda c, d: c == d)
-        self.assertEqual(test_problem.bindings(), [([(a, SimToken("a1", 0)), (b, SimToken("a1", 0))], 0, ta),  ([(a, SimToken("a2", 0)), (b, SimToken("a2", 0))], 0, ta)], "correct token combinations")
+        ta = test_problem.add_event([a, b], [], lambda c, d: [], name="ta", guard=lambda c, d: c == d)
+        self.assertEqual(test_problem.bindings(), [([(a, SimToken("a1", 0)), (b, SimToken("a1", 0))], 0, ta)], "correct token combinations")
 
     def test_bindings_timing(self):
         # starting at time 0, with four possible token combinations a1, b1; a1, b2; a2, b1; a2, b2
@@ -189,7 +110,7 @@ class TestBasics(unittest.TestCase):
         b.put("b1", 0)
         b.put("b2", 1)
         ta = test_problem.add_event([a, b], [], lambda c, d: [], name="ta")
-        self.assertEqual(test_problem.bindings(), [([(a, SimToken("a2", 1)), (b, SimToken("b1", 0))], 1, ta),  ([(a, SimToken("a2", 1)), (b, SimToken("b2", 1))], 1, ta)], "correct token combinations")
+        self.assertEqual(test_problem.bindings(), [([(a, SimToken("a2", 1)), (b, SimToken("b1", 0))], 1, ta)], "correct token combinations")
 
     def test_bindings_timing_complex(self):
         # just for completeness, a more complex example with 3 places
@@ -204,13 +125,8 @@ class TestBasics(unittest.TestCase):
         c = test_problem.add_var("c")
         c.put("c1", 5)
         c.put("c2", 6)
-        ta = test_problem.add_event([a, b, c], [], lambda d, e, f: [], name="ta")
-        self.compare_two_binding_sets(
-            [([(a, SimToken("a1", 1)), (b, SimToken("b1", 3)), (c, SimToken("c1", 5))], 5, ta), 
-             ([(a, SimToken("a1", 1)), (b, SimToken("b2", 4)), (c, SimToken("c1", 5))], 5, ta), 
-             ([(a, SimToken("a2", 2)), (b, SimToken("b1", 3)), (c, SimToken("c1", 5))], 5, ta),
-             ([(a, SimToken("a2", 2)), (b, SimToken("b2", 4)), (c, SimToken("c1", 5))], 5, ta)]
-            , test_problem.bindings())
+        ta = test_problem.add_event([a, b, c], [], lambda d, e, f: [], name="ta")            
+        self.assertEqual(test_problem.bindings(), [([(a, SimToken("a1", 1)), (b, SimToken("b1", 3)), (c, SimToken("c1", 5))], 5, ta)])
         
     def test_fire_result(self):
         test_problem = SimProblem()
@@ -284,6 +200,8 @@ class TestBasics(unittest.TestCase):
         bindings = test_problem.bindings()
         for binding in bindings:
             self.assertEqual(binding[1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
+        # the binding time must be at the current clock, because things cannot happen in the past
+        self.assertEqual(bindings[0][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
         test_problem.fire(bindings[0])
         self.assertEqual(test_problem.clock, 4, "firing a binding does not change the clock time")
 
@@ -296,8 +214,8 @@ class TestBasics(unittest.TestCase):
         test_problem.clock = 4
         bindings = test_problem.bindings()
         self.assertEqual(len(bindings), 1, "only one binding is possible, which is the one that happens at soon as possible after the current time")
-        self.assertEqual(bindings[0][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
         self.assertEqual(test_problem.clock, 5, "since a binding can only be enabled if the clock time changes, the clock time is now 5")
+        self.assertEqual(bindings[0][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
 
     def test_binding_time_guarded_token(self):
         test_problem = SimProblem()
@@ -335,24 +253,143 @@ class TestBasics(unittest.TestCase):
         test_problem.fire(binding)
         self.assertEqual(test_problem.clock, 4, "firing a binding does not change the clock time")
 
-    # def test_binding_time_later_token_guarded(self):
-    #     test_problem = SimProblem()
-    #     a = test_problem.add_var("a")
-    #     a.put("a1", 7)
-    #     a.put("a2", 6)
-    #     self.assertEqual(a.marking[0].value, "a2", "a2 is earlier than a1")
-    #     test_problem.add_event([a], [], lambda _: [], name="ta", guard=lambda x: x == "a1")
-    #     test_problem.clock = 4
-    #     bindings = test_problem.bindings()
-    #     self.assertEqual(len(bindings), 1, "only one binding is possible, which is the one that satisfies the guard")
-    #     # it is the binding with a1 (even though a2 is earlier), because a1 is the only one that satisfies the guard
-    #     self.assertEqual(bindings[0][0][0][1].value, "a1", "the only binding is the one with a1")
-    #     # the clock must now be 7, because a1 is only available at time 7
-    #     self.assertEqual(test_problem.clock, 7, "the clock time is now 7")
-    #     # the enabling time of the binding is 7, because a1 is available at time 7, and the clock is at time 7
-    #     self.assertEqual(bindings[0][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
-    #     test_problem.fire(bindings[0])
-    #     self.assertEqual(test_problem.clock, 7, "firing a binding does not change the clock time")
+    def test_binding_time_later_token_guarded(self):
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put("a1", 7)
+        a.put("a2", 6)
+        self.assertEqual(a.marking[0].value, "a2", "a2 is earlier than a1")
+        test_problem.add_event([a], [], lambda _: [], name="ta", guard=lambda x: x == "a1")
+        test_problem.clock = 4
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 1, "only one binding is possible, which is the one that satisfies the guard")
+        # it is the binding with a1 (even though a2 is earlier), because a1 is the only one that satisfies the guard
+        self.assertEqual(bindings[0][0][0][1].value, "a1", "the only binding is the one with a1")
+        # the clock must now be 7, because a1 is only available at time 7
+        self.assertEqual(test_problem.clock, 7, "the clock time is now 7")
+        # the enabling time of the binding is 7, because a1 is available at time 7, and the clock is at time 7
+        self.assertEqual(bindings[0][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
+        test_problem.fire(bindings[0])
+        self.assertEqual(test_problem.clock, 7, "firing a binding does not change the clock time")
+
+    def test_binding_time_later_token_guarded_between_events(self):
+        test_problem = SimProblem()
+
+        a = test_problem.add_var("a")
+        a.put("a1", 7)
+        a.put("a2", 6)
+
+        b = test_problem.add_var("b")
+        b.put("b1", 7)
+        b.put("b2", 3)
+        b.put("b3", 6)
+
+        self.assertEqual(
+            a.marking[0].value, 
+            "a2", 
+            "a2 is earlier than a1"
+        )
+        self.assertEqual(
+            b.marking[0].value, 
+            "b2", 
+            "b2 is the earliest"
+        )
+        test_problem.add_event(
+            [a], [], 
+            lambda _: [], 
+            name="ta", guard=lambda x: x == "a1"
+        )
+        test_problem.add_event(
+            [b], [], 
+            lambda _: [], 
+            name="tb", guard=lambda x: x == "b1" or x =="b2"
+        )
+        test_problem.clock = 4
+
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 
+            1, "only one binding is possible, which is the b2")
+        # it is the binding with b2 as it is ealier than the clock and allowed
+        # by the guard
+        self.assertEqual(
+            bindings[0][0][0][1].value, 
+            "b2", 
+            "the only binding is the one with b2"
+        )
+        # the clock must now be 4, because b2 before the clock
+        self.assertEqual(test_problem.clock, 4, "the clock time is now 4")
+        # the enabling time of the binding is 4, because b2 is available at 
+        # time 3, and the clock is at time 4, thus the clock must be used
+        self.assertEqual(
+            bindings[0][1], 
+            test_problem.clock, 
+            "the enabling time of a binding must be equal to the current clock time"
+        )
+        test_problem.fire(bindings[0])
+        self.assertEqual(
+            test_problem.clock, 
+            4, 
+            "firing a binding does not change the clock time"
+        )
+
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 
+            2, "two bindings are possible, one from e1 and e2 (a1, b1)")
+        self.assertEqual(
+            bindings[0][0][0][1].value, 
+            "a1", 
+            "the first binding is a1"
+        )
+        self.assertEqual(
+            bindings[1][0][0][1].value, 
+            "b1", 
+            "the second binding is b1"
+        )
+
+        # the clock must now be 7, because both a1 and b1 are timed at 7
+        self.assertEqual(test_problem.clock, 7, "the clock time must now be 7")
+        self.assertEqual(
+            bindings[0][1], 
+            test_problem.clock, 
+            "the enabling time of a binding must be equal to the current clock time"
+        )
+        self.assertEqual(
+            bindings[1][1], 
+            test_problem.clock, 
+            "the enabling time of a binding must be equal to the current clock time"
+        )
+        test_problem.fire(bindings[0])
+        self.assertEqual(
+            test_problem.clock, 
+            7, 
+            "firing a binding does not change the clock time"
+        )
+
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 
+            1, "only one binding is possible, b1")
+        self.assertEqual(
+            bindings[0][0][0][1].value, 
+            "b1", 
+            "the binding is b1"
+        )
+         # the clock must now be 7, because both a1 and b1 are timed at 7
+        self.assertEqual(test_problem.clock, 7, "the clock time must now be 7")
+        self.assertEqual(
+            bindings[0][1], 
+            test_problem.clock, 
+            "the enabling time of a binding must be equal to the current clock time"
+        )
+        test_problem.fire(bindings[0])
+        self.assertEqual(
+            test_problem.clock, 
+            7, 
+            "firing a binding does not change the clock time"
+        )
+
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 
+            0, "the problem shoud be deadlocked")
 
 
 class TestSimVarQueue(unittest.TestCase):
@@ -545,10 +582,7 @@ class TestPriorities(unittest.TestCase):
         ta = test_problem.add_event([a, b], [], lambda c, d: [], name="ta")
         # on a single queue, the tokens are always in time order
         self.assertEqual(test_problem.bindings(), 
-                         [([(a, SimToken("a1", 1)), (b, SimToken("b3", 3))], 3, ta), 
-                          ([(a, SimToken("a2", 2)), (b, SimToken("b3", 3))], 3, ta),
-                          ([(a, SimToken("a3", 3)), (b, SimToken("b3", 3))], 3, ta),
-                          ],
+                         [([(a, SimToken("a1", 1)), (b, SimToken("b3", 3))], 3, ta)],
                          "correct token combinations")
         
         # if the SimProblem is set to use priority-based binding, the first binding must be the one with the lowest time
@@ -572,15 +606,10 @@ class TestPriorities(unittest.TestCase):
 
         # on a single queue, the tokens are always in time order
         self.assertEqual([(binding_vals, binding_time, binding_event) for (binding_vals, binding_time, binding_event) in test_problem.bindings() if binding_event == ta], 
-                         [([(a, SimToken("a1", 1)), (b, SimToken("b3", 3))], 3, ta), 
-                          ([(a, SimToken("a2", 2)), (b, SimToken("b3", 3))], 3, ta),
-                          ([(a, SimToken("a3", 3)), (b, SimToken("b3", 3))], 3, ta),
-                          ],
+                         [([(a, SimToken("a1", 1)), (b, SimToken("b3", 3))], 3, ta)                         ],
                          "correct token combinations on ta")
         self.assertEqual([(binding_vals, binding_time, binding_event) for (binding_vals, binding_time, binding_event) in test_problem.bindings() if binding_event == tb], 
-                         [([(c, SimToken("c1", 1)), (d, SimToken("d3", 3))], 3, tb), 
-                          ([(c, SimToken("c2", 2)), (d, SimToken("d3", 3))], 3, tb),
-                          ([(c, SimToken("c3", 3)), (d, SimToken("d3", 3))], 3, tb),
+                         [([(c, SimToken("c1", 1)), (d, SimToken("d3", 3))], 3, tb)
                           ],
                          "correct token combinations on tb")
 
@@ -658,25 +687,116 @@ class TestPriorities(unittest.TestCase):
             
         self.assertGreater(completion_count, 8, "there are at least 8 completions")
 
-    def test_priority_driven_prio(self):
+    def test_priority_driven_prio_before_current_time(self):
         test_problem = SimProblem()
 
         a = test_problem.add_var("a", priority=lambda token: -token.value)
-        a.put(9, 15); a.put(2, 20); a.put(1, 5); a.put(5, 10)
+        a.put(9, 15); a.put(10, 20); a.put(1, 5); a.put(5, 10)
 
         test_problem.clock = 15
         test_problem.add_event([a], [], lambda _: [], name="ta")
         bindings = test_problem.bindings()
 
-        # there must be 3 bindings, for tokens with value 9, 5, and 1; the token with value 2 is not yet available
-        self.assertEqual(len(bindings), 3, "there must be three bindings")
-        # they must be in order 9, 5, 1, because of the priority function
-        self.assertEqual(bindings[0][0][0][1].value, 9, "the first binding must be for the token with value 9")
-        self.assertEqual(bindings[1][0][0][1].value, 5, "the second binding must be for the token with value 5")
-        self.assertEqual(bindings[2][0][0][1].value, 1, "the third binding must be for the token with value 1")
+        # because of the priority, the binding must be for the token with value 10
+        self.assertEqual(len(bindings), 1, "there must be one binding")
+        self.assertEqual(bindings[0][0][0][1].value, 10, "the first binding must be for the token with value 10")
+        # the enabling time of the binding must be equal to the current clock time
+        self.assertEqual(bindings[0][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
+        # and the clock must be shifted to 20, because the token with value 10 is only available at time 20
+        self.assertEqual(test_problem.clock, 20, "the clock time is now 20")
 
-        binding = test_problem.binding_priority(bindings)
-        self.assertEqual(binding[0][0][1].value, 9, "the binding must be fired for the first item in the queue, which is 9")
+    def test_priority_driven_prio_between_simvars_before_current_time(self):
+        test_problem = SimProblem()
+
+        a = test_problem.add_var("a", priority=lambda token: -token.value)
+        a.put(9, 15); a.put(10, 20); a.put(1, 5); a.put(5, 10)
+        b = test_problem.add_var("b", priority=lambda token: token.value)
+        b.put(8, 15); b.put(3, 20); b.put(4, 5); b.put(6, 10)
+
+        test_problem.clock = 15
+        test_problem.add_event([a, b], [], lambda x, y: [], name="tab")
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 1, "there must be one binding")
+        # according to priority the binding must be for the token with value 10 and 3
+        self.assertEqual(bindings[0][0][0][1].value, 10, "the first binding must be for the token with value 10")
+        self.assertEqual(bindings[0][0][1][1].value, 3, "the first binding must be for the token with value 3")
+        # the enabling time of the binding must be equal to the current clock time
+        self.assertEqual(bindings[0][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
+        # and the clock must be shifted to 20, because the token with value 10 is only available at time 20
+        self.assertEqual(test_problem.clock, 20, "the clock time is now 20")
+
+    def test_priority_driven_prio_after_current_time(self):
+        test_problem = SimProblem()
+
+        a = test_problem.add_var("a", priority=lambda token: -token.value)
+        a.put(9, 25); a.put(10, 20); a.put(1, 35); a.put(5, 30)
+
+        test_problem.clock = 15
+        test_problem.add_event([a], [], lambda _: [], name="ta")
+        bindings = test_problem.bindings()
+
+        # according to priority and the current time, only the token with value 10 is available
+        self.assertEqual(len(bindings), 1, "there must be one binding")
+        self.assertEqual(bindings[0][0][0][1].value, 10, "the first binding must be for the token with value 10")
+
+    def test_time_driven_prio_with_two_simevents_before_current_time(self):
+        test_problem = SimProblem()
+
+        a = test_problem.add_var("a")
+        a.put(9, 15); a.put(10, 20); a.put(1, 5); a.put(5, 10)
+        b = test_problem.add_var("b")
+        b.put(8, 15); b.put(3, 20); b.put(4, 5); b.put(6, 10)
+
+        test_problem.clock = 15
+        test_problem.add_event([a], [], lambda x: [], name="ta")
+        test_problem.add_event([b], [], lambda x: [], name="tb")
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 2, "there must be two bindings")
+        # according to priority the binding must be for the token with value 1 and 8
+        self.assertEqual(bindings[0][0][0][1].value, 1, "the first binding must be for the token with value 1")
+        self.assertEqual(bindings[1][0][0][1].value, 4, "the second binding must be for the token with value 8")
+        # the enabling time of the bindings must be equal to the current clock time
+        self.assertEqual(bindings[0][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
+        self.assertEqual(bindings[1][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
+
+    def test_time_driven_prio_with_two_simevents_one_after_current_time(self):
+        test_problem = SimProblem()
+
+        a = test_problem.add_var("a")
+        a.put(9, 25); a.put(10, 20); a.put(1, 30); a.put(5, 35)
+        b = test_problem.add_var("b")
+        b.put(8, 25); b.put(3, 20); b.put(4, 5); b.put(6, 10)
+
+        test_problem.clock = 15
+        test_problem.add_event([a], [], lambda x: [], name="ta")
+        test_problem.add_event([b], [], lambda x: [], name="tb")
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 1, "there must be one binding")
+        # according to priority the binding must be for the token with value 4
+        self.assertEqual(bindings[0][0][0][1].value, 4, "the first binding must be for the token with value 4")
+        # the enabling time of the bindings must be equal to the current clock time
+        self.assertEqual(bindings[0][1], test_problem.clock, "the enabling time of a binding must be equal to the current clock time")
+
+    def test_time_driven_prio_with_two_simevents_after_current_time(self):
+        test_problem = SimProblem()
+
+        a = test_problem.add_var("a")
+        a.put(9, 25); a.put(10, 20); a.put(1, 30); a.put(5, 35)
+        b = test_problem.add_var("b")
+        b.put(8, 25); b.put(3, 20); b.put(4, 30); b.put(6, 35)
+
+        test_problem.clock = 15
+        test_problem.add_event([a], [], lambda x: [], name="ta")
+        test_problem.add_event([b], [], lambda x: [], name="tb")
+        bindings = test_problem.bindings()
+        self.assertEqual(len(bindings), 2, "there must be two bindings")
+        # according to priority the binding must be for the token with value 10 and 3
+        # there is no order between these bindings, so either the first is 10 and the second 3, or vice versa
+        self.assertIn(bindings[0][0][0][1].value, [10, 3], "the first binding must be for the token with value 10 or 3")
+        self.assertIn(bindings[1][0][0][1].value, [10, 3], "the second binding must be for the token with value 10 or 3")
+        # the enabling time of the bindings must be equal to the time of the tokens
+        self.assertEqual(bindings[0][1], 20, "the enabling time of a binding must be equal to the time of the token")
+        self.assertEqual(bindings[1][1], 20, "the enabling time of a binding must be equal to the time of the token")
 
     def test_bpmn_priority_driven_prio(self):
         test_problem = SimProblem()

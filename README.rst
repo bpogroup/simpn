@@ -13,6 +13,14 @@ SimPN provides a simple syntax that is based on Python functions and variables, 
   :language: python
   :class: highlight
 
+Features
+========
+
+- Easy to use discrete event simulation package in Python.
+- Visualization of simulation models.
+- Prototypes for easily modeling, simulating, and visualizing frequently occurring simulation constructs, including BPMN and Queuing Networks.
+- Different reporting options, including logging to file as an event log for process mining purposes.
+
 Installation
 ============
 
@@ -21,6 +29,21 @@ The SimPN package is available on PyPI and can simply be installed with pip.
 .. code-block::
 
     python -m pip install simpn
+
+Quick Start
+===========
+
+You can check out a simple example of a simulation model, e.g., if you like Petri nets:
+
+.. code-block::
+
+    python examples/presentation/presentation_1.py
+
+If you like BPMN, you can check out this example:
+
+.. code-block::
+
+    python examples/presentation/presentation_2.py
 
 A Basic Tutorial
 ================
@@ -164,7 +187,7 @@ For completeness, the full code of the example is:
     shop.simulate(10, SimpleReporter())
 
 Visualizing the Model
-=====================
+~~~~~~~~~~~~~~~~~~~~~
 
 To help check whether the model is correct, it is possible to visualize it. To this end, there is a Visualisation class.
 You can simply create an instance of this class and call the `show` method to show the model as follows.
@@ -190,3 +213,12 @@ If the layout file does not exist, the model will be shown with an automatically
     v = Visualisation(shop, "layout.txt")
     v.show()
     v.save_layout("layout.txt")
+
+Documentation
+=============
+
+For more information, including the `API specification`_, and a far more extensive `tutorial`_, please visit the `documentation`_.
+
+.. _`documentation`: https://bpogroup.github.io/simpn/
+.. _`tutorial`: https://bpogroup.github.io/simpn/teaching.html
+.. _`API specification`: https://bpogroup.github.io/simpn/api.html

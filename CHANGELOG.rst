@@ -131,8 +131,10 @@ Version 1.5.1 (2025-10-08)
 
 - [Bugfix] fixed issue with priority-based binding selection not working correctly in some cases.
 
-Version 1.5.2 ()
+Version 1.6.0 (2025-10-16)
 ---------------------------
 
 - [Bugfix] fixed issue with bindings happening before the simulation time (issue #19).
 - [Bugfix] fixed issue where if a binding after the current clock can be enabled, but there is an earlier binding that is guarded, the binding does not get enabled (issue #20).
+- [Major feature] implemented efficient calculation of bindings. This does lead to a different approach: we now get the first possible binding per event (based on priority), after which the binding selection function can select one. Previously, all possible bindings per event were calculated, after which the binding selection function could select one.
+- [Chore] updated readme.
