@@ -3,9 +3,9 @@ from sortedcontainers import SortedList
 import simpn.visualisation as vis
 
 from random import choice
-from typing import List, Tuple 
-from itertools import product
+from typing import List, Dict 
 from enum import Enum, auto
+from copy import deepcopy
 
 
 class Describable:
@@ -317,6 +317,168 @@ class SimEvent(Describable):
         description = [(self._id + ": SimEvent", Describable.Style.HEADING)]
         return description
 
+class SimTokenValue:
+    """
+    A data structure to enable the handling of values and named attributes
+    associated with tokens. By convention, the first possible value held
+    by the structure is it's identity or `id`.
+
+    :param id: 
+        :type:`object`
+        the identity of this token.
+
+    :param ...values:
+        :type:`List[object]`
+        a list of unnamed attributes, or comma passed values passed to the
+        constructor.
+
+    :param ...dict_values:
+        :type:`Dict[str,object]`
+        a dictionary of named attributes, or named parameters passed to the
+        constructor.
+
+    --------
+    Examples
+    --------
+
+    With this class, values of tokens can be built in a pythonic manner
+    without much fuss and avoids using tuples everywhere.
+
+    .. code-block:: python 
+        # create a new value!
+        val = SimTokenValue("a1", 1, 'a', mary='alice', joe={ 'value' : 5})
+        # you can grab the identity of the token
+        id = val.id # or val[0]
+        # but you can still pretend to have a tuple
+        print(val[1])
+        # but for named arguments, you can use the dot notation on the value
+        print(val.mary)
+        print(val[3]) # same as above
+        # to ensure that immutable state is kept you can quickly make an
+        # equivalent value reference
+        copy_of_val = val.clone()
+        # you can quickly update values as well
+        val.mary= 'ham'
+        val['joe'] = 'spam'
+    """
+
+    def __init__(self, id, *values:List[object], **dict_values:Dict[str,object]):
+        tmp = [id] + list(values)
+        
+        self._id = id
+        self._named_start = len(values) + 1
+        self._names = sorted(list(dict_values.keys()))
+        for key in self._names:
+            if (hasattr(self, key)):
+                raise ValueError(
+                    f"SimTokenValue has duplicate keys in parameter list" \
+                    + f" :: {key}"
+                    )
+            setattr(self, key, dict_values[key])
+            tmp.append(dict_values[key])
+
+        self._values = tmp
+
+    @property
+    def id(self) -> object:
+        """
+        Returns the identity of the token.
+        """
+        return self._id
+
+    def clone(self) -> 'SimTokenValue':
+        """
+        Returns a clone of itself. When working within a behaviour and you
+        want to make changes to the state of the token, best practice is to
+        do so on a clone.
+
+        :returns SimTokenValue:
+        """
+        return deepcopy(self)
+    
+    def __hash__(self):
+        return self._values.__hash__()
+
+    def __str__(self):
+        result = "("
+        for val in self._values[:self._named_start]:
+            result += f"{val}, "
+        for name in self._names:
+            result += f"{name}={self[name]}, "
+        result = result[:-2] + ")"
+        return result
+
+    def __repr__(self):
+        ret = f"SimTokenValue({repr(self._values[0])}, "
+
+        for val in self._values[1:self._named_start]:
+            ret += f"{repr(val)}, "
+
+        named_values = dict( 
+            (key,val) 
+            for key,val 
+            in zip(self._names, self._values[self._named_start:])
+        )
+        ret += f"**{repr(named_values)})"
+
+        return ret
+    
+    def __eq__(self, value):
+        if isinstance(value, SimTokenValue):
+            return self._values == value._values
+        else:
+            return tuple(self._values) == value
+    
+    def __getitem__(self, key, default_val=None):
+        if isinstance(key, str):
+            if hasattr(self, key):
+                return getattr(self, key)
+            else:
+                return default_val
+        elif isinstance(key, int) or isinstance(key, slice):
+            return self._values[key]
+        else:
+            raise TypeError(f"The given key {key} was neither a str nor a int.")
+        
+    def __setattr__(self, key, value):
+        if (hasattr(self, '_names') and hasattr(self, '_values') and hasattr(self, '_named_start')):
+            if (key in ["id", "_id"]):
+                raise TypeError("You cannot change the identity of a token.")
+            
+            if hasattr(self, key):
+                index = self._named_start + self._names.index(key)
+                self._values[index] = value 
+            else:
+                self._names.append(key)
+                self._values.append(value)
+        super().__setattr__(key, value)
+        
+    def __setitem__(self, key, value):
+        if key == 0:
+            raise TypeError("You cannot change the identity of a token.")
+
+        if isinstance(key, str):
+            setattr(self, key, value)
+            if hasattr(self, key):
+                index = self._named_start + self._names.index(key)
+                self._values[index] = value 
+            else:
+                self._names.append(key)
+                self._values.append(value)
+        elif isinstance(key, int):
+            self._values[key] = value 
+            if key >= self._named_start:
+                index = key - self._named_start
+                key = self._names[index]
+                setattr(self, key, value)
+        else:
+            raise TypeError(f"The given key {key} was neither a str nor a int.")
+
+    def __len__(self):
+        return len(self._values)
+    
+    def __iter__(self):
+        return iter(self._values)
 
 class SimToken:
     """

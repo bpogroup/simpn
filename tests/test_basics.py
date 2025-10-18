@@ -812,7 +812,10 @@ class TestPriorities(unittest.TestCase):
         resource.put("r2")
         resource.put("r3")
 
-        prototype.BPMNStartEvent(test_problem, [], [task1_queue], "", 1, behavior=lambda: [SimToken(randint(1, 2))])
+        prototype.BPMNStartEvent(
+            test_problem, [], [task1_queue], "", 1, 
+            behavior=lambda id: SimToken((id, randint(1, 2)))
+        )
 
         prototype.BPMNTask(test_problem, [task2_queue, resource], [done, resource], "task2", lambda c, r: [SimToken((c, r), delay=2)])
 
