@@ -2,7 +2,7 @@
 A module to create some dummy problems for testing.
 """
 
-from simpn.simulator import SimProblem, SimToken
+from simpn.simulator import SimProblem, SimToken, SimTokenValue
 from simpn.helpers import Place, Transition, BPMN
 
 def create_dummy_pn():
@@ -33,9 +33,11 @@ def create_dummy_pn():
         
     return problem
 
-def create_dummy_bpmn():
-    from random import uniform
+def create_dummy_bpmn(structured=False):
+    from random import uniform, choice
     problem = SimProblem()
+    instance_types = ["gold", "silver", "bronze"]
+
 
     class Start(BPMN):
         type="start"
@@ -45,6 +47,12 @@ def create_dummy_bpmn():
 
         def interarrival_time():
             return 0.2
+        
+        def behaviour(id):
+            if structured:
+                return SimToken(SimTokenValue(id, type=choice(instance_types)))
+            else:
+                return SimToken((id))
         
     class Employee(BPMN):
         type="resource-pool"

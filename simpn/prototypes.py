@@ -1,6 +1,7 @@
 import inspect
 import pygame
 from simpn.simulator import SimToken, SimVar, SimEvent, SimProblem, Describable
+from simpn.simulator import SimTokenValue
 import simpn.visualisation as vis
 import math
 import re
@@ -204,7 +205,7 @@ class BPMNStartEvent(Prototype):
     :param outgoing: a list with a single SimVar in which the cases will be placed.
     :param name: the name of the start event.
     :param interarrival_time: the interarrival time with which events are generated. Can be a numeric value or a function that produces a numeric value, such as a sampling function from a random distribution.
-    :param behavior: an optional behavior describing how case_data is produced.
+    :param behavior: an optional function describing how case_data is produced.
     """
 
     def __init__(self, model, incoming, outgoing, name, interarrival_time, behavior=None):
@@ -230,9 +231,12 @@ class BPMNStartEvent(Prototype):
         else:
             if not callable(behavior):
                 raise TypeError("Start event " + name + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
-            if len(inspect.signature(behavior).parameters) != 0:
-                raise TypeError("Start event " + name + ": the behavior function must not have many parameters.")
-            result = model.add_event([invar], [invar, outgoing[0]], lambda a: [SimToken(name + str(int(a[len(name):]) + 1), delay=interarrival_time_f()), SimToken((a, behavior()[0].value))], name=name + "<start_event>")
+            if len(inspect.signature(behavior).parameters) > 1:
+                raise TypeError("Start event " + name + ": the behavior function must take either a single parameter, the identity or none.")
+            elif len(inspect.signature(behavior).parameters) == 0:
+                result = model.add_event([invar], [invar, outgoing[0]], lambda a: [SimToken(name + str(int(a[len(name):]) + 1), delay=interarrival_time_f()), SimToken((a, behavior()[0].value))], name=name + "<start_event>")
+            elif len(inspect.signature(behavior).parameters) == 1:
+                result = model.add_event([invar], [invar, outgoing[0]], lambda a: [SimToken(name + str(int(a[len(name):]) + 1), delay=interarrival_time_f()), behavior(a)], name=name + "<start_event>")
             self.add_event(result)
         invar.put(name + "0")
 
