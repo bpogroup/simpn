@@ -115,22 +115,74 @@ class HelperBPMNStart(BPMNStartEvent):
     following fields and functions. After the defintion is created a new 
     prototype instance will be recorded in the simulation problem.
 
-    ^^^^
-    Required class fields
-    ^^^^
-    :fieldname `model`:
-        The `SimProblem` to add the prototype to.
-    :fieldname `name`:
-        A unique identifier for the new prototype. 
-    :fieldname `outgoing`:
-        A list of `SimVar` that to put tokens into once the arrival time
-        occurs.
+    See :class:`~simpn.helpers.BPMN` for further use cases.
+
+    .. attributes::
+    The following attributes on the class need to be present to ensure
+    basic functionality.
+
+        .. model::
+            :type:`SimProblem`
+            The model to add the prototype to.
+
+        .. name:: 
+            :type:`str`
+            A unique identifier for the new prototype.
+
+        .. outgoing:: 
+            :type:`list`
+            A list of `SimVar` that to put tokens into once the arrival time
+            occurs.
+
+    .. required-methods ::
+
+    The following class methods need to be implemented to ensure basic
+    functionality.
+    
+        .. interarrival_time:: `interarrival_time()`
+
+            A function that returns the delay between the next token arrival.
+
+    .. optional-methods :: 
+    The following class methods can be implemented for further functionality.
+    
+        .. behaviour:: `behaviour()`
+                       `behaviour(id)`
+            :id: the identity of the token
+            :returns: the token value
+
+            A function that is called to generate the next token with case
+            data attached to the token if needed.   
+            If `behaviour()` then the function only generates case data but 
+            does not know the identity. The produced values are placed into a 
+            tuple (id, ret).
+            If `behaviour(id)` then function is responsible for returning a 
+            single value for the token value, the function will be given the 
+            identity. 
 
     ^^^
-    Required class functions
+    Examples
     ^^^
-    :fieldname `interarrival_time`:
-        A function that returns the delay between the next token arrival.
+
+    .. code-block:: python
+        from random import randint
+        from simpn.simulator import SimProblem
+        from simpn.helpers import HelperBPMNStart
+        model = SimProblem()
+        spot = model.add_var("waiting-for-spot")
+
+        class Start(HelperBPMNStart):
+            model=model
+            outgoing=[spot]
+            name="start"
+
+            def interarrival_time():
+                return randint(10)
+            
+            def behaviour():
+                return [
+                    { 'val' : randint(10) }
+                ]
     """
     model = None
     outgoing = None
