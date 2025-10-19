@@ -3,6 +3,9 @@ import re
 import xml.etree.ElementTree as ET
 from enum import Enum
 import random
+from simpn.simulator import SimProblem, SimToken
+import simpn.prototypes as prototype
+import random
 
 
 class BPMNParseException(Exception):
@@ -62,9 +65,9 @@ class BPMNArc:
 
 
 class BPMNRole:
-    def __init__(self, name: str):
+    def __init__(self, name: str, nr_resources: int = 0):
         self.name = name
-        self.nr_resources = 0
+        self.nr_resources = nr_resources
         self.contained_nodes = []
 
     def set_nr_resources(self, nr: int):
@@ -99,6 +102,23 @@ class BPMNModel:
     def get_nodes(self):
         return self.nodes
 
+
+def _choice_behavior(case, stable_probabilities):
+    # A behavior function for exclusive gateways that selects an outgoing flow based on stable probabilities.
+    # This is used by the BPMNParser transform method. It is not meant to be called directly.
+    pick = random.uniform(0, 1)
+    picked = False
+    cumulative = 0.0
+    result = [None] * len(stable_probabilities)
+    for i, prob in enumerate(stable_probabilities):
+        cumulative += prob
+        if pick <= cumulative:
+            result[i] = SimToken(case)
+            picked = True
+            break
+    if not picked:
+        result[-1] = SimToken(case)
+    return result
 
 class BPMNParser:
     def __init__(self):
@@ -148,9 +168,22 @@ class BPMNParser:
                 
         elif tag == "lane":
             name = elem.get("name", "")
+            nr_resources = 0
             if not name:
                 self.errors.append("The model contains a lane that has no name.")
-            role = BPMNRole(name)
+            # The name must have the form "role_name (nr_resources)"
+            match = re.match(r"^(.*?)(?:\s*\((\d+)\))?$", name)
+            if not match:
+                self.errors.append(f"The lane name '{name}' is not valid. It must be of the form 'role_name (nr_resources)'.")
+            else:
+                role_name = match.group(1).strip()
+                nr_resources_str = match.group(2)
+                if nr_resources_str is not None:
+                    try:
+                        nr_resources = int(nr_resources_str)
+                    except ValueError:
+                        self.errors.append(f"The number of resources for lane '{name}' is not a valid integer.")
+            role = BPMNRole(role_name, nr_resources)
             self.result.add_role(role)
             self.role2contained_ids[role] = []
             
@@ -173,6 +206,7 @@ class BPMNParser:
             # a start event must have a property child with name "interarrival_time"
             # this child must have a child dataState with a name which - when we call eval on it - evaluates to a number
             interarrival_time = elem.find("property[@name='interarrival_time']")
+            data_state_name = ""
             if interarrival_time is None:
                 self.errors.append(f"The model contains a start event '{name}' that has no property 'interarrival_time'.")
             else:
@@ -188,6 +222,7 @@ class BPMNParser:
                         self.errors.append(f"The interarrival_time of start event '{name}' does not evaluate to a number.")
 
             node = BPMNNode(name, NodeType.StartEvent)
+            node.set_property("interarrival_time", data_state_name)
             self.result.add_node(node)
             self.id2node[id_] = node
             
@@ -229,6 +264,7 @@ class BPMNParser:
             # a task must have a property child with name "processing_time"
             # this child must have a child dataState with a name which - when we call eval on it - evaluates to a number
             processing_time = elem.find("property[@name='processing_time']")
+            data_state_name = ""
             if processing_time is None:
                 self.errors.append(f"The model contains a task '{name}' that has no property 'processing_time'.")
             else:
@@ -242,7 +278,9 @@ class BPMNParser:
                         eval(data_state_name)
                     except:
                         self.errors.append(f"The processing_time of task '{name}' does not evaluate to a number.")
+            
             node = BPMNNode(name, NodeType.Task)
+            node.set_property("processing_time", data_state_name)
             self.result.add_node(node)
             self.id2node[id_] = node
             
@@ -285,6 +323,8 @@ class BPMNParser:
                     self.errors.append(f"Invalid probability format for arc: {name}. Expected format is 'number%'.")
                 else:
                     probability = int(name[:-1]) / 100.0
+                    if probability < 0.0 or probability > 1.0:
+                        self.errors.append(f"The probability for arc '{name}' must be between 0% and 100%.")
             arc = BPMNArc(probability)
             self.result.add_arc(arc)
             source_ref = elem.get("sourceRef")
@@ -460,5 +500,160 @@ class BPMNParser:
 
         return self.result
 
-    def get_parsed_model(self):
-        return self.result
+    def transform(self):
+        """
+        Transform the parsed BPMN model into a simulation model (SimProblem).
+        
+        This method converts a parsed BPMN model into an executable simulation using 
+        the simpn prototypes library. The transformation includes:
+        Lanes, Sequence Flows, Start Events, End Events, Tasks, Exclusive Gateways, and Parallel Gateways.
+        TODO: Intermediate Events and Event-Based Gateways are not yet supported.
+                
+        **Example Usage**:
+        ```python
+        parser = BPMNParser()
+        bpmn_model = parser.parse_file("model.bpmn")
+        sim_problem = parser.transform()
+        
+        # Customize if needed (e.g., change processing times, interarrival rates)
+        
+        # Visualize and run
+        vis = Visualisation(sim_problem, "layout.txt")
+        vis.show()
+        ```
+        
+        :return: A SimProblem instance representing the executable simulation model.
+        :raises BPMNParseException: If no BPMN model has been parsed, or if a task/event is not contained in any role/lane.
+        """        
+        if self.result is None:
+            raise BPMNParseException("No BPMN model has been parsed yet. Call parse() or parse_file() first.")
+        
+        # Create the simulation problem
+        sim_problem = SimProblem()
+        
+        # Create resources for each role (lane)
+        role_resources = {}
+        for role in self.result.get_roles():
+            resource = sim_problem.add_var(role.name)
+            # Add resource tokens based on nr_resources (default to 1 if not set)
+            nr_resources = role.nr_resources if role.nr_resources > 0 else 1
+            for i in range(1, nr_resources + 1):
+                resource.put(i)
+            role_resources[role] = resource
+        
+        # Create flows for each arc
+        arc_flows = {}
+        arc_counter = 0
+        for arc in self.result.arcs:
+            # Generate a unique flow name based on source and target
+            source_name = arc.source.name if arc.source and arc.source.name else "unknown"
+            target_name = arc.target.name if arc.target and arc.target.name else "unknown"
+            flow_name = f"{source_name}_to_{target_name}_{arc_counter}"
+            arc_counter += 1
+            flow = prototype.BPMNFlow(sim_problem, flow_name)
+            arc_flows[arc] = flow
+        
+        # Helper function to find the role containing a node
+        def get_node_role(node):
+            for role in self.result.get_roles():
+                if node in role.get_contained_nodes():
+                    return role
+            return None
+        
+        # Create BPMN elements for each node
+        for node in self.result.get_nodes():
+            incoming_flows = [arc_flows[arc] for arc in node.get_incoming()]
+            outgoing_flows = [arc_flows[arc] for arc in node.get_outgoing()]
+            
+            if node.type == NodeType.StartEvent:
+                def interarrival_time_factory(duration):
+                    return eval("lambda: " + duration)
+                interarrival_time_expression = node.properties.get("interarrival_time")
+                prototype.BPMNStartEvent(
+                    sim_problem, 
+                    [], 
+                    outgoing_flows, 
+                    node.name, 
+                    interarrival_time_factory(interarrival_time_expression)
+                )
+            
+            elif node.type == NodeType.EndEvent:
+                prototype.BPMNEndEvent(
+                    sim_problem, 
+                    incoming_flows, 
+                    [], 
+                    name=node.name
+                )
+            
+            elif node.type == NodeType.Task:
+                # Get the resource for this task's role
+                role = get_node_role(node)
+                if role is None:
+                    raise BPMNParseException(f"Task '{node.name}' is not in any role/lane.")
+                resource = role_resources[role]
+
+                def processing_time_factory(duration):
+                    return eval("lambda: " + duration)
+                processing_time_expression = node.properties.get("processing_time")
+                default_behavior = lambda case, res: [SimToken((case, res), delay=processing_time_factory(processing_time_expression)())]
+
+                prototype.BPMNTask(
+                    sim_problem,
+                    [incoming_flows[0], resource],
+                    [outgoing_flows[0], resource],
+                    node.name,
+                    default_behavior
+                )
+            
+            elif node.type == NodeType.IntermediateEvent:
+                raise BPMNParseException("Intermediate events are not yet supported in the transformation.")
+            
+            elif node.type == NodeType.ExclusiveSplit:
+                def choice_factory(outgoing_probabilities):
+                    # A factory for the choice behavior based on arc probabilities.
+                    # Takes a list of probabilities corresponding to outgoing flows.
+                    # Returns a function that takes a case as input and returns a list of SimToken(case)
+                    # of len(outgoing_probabilities), with only one SimToken for the chosen flow the rest None.
+                    return eval("lambda case: _choice_behavior(case, " + str(outgoing_probabilities) + ")")
+                
+                outgoing_flow_probabilities = []
+                for arc in node.get_outgoing():
+                    prob = arc.probability if arc.probability is not None else 0.0
+                    outgoing_flow_probabilities.append(prob)
+
+                prototype.BPMNExclusiveSplitGateway(
+                    sim_problem,
+                    incoming_flows,
+                    outgoing_flows,
+                    node.name if node.name else "xor split",
+                    behavior=choice_factory(outgoing_flow_probabilities)
+                )
+            
+            elif node.type == NodeType.ExclusiveJoin:
+                prototype.BPMNExclusiveJoinGateway(
+                    sim_problem,
+                    incoming_flows,
+                    outgoing_flows,
+                    node.name if node.name else "xor join"
+                )
+            
+            elif node.type == NodeType.ParallelSplit:
+                prototype.BPMNParallelSplitGateway(
+                    sim_problem,
+                    incoming_flows,
+                    outgoing_flows,
+                    node.name if node.name else "and split"
+                )
+            
+            elif node.type == NodeType.ParallelJoin:
+                prototype.BPMNParallelJoinGateway(
+                    sim_problem,
+                    incoming_flows,
+                    outgoing_flows,
+                    node.name if node.name else "and join"
+                )
+            
+            elif node.type == NodeType.EventBasedGateway:
+                raise BPMNParseException("Event-based gateways are not yet supported in the transformation.")
+        
+        return sim_problem
