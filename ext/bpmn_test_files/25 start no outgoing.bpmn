@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:signavio="http://www.signavio.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" exporter="Signavio Process Editor, http://www.signavio.com" exporterVersion="11.10.0" expressionLanguage="http://www.w3.org/TR/XPath" id="sid-aa52801b-0233-4db1-a781-1abd0e56952b" targetNamespace="http://www.signavio.com" typeLanguage="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://www.omg.org/spec/BPMN/2.0/20100501/BPMN20.xsd">
+   <collaboration id="sid-1d299c99-9889-46b6-96f1-19a956afa73c">
+      <participant id="sid-588C34B0-AAE4-4CAC-A283-ED65C4350405" name="Pool" processRef="sid-DFFC23AF-8E57-4CA9-AAC5-181CA8658AA8">
+         <extensionElements>
+            <signavio:signavioMetaData metaKey="bgcolor" metaValue="#ffffff"/>
+            <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000"/>
+         </extensionElements>
+      </participant>
+   </collaboration>
+   <process id="sid-DFFC23AF-8E57-4CA9-AAC5-181CA8658AA8" isClosed="false" isExecutable="false" name="Pool" processType="None">
+      <extensionElements/>
+      <laneSet id="sid-508cb04e-c4f4-4ffd-90c2-7d785deca081">
+         <lane id="sid-FF3861DC-EF57-4EB2-9DF0-9B7B8EE11229" name="Lane">
+            <extensionElements>
+               <signavio:signavioMetaData metaKey="bgcolor" metaValue=""/>
+               <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000"/>
+            </extensionElements>
+            <flowNodeRef>sid-39C90F72-7E14-455F-82C9-FFF10EBD762A</flowNodeRef>
+         </lane>
+      </laneSet>
+      <startEvent id="sid-39C90F72-7E14-455F-82C9-FFF10EBD762A" name="Start">
+         <extensionElements>
+            <signavio:signavioMetaData metaKey="bgcolor" metaValue="#ffffff"/>
+            <signavio:signavioMetaData metaKey="bordercolor" metaValue="#000000"/>
+         </extensionElements>
+      </startEvent>
+   </process>
+   <bpmndi:BPMNDiagram id="sid-24744965-97b0-438c-b435-0f47c92aca09">
+      <bpmndi:BPMNPlane bpmnElement="sid-1d299c99-9889-46b6-96f1-19a956afa73c" id="sid-546beea0-7afc-4c36-932d-d76cefd9e917">
+         <bpmndi:BPMNShape bpmnElement="sid-588C34B0-AAE4-4CAC-A283-ED65C4350405" id="sid-588C34B0-AAE4-4CAC-A283-ED65C4350405_gui" isHorizontal="true">
+            <omgdc:Bounds height="250.0" width="600.0" x="135.0" y="270.0"/>
+            <bpmndi:BPMNLabel labelStyle="sid-da066cbf-6389-4ba8-b9f0-59d7a43b1389">
+               <omgdc:Bounds height="22.371429443359375" width="12.0" x="140.0" y="383.8142852783203"/>
+            </bpmndi:BPMNLabel>
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape bpmnElement="sid-FF3861DC-EF57-4EB2-9DF0-9B7B8EE11229" id="sid-FF3861DC-EF57-4EB2-9DF0-9B7B8EE11229_gui" isHorizontal="true">
+            <omgdc:Bounds height="250.0" width="570.0" x="165.0" y="270.0"/>
+            <bpmndi:BPMNLabel labelStyle="sid-da066cbf-6389-4ba8-b9f0-59d7a43b1389">
+               <omgdc:Bounds height="25.45714569091797" width="12.0" x="170.0" y="382.271427154541"/>
+            </bpmndi:BPMNLabel>
+         </bpmndi:BPMNShape>
+         <bpmndi:BPMNShape bpmnElement="sid-39C90F72-7E14-455F-82C9-FFF10EBD762A" id="sid-39C90F72-7E14-455F-82C9-FFF10EBD762A_gui">
+            <omgdc:Bounds height="30.0" width="30.0" x="270.0" y="380.0"/>
+            <bpmndi:BPMNLabel labelStyle="sid-d6b0727d-7a73-467e-b20b-7003f7f58e3e">
+               <omgdc:Bounds height="11.0" width="25.45714569091797" x="272.271427154541" y="412.0"/>
+            </bpmndi:BPMNLabel>
+         </bpmndi:BPMNShape>
+      </bpmndi:BPMNPlane>
+      <bpmndi:BPMNLabelStyle id="sid-d6b0727d-7a73-467e-b20b-7003f7f58e3e">
+         <omgdc:Font isBold="false" isItalic="false" isStrikeThrough="false" isUnderline="false" name="Arial" size="11.0"/>
+      </bpmndi:BPMNLabelStyle>
+      <bpmndi:BPMNLabelStyle id="sid-da066cbf-6389-4ba8-b9f0-59d7a43b1389">
+         <omgdc:Font isBold="false" isItalic="false" isStrikeThrough="false" isUnderline="false" name="Arial" size="12.0"/>
+      </bpmndi:BPMNLabelStyle>
+   </bpmndi:BPMNDiagram>
+</definitions>
