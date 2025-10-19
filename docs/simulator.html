@@ -65,13 +65,16 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimToken" title="simpn.simulator.SimToken"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimToken</span></code></a>(value[, time, delay])</p></td>
 <td><p>A token SimToken, which is a possible value of a SimVar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVar" title="simpn.simulator.SimVar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVar</span></code></a>(_id[, priority])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenValue" title="simpn.simulator.SimTokenValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTokenValue</span></code></a>(id, *values, **dict_values)</p></td>
+<td><p>A data structure to enable the handling of values and named attributes associated with tokens.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVar" title="simpn.simulator.SimVar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVar</span></code></a>(_id[, priority])</p></td>
 <td><p>A simulation variable SimVar has an identifier and a marking.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVarQueue" title="simpn.simulator.SimVarQueue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarQueue</span></code></a>(simvar)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVarQueue" title="simpn.simulator.SimVarQueue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarQueue</span></code></a>(simvar)</p></td>
 <td><p>A simulation variable that contains the queue of tokens from another SimVar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVarTime" title="simpn.simulator.SimVarTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarTime</span></code></a>(problem)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVarTime" title="simpn.simulator.SimVarTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarTime</span></code></a>(problem)</p></td>
 <td><p>A simulation variable that contains the simulation time.</p></td>
 </tr>
 </tbody>
@@ -585,6 +588,67 @@ The value will then be available at &lt;time of event&gt; + &lt;delay&gt;.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="simpn.simulator.SimTokenValue">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimTokenValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">object</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">dict_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimTokenValue" title="Link to this definition">¶</a></dt>
+<dd><p>A data structure to enable the handling of values and named attributes
+associated with tokens. By convention, the first possible value held
+by the structure is it’s identity or <cite>id</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>id</strong> – <code class="xref py py-type docutils literal notranslate"><span class="pre">object</span></code>
+the identity of this token.</p></li>
+<li><p><strong>...</strong><strong>values</strong> – <code class="xref py py-type docutils literal notranslate"><span class="pre">List[object]</span></code>
+a list of unnamed attributes, or comma passed values passed to the
+constructor.</p></li>
+<li><p><strong>...</strong><strong>dict_values</strong> – <code class="xref py py-type docutils literal notranslate"><span class="pre">Dict[str,object]</span></code>
+a dictionary of named attributes, or named parameters passed to the
+constructor.</p></li>
+</ul>
+</dd>
+</dl>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h2>
+<p>With this class, values of tokens can be built in a pythonic manner
+without much fuss and avoids using tuples everywhere.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenValue.clone" title="simpn.simulator.SimTokenValue.clone"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clone</span></code></a>()</p></td>
+<td><p>Returns a clone of itself.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenValue.id" title="simpn.simulator.SimTokenValue.id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">id</span></code></a></p></td>
+<td><p>Returns the identity of the token.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimTokenValue.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#simpn.simulator.SimTokenValue" title="simpn.simulator.SimTokenValue"><span class="pre">SimTokenValue</span></a></span></span><a class="headerlink" href="#simpn.simulator.SimTokenValue.clone" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a clone of itself. When working within a behaviour and you
+want to make changes to the state of the token, best practice is to
+do so on a clone.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns SimTokenValue<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="simpn.simulator.SimTokenValue.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">object</span></em><a class="headerlink" href="#simpn.simulator.SimTokenValue.id" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the identity of the token.</p>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimVar">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimVar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimVar" title="Link to this definition">¶</a></dt>
 <dd><p>A simulation variable SimVar has an identifier and a marking.
@@ -819,9 +883,11 @@ The identifier of this SimVar is ‘time’, which consequently is a reserved na
 <h3><a href="index.html">Table of Contents</a></h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="howto.html">SimPN</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html#features">Features</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html#quick-start">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#a-basic-tutorial">A Basic Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="howto.html#visualizing-the-model">Visualizing the Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html#documentation">Documentation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="api.html">API Documentation</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Simulator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reporters.html">Reporters</a></li>
