@@ -1,7 +1,8 @@
-import io
+from io import StringIO
+import re
+import xml.etree.ElementTree as ET
 from enum import Enum
-from xml.sax import handler, make_parser, InputSource, SAXException
-from xml.sax.handler import ContentHandler
+import random
 
 
 class BPMNParseException(Exception):
@@ -24,6 +25,7 @@ class BPMNNode:
     def __init__(self, name: str, ntype: NodeType):
         self.name = name
         self.type = ntype
+        self.properties = {}
         self.incoming = []  # list of BPMNArc
         self.outgoing = []  # list of BPMNArc
 
@@ -35,6 +37,9 @@ class BPMNNode:
 
     def set_type(self, ntype: NodeType):
         self.type = ntype
+    
+    def set_property(self, key: str, value):
+        self.properties[key] = value
 
     def get_incoming(self):
         return self.incoming
@@ -44,8 +49,8 @@ class BPMNNode:
 
 
 class BPMNArc:
-    def __init__(self, name=None):
-        self.name = name
+    def __init__(self, probability=None):
+        self.probability = probability
         self.source = None
         self.target = None
 
@@ -59,12 +64,11 @@ class BPMNArc:
 class BPMNRole:
     def __init__(self, name: str):
         self.name = name
-        self.resources = []
+        self.nr_resources = 0
         self.contained_nodes = []
 
-    def add_resource(self, r: str):
-        if r:
-            self.resources.append(r)
+    def set_nr_resources(self, nr: int):
+        self.nr_resources = nr
 
     def add_contained_node(self, node: BPMNNode):
         self.contained_nodes.append(node)
@@ -95,162 +99,209 @@ class BPMNModel:
     def get_nodes(self):
         return self.nodes
 
-    def set_start_event(self, node: BPMNNode):
-        self.start_event = node
 
-
-class XMLErrorHandler(handler.ErrorHandler):
+class BPMNParser:
     def __init__(self):
-        self._errors = []
-
-    def error(self, exception):
-        self._errors.append(str(exception))
-
-    def fatalError(self, exception):
-        self._errors.append(str(exception))
-
-    def warning(self, exception):
-        # collect warnings but don't fail
-        self._errors.append(str(exception))
-
-    def has_errors(self):
-        return len(self._errors) > 0
-
-    def errors_as_string(self):
-        return "\n".join(self._errors)
-
-
-class ConditionEvaluator:
-    """Stub that mirrors the Java ConditionEvaluator.getInstance().validate(name).
-    For now it always returns an empty list (no validation errors)."""
-    @staticmethod
-    def validate(name: str):
-        return []
-
-
-class BPMNParser(ContentHandler):
-    def __init__(self):
-        super().__init__()
-        self.error_handler = XMLErrorHandler()
-        self.has_pool = False
-        self.role_being_parsed = None
-        self.node_ref_being_parsed = None
-        self.documentation_being_parsed = None
-        self.role2contained_ids = {}
-        self.id2node = {}
-        self.arc2source_id = {}
-        self.arc2target_id = {}
         self.result = BPMNModel()
         self.errors = []
-        self.node_being_parsed = None
+        self.has_pool = False
+        self.id2node = {}
+        self.role2contained_ids = {}
+        self.arc2source_id = {}
+        self.arc2target_id = {}
 
-    # ContentHandler callbacks
-    def startElement(self, name, attrs):
-        qName = name
-        # ignore some qNames like the Java code
-        if (qName in ("definitions", "process", "extensionElements", "timerEventDefinition", "messageEventDefinition") or
-                qName in ("outgoing", "incoming", "collaboration", "laneSet") or
-                qName.startswith("signavio:") or qName.startswith("bpmndi:") or qName.startswith("omgdi:") or qName.startswith("omgdc:") or qName.startswith("conditionExpression")):
+    def _should_ignore(self, tag):
+        """Check if a tag should be ignored during parsing."""
+        # Exact match ignores
+        if tag in ("definitions", "process", "extensionElements", "timerEventDefinition", 
+                   "messageEventDefinition", "outgoing", "incoming", "collaboration", "laneSet",
+                   "conditionExpression", "flowNodeRef", "documentation", "signavioMetaData",
+                   "signavioDiagramMetaData", "property", "dataState"):
+            return True
+        
+        # Prefix match ignores (case-insensitive for BPMN diagram elements)
+        tag_lower = tag.lower()
+        if (tag.startswith("signavio:") or tag.startswith("bpmndi:") or 
+            tag.startswith("omgdi:") or tag.startswith("omgdc:") or
+            tag_lower.startswith("bpmn")):  # BPMNDiagram, BPMNPlane, BPMNShape, BPMNEdge, etc.
+            return True
+        
+        # Additional diagram-related elements
+        if tag in ("Bounds", "waypoint", "Font"):
+            return True
+            
+        return False
+
+    def _parse_element(self, elem):
+        """Parse a single XML element."""
+        tag = elem.tag
+        
+        # Ignore certain elements
+        if self._should_ignore(tag):
             return
 
-        id_ = None
-        if qName in ("startEvent", "intermediateCatchEvent", "endEvent", "task", "exclusiveGateway", "eventBasedGateway", "parallelGateway"):
-            id_ = attrs.get("id")
-            if id_ is None:
-                self.result = None
-                raise SAXException("Unexpected error: the model contains an event that has no identifier.")
-            if id_ in self.id2node:
-                self.result = None
-                raise SAXException("Unexpected error: the model contains a two nodes with the same identifier.")
-
-        if qName == "participant":
+        if tag == "participant":
             if self.has_pool:
                 self.errors.append("The model contains more than one pool.")
             else:
                 self.has_pool = True
-        elif qName == "lane":
-            name_attr = attrs.get("name")
-            if not name_attr:
+                
+        elif tag == "lane":
+            name = elem.get("name", "")
+            if not name:
                 self.errors.append("The model contains a lane that has no name.")
-            role = BPMNRole(name_attr or "")
+            role = BPMNRole(name)
             self.result.add_role(role)
-            self.role_being_parsed = role
             self.role2contained_ids[role] = []
-        elif qName == "flowNodeRef":
-            self.node_ref_being_parsed = ""
-        elif qName == "documentation":
-            self.documentation_being_parsed = ""
-        elif qName in ("startEvent", "endEvent", "intermediateCatchEvent", "task"):
-            name_attr = attrs.get("name") or ""
-            if qName == "startEvent":
-                if len(name_attr) == 0:
-                    self.errors.append("The model contains a start event that has no name.")
-                node = BPMNNode(name_attr, NodeType.StartEvent)
-            elif qName == "endEvent":
-                if len(name_attr) == 0:
-                    self.errors.append("The model contains an end event that has no name.")
-                node = BPMNNode(name_attr, NodeType.EndEvent)
-            elif qName == "intermediateCatchEvent":
-                if len(name_attr) == 0:
-                    self.errors.append("The model contains an intermediate event that has no name.")
-                node = BPMNNode(name_attr, NodeType.IntermediateEvent)
-            else:  # task
-                if len(name_attr) == 0:
-                    self.errors.append("The model contains a task that has no name.")
-                node = BPMNNode(name_attr, NodeType.Task)
-            self.node_being_parsed = node
+            
+            # Parse flowNodeRef children
+            for child in elem:
+                if child.tag == "flowNodeRef":
+                    node_id = child.text.strip() if child.text else ""
+                    if node_id:
+                        self.role2contained_ids[role].append(node_id)
+                        
+        elif tag == "startEvent":
+            name = elem.get("name", "")
+            if not name:
+                self.errors.append("The model contains a start event that has no name.")
+            id_ = elem.get("id")
+            if not id_:
+                raise BPMNParseException("Unexpected error: the model contains an event that has no identifier.")
+            if id_ in self.id2node:
+                raise BPMNParseException("Unexpected error: the model contains two nodes with the same identifier.")
+            # a start event must have a property child with name "interarrival_time"
+            # this child must have a child dataState with a name which - when we call eval on it - evaluates to a number
+            interarrival_time = elem.find("property[@name='interarrival_time']")
+            if interarrival_time is None:
+                self.errors.append(f"The model contains a start event '{name}' that has no property 'interarrival_time'.")
+            else:
+                data_state = interarrival_time.find("dataState")
+                if data_state is None:
+                    self.errors.append(f"The interarrival_time of start event '{name}' must have a 'dataState'.")
+                else:
+                    data_state_name = data_state.get("name", "")
+                    # Check if the name evaluates to a number
+                    try:
+                        eval(data_state_name)
+                    except:
+                        self.errors.append(f"The interarrival_time of start event '{name}' does not evaluate to a number.")
+
+            node = BPMNNode(name, NodeType.StartEvent)
             self.result.add_node(node)
             self.id2node[id_] = node
-        elif qName == "exclusiveGateway":
+            
+        elif tag == "endEvent":
+            name = elem.get("name", "")
+            if not name:
+                self.errors.append("The model contains an end event that has no name.")
+            id_ = elem.get("id")
+            if not id_:
+                raise BPMNParseException("Unexpected error: the model contains an event that has no identifier.")
+            if id_ in self.id2node:
+                raise BPMNParseException("Unexpected error: the model contains two nodes with the same identifier.")
+            node = BPMNNode(name, NodeType.EndEvent)
+            self.result.add_node(node)
+            self.id2node[id_] = node
+            
+        elif tag == "intermediateCatchEvent":
+            name = elem.get("name", "")
+            if not name:
+                self.errors.append("The model contains an intermediate event that has no name.")
+            id_ = elem.get("id")
+            if not id_:
+                raise BPMNParseException("Unexpected error: the model contains an event that has no identifier.")
+            if id_ in self.id2node:
+                raise BPMNParseException("Unexpected error: the model contains two nodes with the same identifier.")
+            node = BPMNNode(name, NodeType.IntermediateEvent)
+            self.result.add_node(node)
+            self.id2node[id_] = node
+            
+        elif tag == "task":
+            name = elem.get("name", "")
+            if not name:
+                self.errors.append("The model contains a task that has no name.")
+            id_ = elem.get("id")
+            if not id_:
+                raise BPMNParseException("Unexpected error: the model contains an event that has no identifier.")
+            if id_ in self.id2node:
+                raise BPMNParseException("Unexpected error: the model contains two nodes with the same identifier.")
+            # a task must have a property child with name "processing_time"
+            # this child must have a child dataState with a name which - when we call eval on it - evaluates to a number
+            processing_time = elem.find("property[@name='processing_time']")
+            if processing_time is None:
+                self.errors.append(f"The model contains a task '{name}' that has no property 'processing_time'.")
+            else:
+                data_state = processing_time.find("dataState")
+                if data_state is None:
+                    self.errors.append(f"The processing_time of task '{name}' must have a 'dataState'.")
+                else:
+                    data_state_name = data_state.get("name", "")
+                    # Check if the name evaluates to a number
+                    try:
+                        eval(data_state_name)
+                    except:
+                        self.errors.append(f"The processing_time of task '{name}' does not evaluate to a number.")
+            node = BPMNNode(name, NodeType.Task)
+            self.result.add_node(node)
+            self.id2node[id_] = node
+            
+        elif tag == "exclusiveGateway":
+            id_ = elem.get("id")
+            if not id_:
+                raise BPMNParseException("Unexpected error: the model contains an event that has no identifier.")
+            if id_ in self.id2node:
+                raise BPMNParseException("Unexpected error: the model contains two nodes with the same identifier.")
             node = BPMNNode("", NodeType.ExclusiveSplit)
             self.result.add_node(node)
             self.id2node[id_] = node
-        elif qName == "eventBasedGateway":
+            
+        elif tag == "eventBasedGateway":
+            id_ = elem.get("id")
+            if not id_:
+                raise BPMNParseException("Unexpected error: the model contains an event that has no identifier.")
+            if id_ in self.id2node:
+                raise BPMNParseException("Unexpected error: the model contains two nodes with the same identifier.")
             node = BPMNNode("", NodeType.EventBasedGateway)
             self.result.add_node(node)
             self.id2node[id_] = node
-        elif qName == "parallelGateway":
+            
+        elif tag == "parallelGateway":
+            id_ = elem.get("id")
+            if not id_:
+                raise BPMNParseException("Unexpected error: the model contains an event that has no identifier.")
+            if id_ in self.id2node:
+                raise BPMNParseException("Unexpected error: the model contains two nodes with the same identifier.")
             node = BPMNNode("", NodeType.ParallelSplit)
             self.result.add_node(node)
             self.id2node[id_] = node
-        elif qName == "sequenceFlow":
-            name_attr = attrs.get("name")
-            name_attr = None if (name_attr is None or len(name_attr) == 0) else name_attr
-            if name_attr is not None:
-                self.errors.extend(ConditionEvaluator.validate(name_attr))
-            arc = BPMNArc(name_attr)
+            
+        elif tag == "sequenceFlow":
+            name = elem.get("name")
+            probability = None
+            if name is not None and len(name) > 0:
+                # The name should be of the form "number%"
+                if not re.match(r"^\d+%$", name):
+                    self.errors.append(f"Invalid probability format for arc: {name}. Expected format is 'number%'.")
+                else:
+                    probability = int(name[:-1]) / 100.0
+            arc = BPMNArc(probability)
             self.result.add_arc(arc)
-            source_ref = attrs.get("sourceRef")
-            target_ref = attrs.get("targetRef")
-            if (not source_ref) or (not target_ref):
+            source_ref = elem.get("sourceRef")
+            target_ref = elem.get("targetRef")
+            if not source_ref or not target_ref:
                 self.errors.append("The model contains an arc that is not connected at the beginning or at the end.")
             self.arc2source_id[arc] = source_ref
             self.arc2target_id[arc] = target_ref
         else:
-            self.errors.append(f"The model contains an illegal model element: {qName}.")
+            # Report error for unrecognized/illegal elements
+            self.errors.append(f"The model contains an illegal model element: {tag}.")
 
-    def characters(self, content):
-        if self.node_ref_being_parsed is not None:
-            self.node_ref_being_parsed += content
-        elif self.documentation_being_parsed is not None:
-            self.documentation_being_parsed += content
-
-    def endElement(self, name):
-        qName = name
-        if qName == "lane":
-            self.role_being_parsed = None
-        elif qName == "flowNodeRef":
-            if self.role_being_parsed is not None:
-                self.role2contained_ids[self.role_being_parsed].append(self.node_ref_being_parsed.strip())
-            self.node_ref_being_parsed = None
-        elif qName == "documentation":
-            if self.documentation_being_parsed is not None:
-                for resource in self.documentation_being_parsed.split(','):
-                    if self.role_being_parsed is not None:
-                        self.role_being_parsed.add_resource(resource.strip())
-            self.documentation_being_parsed = None
-        elif qName in ("startEvent", "endEvent", "intermediateCatchEvent", "task", "exclusiveGateway", "eventBasedGateway", "parallelGateway"):
-            self.node_being_parsed = None
+    def _traverse_tree(self, elem):
+        """Recursively traverse the XML tree."""
+        self._parse_element(elem)
+        for child in elem:
+            self._traverse_tree(child)
 
     def connect_elements(self):
         # connect nodes to roles
@@ -328,6 +379,8 @@ class BPMNParser(ContentHandler):
             elif node.type == NodeType.IntermediateEvent:
                 if inc == 0:
                     self.errors.append(f"Intermediate event '{node.name}' has no incoming arc.")
+                elif inc > 1:
+                    self.errors.append(f"Intermediate event '{node.name}' has multiple incoming arcs.")
                 if out != 1:
                     self.errors.append(f"Intermediate event '{node.name}' does not have exactly one outgoig arc.")
             elif node.type == NodeType.StartEvent:
@@ -360,14 +413,7 @@ class BPMNParser(ContentHandler):
                 if inc > 1 and out > 1:
                     self.errors.append("The model contains an exclusive gateway with multiple incoming and outgoing arcs.")
 
-        has_start = False
-        for node in self.result.get_nodes():
-            if node.type == NodeType.StartEvent:
-                if has_start:
-                    self.errors.append("The model contains multiple start events.")
-                self.result.set_start_event(node)
-                has_start = True
-        if not has_start:
+        if len([node for node in self.result.get_nodes() if node.type == NodeType.StartEvent]) == 0:
             self.errors.append("The model has no start event.")
 
     def errors_to_string(self):
@@ -383,32 +429,29 @@ class BPMNParser(ContentHandler):
         return self.parse(xml)
 
     def parse(self, xml: str):
-        # reset state
+        # Reset state
         self.result = BPMNModel()
-        self.error_handler = XMLErrorHandler()
         self.errors = []
         self.id2node = {}
         self.role2contained_ids = {}
         self.arc2source_id = {}
         self.arc2target_id = {}
+        self.has_pool = False
 
-        # parse XML using SAX
-        parser = make_parser()
-        parser.setContentHandler(self)
-        parser.setErrorHandler(self.error_handler)
+        # Parse XML using ElementTree
         try:
-            src = InputSource()
-            src.setCharacterStream(io.StringIO(xml))
-            parser.parse(src)
-        except SAXException as e:
+            it = ET.iterparse(StringIO(xml))
+            for _, el in it:
+                _, _, el.tag = el.tag.rpartition('}') # strip ns
+            root = it.root
+        except ET.ParseError as e:
             self.result = None
-            raise BPMNParseException("An unexpected error occurred while reading the BPMN XML.") from e
+            raise BPMNParseException(f"An unexpected error occurred while reading the BPMN XML: {str(e)}") from e
 
-        if self.error_handler.has_errors():
-            self.result = None
-            raise BPMNParseException("The BPMN XML contains unexpected errors:\n" + self.error_handler.errors_as_string())
+        # Traverse the XML tree
+        self._traverse_tree(root)
 
-        # connect and check
+        # Connect and check
         self.connect_elements()
         self.check_semantics()
         if self.errors:

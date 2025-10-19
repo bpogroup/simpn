@@ -86,17 +86,6 @@ class TestBPMNParser(unittest.TestCase):
         except BPMNParseException as e:
             self.assertIn("The task 'Task' is not contained in a lane.", str(e))
 
-    # '21 multiple start events.bpmn': "The BPMN Model contains the following error(s):\n- The model contains multiple start events.",
-    def test_multiple_start_events_error(self):
-        test_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'ext', 'bpmn_test_files', '21 multiple start events.bpmn'))
-        parser = BPMNParser()
-        try:
-            parser.parse_file(test_file)
-            # If no exception is raised, the test should fail
-            self.fail("BPMNParseException was not raised")
-        except BPMNParseException as e:
-            self.assertIn("The model contains multiple start events.", str(e))
-
     # '22 unlabeled start event.bpmn': "The BPMN Model contains the following error(s):\n- The model contains a start event that has no name.",
     def test_unlabeled_start_event_error(self):
         test_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'ext', 'bpmn_test_files', '22 unlabeled start event.bpmn'))
@@ -265,9 +254,29 @@ class TestBPMNParser(unittest.TestCase):
         except BPMNParseException as e:
             self.assertIn("The model contains a parallel gateway with multiple incoming and outgoing arcs.", str(e))
 
-    # 70 is valid
-    def test_valid_file_parsing(self):
-        test_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'ext', 'bpmn_test_files', '70 all valid elements.bpmn'))
+    # 71 is valid
+    def test_valid_elements_wrong_values_parsing(self):
+        test_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'ext', 'bpmn_test_files', '71 valid elements wrong values.bpmn'))
+        parser = BPMNParser()
+        try:
+            process = parser.parse_file(test_file)
+            # If no exception is raised, the test should fail
+            self.fail("BPMNParseException was not raised")
+        except BPMNParseException as e:
+            self.assertIn("The model contains a start event 'start no time' that has no property 'interarrival_time'.", str(e))
+            self.assertIn("The model contains a start event 'start wrong time' that has no property 'interarrival_time'.", str(e))
+            self.assertIn("The interarrival_time of start event 'start no data' must have a 'dataState'.", str(e))
+            self.assertIn("The interarrival_time of start event 'start wrong value' does not evaluate to a number.", str(e))
+            self.assertIn("The model contains a task 'task no time' that has no property 'processing_time'.", str(e))
+            self.assertIn("The model contains a task 'task wrong time' that has no property 'processing_time'.", str(e))
+            self.assertIn("The processing_time of task 'task no data' must have a 'dataState'.", str(e))
+            self.assertIn("The processing_time of task 'task wrong value' does not evaluate to a number.", str(e))
+            self.assertIn("Invalid probability format for arc: variable < 1. Expected format is 'number%'.", str(e))
+            self.assertIn("Invalid probability format for arc: variable >= 1. Expected format is 'number%'.", str(e))
+
+    # 80 is a correct model that can also simulate
+    def test_valid_simulation_model_parsing(self):
+        test_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'ext', 'bpmn_test_files', '80 correct numbers.bpmn'))
         parser = BPMNParser()
         try:
             process = parser.parse_file(test_file)
