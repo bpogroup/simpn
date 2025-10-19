@@ -121,6 +121,20 @@ def _choice_behavior(case, stable_probabilities):
     return result
 
 class BPMNParser:
+    """
+    A parser for BPMN 2.0 XML files that can convert them into a simulatable SimProblem.
+    This parser reads BPMN XML files, constructs an internal representation of the BPMN model,
+    and provides a method to transform the model into a SimProblem using the simpn BPMN prototypes.
+    The transformation includes: Lanes, Sequence Flows, Start Events, End Events, Tasks, Exclusive Gateways, and Parallel Gateways.
+    TODO: Intermediate Events and Event-Based Gateways are not yet supported.
+
+    **Example Usage**:
+    ```python
+    parser = BPMNParser()
+    parser.parse_file("model.bpmn")
+    sim_problem = parser.transform()
+    ```
+    """
     def __init__(self):
         self.result = BPMNModel()
         self.errors = []
@@ -131,7 +145,6 @@ class BPMNParser:
         self.arc2target_id = {}
 
     def _should_ignore(self, tag):
-        """Check if a tag should be ignored during parsing."""
         # Exact match ignores
         if tag in ("definitions", "process", "extensionElements", "timerEventDefinition", 
                    "messageEventDefinition", "outgoing", "incoming", "collaboration", "laneSet",
@@ -153,7 +166,7 @@ class BPMNParser:
         return False
 
     def _parse_element(self, elem):
-        """Parse a single XML element."""
+        # Parse a single XML element and update the BPMN model accordingly.
         tag = elem.tag
         
         # Ignore certain elements
@@ -343,14 +356,14 @@ class BPMNParser:
         for child in elem:
             self._traverse_tree(child)
 
-    def connect_elements(self):
+    def _connect_elements(self):
         # connect nodes to roles
         for role, ids in self.role2contained_ids.items():
             for cid in ids:
                 node = self.id2node.get(cid)
                 if node is None:
                     self.result = None
-                    raise BPMNParseException(f"Unexpected error: lane '{role.name}' contains the identifier '{cid}' of a node that cannot be found." + ("" if not self.errors else " This may be caused by the following errors:\n" + self.errors_to_string()))
+                    raise BPMNParseException(f"Unexpected error: lane '{role.name}' contains the identifier '{cid}' of a node that cannot be found." + ("" if not self.errors else " This may be caused by the following errors:\n" + self._errors_to_string()))
                 role.add_contained_node(node)
 
         # connect arcs
@@ -358,7 +371,7 @@ class BPMNParser:
             node = self.id2node.get(sid)
             if node is None:
                 self.result = None
-                raise BPMNParseException("Unexpected error: an arc contains the identifier of a node that cannot be found." + ("" if not self.errors else " This may be caused by the following errors:\n" + self.errors_to_string()))
+                raise BPMNParseException("Unexpected error: an arc contains the identifier of a node that cannot be found." + ("" if not self.errors else " This may be caused by the following errors:\n" + self._errors_to_string()))
             node.add_outgoing(arc)
             arc.set_source(node)
 
@@ -366,7 +379,7 @@ class BPMNParser:
             node = self.id2node.get(tid)
             if node is None:
                 self.result = None
-                raise BPMNParseException("Unexpected error: an arc contains the identifier of a node that cannot be found." + ("" if not self.errors else " This may be caused by the following errors:\n" + self.errors_to_string()))
+                raise BPMNParseException("Unexpected error: an arc contains the identifier of a node that cannot be found." + ("" if not self.errors else " This may be caused by the following errors:\n" + self._errors_to_string()))
             node.add_incoming(arc)
             arc.set_target(node)
 
@@ -379,7 +392,7 @@ class BPMNParser:
                     else:
                         node.set_type(NodeType.ExclusiveJoin)
 
-    def check_semantics(self):
+    def _check_semantics(self):
         if len(self.result.get_roles()) == 0:
             self.errors.append("The model has no roles.")
 
@@ -456,19 +469,23 @@ class BPMNParser:
         if len([node for node in self.result.get_nodes() if node.type == NodeType.StartEvent]) == 0:
             self.errors.append("The model has no start event.")
 
-    def errors_to_string(self):
+    def _errors_to_string(self):
         return "\n".join([f"- {e}" for e in self.errors])
 
     def parse_file(self, file_name: str):
+        """
+        Parse a BPMN 2.0 XML file and construct the internal BPMN model representation.
+
+        :param file_name: The path to the BPMN XML file.
+        :raises BPMNParseException: If an error occurs during parsing or if the model is invalid.
+        """
         try:
             with open(file_name, 'r', encoding='utf-8') as f:
                 xml = f.read()
         except IOError as e:
             self.result = None
             raise BPMNParseException(f"An unexpected error occurred while reading the BPMN file '{file_name}'.") from e
-        return self.parse(xml)
 
-    def parse(self, xml: str):
         # Reset state
         self.result = BPMNModel()
         self.errors = []
@@ -492,35 +509,17 @@ class BPMNParser:
         self._traverse_tree(root)
 
         # Connect and check
-        self.connect_elements()
-        self.check_semantics()
+        self._connect_elements()
+        self._check_semantics()
         if self.errors:
             self.result = None
-            raise BPMNParseException("The BPMN Model contains the following error(s):\n" + self.errors_to_string())
+            raise BPMNParseException("The BPMN Model contains the following error(s):\n" + self._errors_to_string())
 
         return self.result
 
     def transform(self):
         """
         Transform the parsed BPMN model into a simulation model (SimProblem).
-        
-        This method converts a parsed BPMN model into an executable simulation using 
-        the simpn prototypes library. The transformation includes:
-        Lanes, Sequence Flows, Start Events, End Events, Tasks, Exclusive Gateways, and Parallel Gateways.
-        TODO: Intermediate Events and Event-Based Gateways are not yet supported.
-                
-        **Example Usage**:
-        ```python
-        parser = BPMNParser()
-        bpmn_model = parser.parse_file("model.bpmn")
-        sim_problem = parser.transform()
-        
-        # Customize if needed (e.g., change processing times, interarrival rates)
-        
-        # Visualize and run
-        vis = Visualisation(sim_problem, "layout.txt")
-        vis.show()
-        ```
         
         :return: A SimProblem instance representing the executable simulation model.
         :raises BPMNParseException: If no BPMN model has been parsed, or if a task/event is not contained in any role/lane.
