@@ -1,8 +1,8 @@
-import sys
 import pygame
-from PyQt6.QtCore import Qt, QTimer, QSize, pyqtSignal
-from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, 
+import threading
+from PyQt6.QtCore import Qt, QSize, pyqtSignal, QTimer
+from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
+from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QPushButton, 
                              QHBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QStyle)
 
 
@@ -11,6 +11,12 @@ class PygameWidget(QLabel):
     
     # Signal to emit when mouse is clicked
     mouse_clicked = pyqtSignal(int, int)
+    # Signal to emit when mouse is pressed (for dragging)
+    mouse_pressed = pyqtSignal(int, int, int)  # x, y, button
+    # Signal to emit when mouse is released
+    mouse_released = pyqtSignal(int, int, int)  # x, y, button
+    # Signal to emit when mouse is moved
+    mouse_moved = pyqtSignal(int, int)  # x, y
     
     def __init__(self, width=640, height=480, parent=None):
         super().__init__(parent)
@@ -19,9 +25,22 @@ class PygameWidget(QLabel):
         pygame.init()
         self.surface = pygame.Surface((width, height))
         self.setMinimumSize(width, height)
+        self._viz = None  # Will hold the IDEVisualisation instance
+        
+    def set_visualisation(self, viz):
+        """Set the visualisation to render."""
+        self._viz = viz
+        
+    def get_visualisation(self):
+        """Get the current visualisation."""
+        return self._viz
         
     def update_display(self):
         """Convert pygame surface to QPixmap and display it"""
+        # If we have a visualisation, render it first
+        if self._viz is not None:
+            self._viz.render(self.surface)
+        
         # Get the pygame surface as a string buffer
         data = pygame.image.tostring(self.surface, 'RGB')
         # Create QImage from the data
@@ -52,11 +71,60 @@ class PygameWidget(QLabel):
         """Handle mouse press events"""
         if event.button() == Qt.MouseButton.LeftButton:
             # Get the click position
-            x = event.position().x()
-            y = event.position().y()
-            # Emit signal with coordinates
-            self.mouse_clicked.emit(int(x), int(y))
+            x = int(event.position().x())
+            y = int(event.position().y())
+            # Emit signals
+            self.mouse_clicked.emit(x, y)
+            self.mouse_pressed.emit(x, y, 1)
+            
+            # If we have a visualisation, let it handle the event
+            if self._viz is not None:
+                node = self._viz.handle_mouse_press((x, y), 1)
+                if node is not None:
+                    # Update display to show any selection changes
+                    self.update_display()
         super().mousePressEvent(event)
+    
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        """Handle mouse release events"""
+        if event.button() == Qt.MouseButton.LeftButton:
+            x = int(event.position().x())
+            y = int(event.position().y())
+            self.mouse_released.emit(x, y, 1)
+            
+            # If we have a visualisation, let it handle the event
+            if self._viz is not None:
+                self._viz.handle_mouse_release((x, y), 1)
+                self.update_display()
+        super().mouseReleaseEvent(event)
+    
+    def mouseMoveEvent(self, event: QMouseEvent):
+        """Handle mouse move events"""
+        x = int(event.position().x())
+        y = int(event.position().y())
+        self.mouse_moved.emit(x, y)
+        
+        # If we have a visualisation, let it handle dragging
+        if self._viz is not None:
+            self._viz.handle_mouse_motion((x, y))
+            self.update_display()
+        super().mouseMoveEvent(event)
+    
+    def wheelEvent(self, event: QWheelEvent):
+        """Handle mouse wheel events for zooming"""
+        if self._viz is not None:
+            # Get the angle delta (positive = scroll up = zoom in)
+            delta = event.angleDelta().y()
+            
+            if delta > 0:
+                self._viz.zoom("increase")
+            else:
+                self._viz.zoom("decrease")
+            
+            # Update display to show zoom change
+            self.update_display()
+        
+        super().wheelEvent(event)
 
 
 class DebugPanel(QWidget):
@@ -143,19 +211,105 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout()
         layout.addWidget(self.pygame_widget)
 
-        # Add the start and stop buttons to the main window
-        button_layout = QHBoxLayout()
-        self.start_button = QPushButton("Start Animation", self)
-        self.start_button.clicked.connect(self.start_animation)
-        button_layout.addWidget(self.start_button)
-        self.stop_button = QPushButton("Stop Animation", self)
-        self.stop_button.clicked.connect(self.stop_animation)
-        button_layout.addWidget(self.stop_button)
-        layout.addLayout(button_layout)
-
         central_widget = QWidget(self)
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
+        
+        # Create main toolbar
+        main_toolbar = QToolBar("Main Toolbar")
+        main_toolbar.setMovable(False)
+        main_toolbar.setIconSize(QSize(18, 18))
+        main_toolbar.setStyleSheet("""
+            QToolBar {
+                spacing: 5px;
+                padding: 3px;
+                border: none;
+            }
+            QToolButton {
+                padding: 3px;
+                margin: 1px;
+            }
+        """)
+        
+        # Add Step button to toolbar
+        step_action = main_toolbar.addAction("Step")
+        step_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_MediaSkipForward))
+        step_action.setToolTip("Execute one simulation step")
+        step_action.triggered.connect(self.step_simulation)
+        step_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.step_action = step_action  # Store reference to enable/disable later
+        
+        # Add Play button to toolbar
+        play_action = main_toolbar.addAction("Play")
+        play_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_MediaPlay))
+        play_action.setToolTip("Start continuous simulation")
+        play_action.triggered.connect(self.play_simulation)
+        play_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.play_action = play_action
+        
+        # Add Stop button to toolbar
+        stop_action = main_toolbar.addAction("Stop")
+        stop_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_MediaStop))
+        stop_action.setToolTip("Stop continuous simulation")
+        stop_action.triggered.connect(self.stop_simulation)
+        stop_action.setEnabled(False)  # Disabled until playing
+        self.stop_action = stop_action
+        
+        # Add separator
+        main_toolbar.addSeparator()
+        
+        # Add Faster button to toolbar
+        faster_action = main_toolbar.addAction("Faster")
+        faster_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_MediaSeekForward))
+        faster_action.setToolTip("Increase simulation speed")
+        faster_action.triggered.connect(self.faster_simulation)
+        faster_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.faster_action = faster_action
+        
+        # Add Slower button to toolbar
+        slower_action = main_toolbar.addAction("Slower")
+        slower_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_MediaSeekBackward))
+        slower_action.setToolTip("Decrease simulation speed")
+        slower_action.triggered.connect(self.slower_simulation)
+        slower_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.slower_action = slower_action
+        
+        # Add separator
+        main_toolbar.addSeparator()
+        
+        # Add Zoom In button to toolbar
+        zoom_in_action = main_toolbar.addAction("Zoom In")
+        zoom_in_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_FileDialogDetailedView))
+        zoom_in_action.setToolTip("Zoom in (Ctrl++)")
+        zoom_in_action.setShortcut("Ctrl++")
+        zoom_in_action.triggered.connect(self.zoom_in)
+        zoom_in_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.zoom_in_action = zoom_in_action
+        
+        # Add Zoom Out button to toolbar
+        zoom_out_action = main_toolbar.addAction("Zoom Out")
+        zoom_out_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_FileDialogListView))
+        zoom_out_action.setToolTip("Zoom out (Ctrl+-)")
+        zoom_out_action.setShortcut("Ctrl+-")
+        zoom_out_action.triggered.connect(self.zoom_out)
+        zoom_out_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.zoom_out_action = zoom_out_action
+        
+        # Add Zoom Reset button to toolbar
+        zoom_reset_action = main_toolbar.addAction("Zoom 100%")
+        zoom_reset_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_BrowserReload))
+        zoom_reset_action.setToolTip("Reset zoom to 100% (Ctrl+0)")
+        zoom_reset_action.setShortcut("Ctrl+0")
+        zoom_reset_action.triggered.connect(self.zoom_reset)
+        zoom_reset_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.zoom_reset_action = zoom_reset_action
+        
+        # Add toolbar to main window
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, main_toolbar)
+        
+        # Initialize simulation control variables
+        self._playing = False
+        self._play_step_delay = 500  # milliseconds between steps
         
         # Create debug panel as a dock widget
         self.debug_dock = QDockWidget("Debug Console", self)
@@ -242,19 +396,9 @@ class MainWindow(QMainWindow):
         attr_close_action.triggered.connect(self.attribute_dock.hide)
         
         self.attribute_dock.setTitleBarWidget(attr_toolbar)
-        
-        # Connect pygame mouse clicks to attribute panel
-        self.pygame_widget.mouse_clicked.connect(self.on_pygame_mouse_click)
-        
+                
         # Create menu bar
         self.create_menus()
-
-        # Set up the animation
-        self.x = 320  # Initial x position of the moving object
-        self.dx = 1  # Speed of the moving object
-        self.animation_timer = QTimer(self)  # Create a timer to control the animation
-        self.animation_timer.timeout.connect(self.update_animation)  # Connect the timeout signal of the timer to the
-        # update_animation method
     
     def create_monochrome_icon(self, standard_pixmap):
         """Create a monochrome version of a standard icon"""
@@ -324,57 +468,129 @@ class MainWindow(QMainWindow):
     def on_pygame_mouse_click(self, x, y):
         """Handle mouse clicks on the pygame widget"""
         # Display coordinates in attribute panel
-        self.attribute_panel.set_attributes({
+        attrs = {
             'Click Position': '',
             'X': x,
             'Y': y
-        })
-        # Also log to debug console
-        self.debug_panel.write_text(f"Mouse clicked at ({x}, {y})")
-
-    def start_animation(self):
-        # Start or resume the animation
-        if not self.animation_timer.isActive():
-            # Start the animation
-            self.animation_timer.start(
-                1000 // 60)  # Start the timer with an interval of 1000 / 60 milliseconds to update the Pygame surface at 60 FPS
-            self.debug_panel.write_success("Animation started")
-        else:
-            # Resume the animation
-            self.animation_timer.start()
-            self.debug_panel.write_text("Animation resumed")
-
-    def stop_animation(self):
-        # Pause the animation
-        self.animation_timer.stop()
-        self.debug_panel.write_warning("Animation stopped")
-
-    def update_animation(self):
-        # Update the Pygame surface
-        self.pygame_widget.surface.fill((220, 220, 220))  # Clear the surface
-
-        # Get current surface dimensions
-        width = self.pygame_widget.width
-        height = self.pygame_widget.height
+        }
         
-        # Draw the moving object (centered vertically)
-        y_center = height // 2
-        pygame.draw.circle(self.pygame_widget.surface, (0, 0, 0), (self.x, y_center), 30)  # Draw a black circle at the current position
-        self.x += self.dx  # Update the position of the moving object
+        # If we have a visualisation and a node was clicked, show node info
+        viz = self.pygame_widget.get_visualisation()
+        if viz is not None:
+            node = viz._get_node_at((x, y))
+            if node is not None:
+                attrs['Node ID'] = node.get_id()
+                attrs['Node Type'] = type(node).__name__
+                if hasattr(node, '_model_node') and node._model_node is not None:
+                    model_node = node._model_node
+                    if hasattr(model_node, 'marking'):
+                        attrs['Token Count'] = len(model_node.marking)
         
-        # Check if the moving object has reached the edge of the surface (with current width)
-        if self.x + 30 > width or self.x - 30 < 0:
-            self.dx = -self.dx  # Reverse the direction of the moving object
+        self.attribute_panel.set_attributes(attrs)
+    
+    def load_simulation(self, sim_problem, layout_file=None):
+        """
+        Load a simulation problem into the IDE.
         
-        # Keep x within bounds if window was resized smaller
-        self.x = max(30, min(self.x, width - 30))
+        :param sim_problem: The simulation problem to visualize
+        :param layout_file: Optional layout file path
+        """
+        try:
+            from simpn.visualisation.ide_integration import IDEVisualisation
+            
+            # Create the visualisation adapter
+            viz = IDEVisualisation(
+                sim_problem=sim_problem,
+                layout_file=layout_file
+            )
+            
+            # Set it in the pygame widget
+            self.pygame_widget.set_visualisation(viz)
+            
+            # Enable simulation controls
+            self.step_action.setEnabled(True)
+            self.play_action.setEnabled(True)
+            self.faster_action.setEnabled(True)
+            self.slower_action.setEnabled(True)
+            self.zoom_in_action.setEnabled(True)
+            self.zoom_out_action.setEnabled(True)
+            self.zoom_reset_action.setEnabled(True)
+            
+            # Update the display
+            self.pygame_widget.update_display()
+                        
+        except Exception as e:
+            self.debug_panel.write_error(f"Failed to load simulation: {str(e)}")
+            import traceback
+            self.debug_panel.write_error(traceback.format_exc())
+    
+    def step_simulation(self):
+        """Execute one step of the simulation."""
+        viz = self.pygame_widget.get_visualisation()
+        if viz is not None:
+            viz.step()
+            self.pygame_widget.update_display()
+    
+    def play_simulation(self):
+        """Start continuous simulation playback."""
+        if not self._playing:
+            self._playing = True
+            self.play_action.setEnabled(False)
+            self.step_action.setEnabled(False)
+            self.stop_action.setEnabled(True)
+            threading.Thread(target=self._play_loop, daemon=True).start()
+    
+    def _play_loop(self):
+        """The main play loop that runs in a separate thread."""
+        import time
+        while self._playing:
+            viz = self.pygame_widget.get_visualisation()
+            if viz is not None:
+                viz.step()
+                # Schedule UI update on the main thread
+                self.pygame_widget.update_display()
+            time.sleep(self._play_step_delay / 1000.0)  # Convert ms to seconds
+    
+    def stop_simulation(self):
+        """Stop continuous simulation playback."""
+        self._playing = False
+        self.play_action.setEnabled(True)
+        self.step_action.setEnabled(True)
+        self.stop_action.setEnabled(False)
+    
+    def faster_simulation(self):
+        """Increase simulation speed by decreasing delay."""
+        self._play_step_delay = max(100, self._play_step_delay - 100)
+        self.debug_panel.write_text(f"Simulation speed: {1000/self._play_step_delay:.1f} steps/second")
+    
+    def slower_simulation(self):
+        """Decrease simulation speed by increasing delay."""
+        self._play_step_delay = min(1000, self._play_step_delay + 100)
+        self.debug_panel.write_text(f"Simulation speed: {1000/self._play_step_delay:.1f} steps/second")
+    
+    def zoom_in(self):
+        """Zoom in on the visualization."""
+        viz = self.pygame_widget.get_visualisation()
+        if viz is not None:
+            viz.zoom("increase")
+            zoom_level = viz.get_zoom_level()
+            self.debug_panel.write_text(f"Zoom: {zoom_level*100:.0f}%")
+            self.pygame_widget.update_display()
+    
+    def zoom_out(self):
+        """Zoom out on the visualization."""
+        viz = self.pygame_widget.get_visualisation()
+        if viz is not None:
+            viz.zoom("decrease")
+            zoom_level = viz.get_zoom_level()
+            self.debug_panel.write_text(f"Zoom: {zoom_level*100:.0f}%")
+            self.pygame_widget.update_display()
+    
+    def zoom_reset(self):
+        """Reset zoom to 100%."""
+        viz = self.pygame_widget.get_visualisation()
+        if viz is not None:
+            viz.zoom("reset")
+            self.debug_panel.write_text(f"Zoom: 100%")
+            self.pygame_widget.update_display()
 
-        # Update the display
-        self.pygame_widget.update_display()
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())

@@ -507,8 +507,6 @@ class Visualisation:
 
         for mod in self._modules:
             mod.create(self._problem)
-
-        self.__win = pygame.display.set_mode(self._size, pygame.RESIZABLE) # the window
     
     def __create_buttons_open_menu(self):
         self.buttons = []
@@ -753,6 +751,8 @@ class Visualisation:
         The spacebar can be used to step through the Petri net problem.
         The mouse can be used to drag nodes around.
         """
+        self.__win = pygame.display.set_mode(self._size, pygame.RESIZABLE) # the window
+        
         clock = pygame.time.Clock()
         
         self.__running = True
