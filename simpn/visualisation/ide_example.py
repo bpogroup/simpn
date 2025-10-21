@@ -1,12 +1,4 @@
-"""
-Example of using the IDE with a simulation problem.
-
-This script demonstrates how to load a simulation into the IDE.
-"""
-
-import sys
-from PyQt6.QtWidgets import QApplication
-from simpn.visualisation.ide import MainWindow
+from simpn.visualisation.ide import Visualisation
 from simpn.simulator import SimProblem, SimToken
 
 
@@ -29,18 +21,6 @@ def create_simple_example():
     return shop
 
 
-def main():
-    """Run the IDE with a loaded simulation."""
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    
-    # Create and load a simulation
-    sim_problem = create_simple_example()
-    window.load_simulation(sim_problem)
-    
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == '__main__':
-    main()
+v = Visualisation(create_simple_example(), layout_algorithm="sugiyama", grid_spacing=100, node_spacing=200, layout_file="./temp/layout.txt")
+v.show()
+v.save_layout("./temp/layout.txt")

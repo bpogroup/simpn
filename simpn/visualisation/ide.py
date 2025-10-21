@@ -1,19 +1,16 @@
 import pygame
 import threading
-from PyQt6.QtCore import Qt, QSize, pyqtSignal, QTimer
-from PyQt6.QtGui import (
-    QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
-)
-from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QPushButton, 
-    QHBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, 
-    QSizePolicy, QStyle)
-
+import os
+import sys
+from PyQt6.QtCore import Qt, QSize, pyqtSignal
+from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QApplication
+from simpn.simulator import Describable
+from simpn.visualisation.ide_integration import ModelPanel
 from simpn.visualisation.modules.base import ModuleInterface
 from simpn.visualisation.events import NODE_CLICKED, SELECTION_CLEAR, check_event
-from simpn.simulator import Describable
-
 from typing import List, Tuple
+
 
 class PygameWidget(QLabel):
     """Widget that renders pygame surface as a QLabel"""
@@ -32,15 +29,16 @@ class PygameWidget(QLabel):
         self.width = width
         self.height = height
         pygame.init()
+        pygame.font.init()
         self.surface = pygame.Surface((width, height))
         self.setMinimumSize(width, height)
-        self._viz = None  # Will hold the IDEVisualisation instance
+        self._viz = None  # Will hold the Visualisation instance
         
     def set_visualisation(self, viz):
         """Set the visualisation to render."""
         self._viz = viz
 
-    def get_visualisation(self) -> 'ide_integration.IDEVisualisation':
+    def get_visualisation(self):
         """Get the current visualisation."""
         return self._viz
         
@@ -353,7 +351,14 @@ class AttributePanel(QWidget,ModuleInterface):
         self.refresh()
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, as_application=False):
+        """
+        Main window for the simulation. The main window can be created from code or by calling the main function below.
+        If it is created from code, it is expected to set a simulation using set_simulation().
+        If it is created as an application, the load button is visible to load a BPMN file, instead.
+
+        :param as_application: If True, the window will be treated as a main application.
+        """
         super().__init__()
 
         # Set up the main window
@@ -374,7 +379,6 @@ class MainWindow(QMainWindow):
         # Create main toolbar
         main_toolbar = QToolBar("Main Toolbar")
         main_toolbar.setMovable(False)
-        main_toolbar.setIconSize(QSize(18, 18))
         main_toolbar.setStyleSheet("""
             QToolBar {
                 spacing: 5px;
@@ -387,17 +391,30 @@ class MainWindow(QMainWindow):
             }
         """)
         
+        # Add open button to the toolbar
+        if as_application:
+            open_action = main_toolbar.addAction("Open")
+            open_action.setToolTip("Open a BPMN file")
+            icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'open.png')
+            open_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+            open_action.triggered.connect(self.open_bpmn_file)
+
+            # Add separator
+            main_toolbar.addSeparator()
+
         # Add Step button to toolbar
-        step_action = main_toolbar.addAction("Step")
-        step_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_MediaSkipForward))
+        step_action = main_toolbar.addAction("Step")        
         step_action.setToolTip("Execute one simulation step")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_step.png')
+        step_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         step_action.triggered.connect(self.step_simulation)
         step_action.setEnabled(False)  # Disabled until a simulation is loaded
         self.step_action = step_action  # Store reference to enable/disable later
         
         # Add Play button to toolbar
         play_action = main_toolbar.addAction("Play")
-        play_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_MediaPlay))
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_play.png')
+        play_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         play_action.setToolTip("Start continuous simulation")
         play_action.triggered.connect(self.play_simulation)
         play_action.setEnabled(False)  # Disabled until a simulation is loaded
@@ -405,7 +422,8 @@ class MainWindow(QMainWindow):
         
         # Add Stop button to toolbar
         stop_action = main_toolbar.addAction("Stop")
-        stop_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_MediaStop))
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_stop.png')
+        stop_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         stop_action.setToolTip("Stop continuous simulation")
         stop_action.triggered.connect(self.stop_simulation)
         stop_action.setEnabled(False)  # Disabled until playing
@@ -416,7 +434,8 @@ class MainWindow(QMainWindow):
         
         # Add Faster button to toolbar
         faster_action = main_toolbar.addAction("Faster")
-        faster_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_MediaSeekForward))
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_faster.png')
+        faster_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         faster_action.setToolTip("Increase simulation speed")
         faster_action.triggered.connect(self.faster_simulation)
         faster_action.setEnabled(False)  # Disabled until a simulation is loaded
@@ -424,7 +443,8 @@ class MainWindow(QMainWindow):
         
         # Add Slower button to toolbar
         slower_action = main_toolbar.addAction("Slower")
-        slower_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_MediaSeekBackward))
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_slower.png')
+        slower_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         slower_action.setToolTip("Decrease simulation speed")
         slower_action.triggered.connect(self.slower_simulation)
         slower_action.setEnabled(False)  # Disabled until a simulation is loaded
@@ -435,7 +455,9 @@ class MainWindow(QMainWindow):
         
         # Add Zoom In button to toolbar
         zoom_in_action = main_toolbar.addAction("Zoom In")
-        zoom_in_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_FileDialogDetailedView))
+        # load the icon from assets/img/zoom-in.png
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'zoom-in.png')
+        zoom_in_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         zoom_in_action.setToolTip("Zoom in (Ctrl++)")
         zoom_in_action.setShortcut("Ctrl++")
         zoom_in_action.triggered.connect(self.zoom_in)
@@ -444,7 +466,9 @@ class MainWindow(QMainWindow):
         
         # Add Zoom Out button to toolbar
         zoom_out_action = main_toolbar.addAction("Zoom Out")
-        zoom_out_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_FileDialogListView))
+        # load the icon from assets/img/zoom-out.png
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'zoom-out.png')
+        zoom_out_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         zoom_out_action.setToolTip("Zoom out (Ctrl+-)")
         zoom_out_action.setShortcut("Ctrl+-")
         zoom_out_action.triggered.connect(self.zoom_out)
@@ -453,7 +477,9 @@ class MainWindow(QMainWindow):
         
         # Add Zoom Reset button to toolbar
         zoom_reset_action = main_toolbar.addAction("Zoom 100%")
-        zoom_reset_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_BrowserReload))
+        # load the icon from assets/img/zoom-reset.png
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'zoom-reset.png')
+        zoom_reset_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         zoom_reset_action.setToolTip("Reset zoom to 100% (Ctrl+0)")
         zoom_reset_action.setShortcut("Ctrl+0")
         zoom_reset_action.triggered.connect(self.zoom_reset)
@@ -478,7 +504,6 @@ class MainWindow(QMainWindow):
         # Create toolbar for the debug dock
         debug_toolbar = QToolBar("Debug Toolbar")
         debug_toolbar.setMovable(False)
-        debug_toolbar.setIconSize(QSize(18, 18))  # Smaller icons
         debug_toolbar.setStyleSheet("""
             QToolBar {
                 spacing: 3px;
@@ -503,13 +528,15 @@ class MainWindow(QMainWindow):
         
         # Clear button with icon
         clear_action = debug_toolbar.addAction("Clear")
-        clear_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_DialogResetButton))
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'clear.png')
+        clear_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         clear_action.setToolTip("Clear debug console")
         clear_action.triggered.connect(self.debug_panel.clear_text)
         
         # Close button with icon
         close_action = debug_toolbar.addAction("Close")
-        close_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_TitleBarCloseButton))
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'close.png')
+        close_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         close_action.setToolTip("Close debug console")
         close_action.triggered.connect(self.debug_dock.hide)
         
@@ -524,7 +551,6 @@ class MainWindow(QMainWindow):
         # Create toolbar for the attribute dock
         attr_toolbar = QToolBar("Attribute Toolbar")
         attr_toolbar.setMovable(False)
-        attr_toolbar.setIconSize(QSize(18, 18))
         attr_toolbar.setStyleSheet("""
             QToolBar {
                 spacing: 3px;
@@ -549,7 +575,8 @@ class MainWindow(QMainWindow):
         
         # Close button with icon
         attr_close_action = attr_toolbar.addAction("Close")
-        attr_close_action.setIcon(self.create_monochrome_icon(QStyle.StandardPixmap.SP_TitleBarCloseButton))
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'close.png')
+        attr_close_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         attr_close_action.setToolTip("Close attribute panel")
         attr_close_action.triggered.connect(self.attribute_dock.hide)
         
@@ -562,7 +589,35 @@ class MainWindow(QMainWindow):
         """Create a monochrome version of a standard icon"""
         # Get the original icon
         original_icon = self.style().standardIcon(standard_pixmap)
-        pixmap = original_icon.pixmap(QSize(18, 18))
+        pixmap = original_icon.pixmap(QSize(16, 16))
+        
+        # Create a new pixmap with the same size
+        mono_pixmap = QPixmap(pixmap.size())
+        mono_pixmap.fill(Qt.GlobalColor.transparent)
+        
+        # Create a painter to draw the monochrome version
+        painter = QPainter(mono_pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+        painter.fillRect(mono_pixmap.rect(), QColor(100, 100, 100))  # Dark gray
+        painter.end()
+        
+        return QIcon(mono_pixmap)
+    
+    def create_monochrome_icon_from_file(self, file_path):
+        """Create a monochrome version of an icon from a PNG file"""
+        if not os.path.exists(file_path):
+            # Return empty icon if file doesn't exist
+            return QIcon()
+        
+        # Load the pixmap from file
+        pixmap = QPixmap(file_path)
+        
+        # Resize to standard icon size if needed
+        if pixmap.width() != 16 or pixmap.height() != 16:
+            pixmap = pixmap.scaled(QSize(16, 16), Qt.AspectRatioMode.KeepAspectRatio, 
+                                  Qt.TransformationMode.SmoothTransformation)
         
         # Create a new pixmap with the same size
         mono_pixmap = QPixmap(pixmap.size())
@@ -646,21 +701,33 @@ class MainWindow(QMainWindow):
         
         self.attribute_panel.set_attributes(attrs)
     
-    def load_simulation(self, sim_problem, layout_file=None):
+    def open_bpmn_file(self):
+        # open a file dialog to select a BPMN file
+        from PyQt6.QtWidgets import QFileDialog
+        file_dialog = QFileDialog(self)
+        file_dialog.setNameFilter("BPMN Files (*.bpmn);;All Files (*)")
+        if file_dialog.exec():
+            selected_files = file_dialog.selectedFiles()
+            if selected_files:
+                bpmn_file = selected_files[0]
+                self.debug_panel.write_text(f"Selected BPMN file: {bpmn_file}")
+                from simpn.bpmn_parser import BPMNParser
+                parser = BPMNParser()
+                parser.parse_file(bpmn_file)
+                simproblem = parser.transform()
+                model_panel = ModelPanel(simproblem)
+                self.set_simulation(model_panel)
+
+    def set_simulation(self, model_panel: ModelPanel):
         """
         Load a simulation problem into the IDE.
         
         :param sim_problem: The simulation problem to visualize
         :param layout_file: Optional layout file path
         """
-        try:
-            from simpn.visualisation.ide_integration import IDEVisualisation
-            
-            # Create the visualisation adapter
-            viz = IDEVisualisation(
-                sim_problem=sim_problem,
-                layout_file=layout_file,
-            )
+        try:            
+            # Create the visualisation
+            viz = model_panel
 
             viz.add_ui_module(self.debug_panel)
             viz.add_ui_module(self.attribute_panel)
@@ -781,3 +848,47 @@ class MainWindow(QMainWindow):
         event.accept()
 
 
+class Visualisation:
+    def __init__(self, sim_problem=None, 
+                 layout_file=None, 
+                 grid_spacing=50, 
+                 node_spacing=100, 
+                 layout_algorithm="sugiyama",
+                 extra_modules:List=None):
+        self.sim_problem = sim_problem
+        self.layout_file = layout_file
+        self.grid_spacing = grid_spacing
+        self.node_spacing = node_spacing
+        self.layout_algorithm = layout_algorithm
+        self.extra_modules = extra_modules if extra_modules is not None else []
+
+        self.app = QApplication(sys.argv)
+
+        if sim_problem is None:
+            self.main_window = MainWindow(as_application=True)
+        else:
+            self.main_window = MainWindow(as_application=False)
+            model_panel = ModelPanel(
+                sim_problem,
+                layout_file=layout_file,
+                grid_spacing=grid_spacing,
+                node_spacing=node_spacing,
+                layout_algorithm=layout_algorithm,
+                extra_modules=extra_modules
+            )
+            self.main_window.set_simulation(model_panel)            
+
+    def show(self):
+        self.main_window.show()
+        self.app.exec()
+    
+    def save_layout(self, layout_file: str):
+        """Save the current layout to a file."""
+        viz = self.main_window.pygame_widget.get_visualisation()
+        if viz is not None:
+            viz.save_layout(layout_file)
+
+
+if __name__ == "__main__":
+    visualisation = Visualisation()
+    visualisation.show()

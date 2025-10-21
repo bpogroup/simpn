@@ -9,6 +9,8 @@ from typing import Optional, Tuple, List
 import simpn
 from simpn.visualisation.events import create_event, NODE_CLICKED, SELECTION_CLEAR
 from simpn.visualisation.modules.base import ModuleInterface
+from .modules.base import ModuleInterface
+from .modules.ui import UIClockModule
 
 
 MAX_SIZE = 1920, 1080
@@ -386,56 +388,59 @@ class IDEBroadcastModule(ModuleInterface):
     back to the IDE for further processing.
     """
     
-    def __init__(self, ide_integration: 'IDEVisualisation'):
+    def __init__(self, visualisation: 'ModelPanel'):
         super().__init__()
-        self._ide_integration = ide_integration
+        self._visualisation = visualisation
 
     def create(self, *args, **kwargs):
-        self._ide_integration.handle_broadcast_event(
+        self._visualisation.handle_broadcast_event(
             BroadcastType.create, args, kwargs
         )
         return True
 
     def pre_event_loop(self, *args, **kwargs):
-        self._ide_integration.handle_broadcast_event(
+        self._visualisation.handle_broadcast_event(
             BroadcastType.pre_event_loop, args, kwargs
         )
         return True
 
     def handle_event(self, *args, **kwargs):
-        self._ide_integration.handle_broadcast_event(
+        self._visualisation.handle_broadcast_event(
             BroadcastType.handle_event, args, kwargs
         )
         return True
 
     def render_sim(self, *args, **kwargs):
-        self._ide_integration.handle_broadcast_event(
+        self._visualisation.handle_broadcast_event(
             BroadcastType.render_sim, args, kwargs
         )
         return True
     
     def render_ui(self, *args, **kwargs):
-        self._ide_integration.handle_broadcast_event(
+        self._visualisation.handle_broadcast_event(
             BroadcastType.render_ui, args, kwargs
         )
         return True
     
     def firing(self, *args, **kwargs):
-        self._ide_integration.handle_broadcast_event(
+        self._visualisation.handle_broadcast_event(
             BroadcastType.firing, args, kwargs
         )
         return True
     
     def post_event_loop(self, *args, **kwargs):
-        self._ide_integration.handle_broadcast_event(
+        self._visualisation.handle_broadcast_event(
             BroadcastType.post_event_loop, args, kwargs
         )
         return True
 
 
-class Visualisation:
+class ModelPanel:
     """
     A class for visualizing the provided simulation problem as a Petri net.
+    
+    This class can work both in standalone mode (with show() method) and in IDE mode
+    (with render() method for integration with Qt widgets).
 
     Attributes:
     - sim_problem (SimProblem): the simulation problem to visualize
@@ -446,7 +451,7 @@ class Visualisation:
 
     Methods:
     - save_layout(self, filename): saves the layout to a file
-    - show(self): shows the visualisation
+    - render(self, surface): renders the visualization onto a pygame surface (for IDE integration)
     """
     def __init__(self, sim_problem, 
                  layout_file=None, 
@@ -454,16 +459,21 @@ class Visualisation:
                  node_spacing=100, 
                  layout_algorithm="sugiyama",
                  extra_modules:List=None):
-        pygame.init()
-        pygame.font.init()
-        pygame.display.set_caption('Petri Net Visualisation')
-
+        """
+        Initialize the visualization.
+        
+        :param sim_problem: The simulation problem to visualize
+        :param layout_file: Optional file path to load layout from
+        :param grid_spacing: Spacing between grid lines
+        :param node_spacing: Spacing between nodes in layout
+        :param layout_algorithm: Algorithm to use for layout (sugiyama, davidson_harel, grid, auto)
+        :param extra_modules: Additional visualization modules
+        """
         self._grid_spacing = grid_spacing
         self._node_spacing = node_spacing
         self._layout_algorithm = layout_algorithm
 
         self.__playing = False
-        self.__running = False
         self._play_step_delay = 500
         self._problem = sim_problem
         self._nodes = dict()
@@ -471,16 +481,16 @@ class Visualisation:
         self._selected_nodes = None        
         self._zoom_level = 1.0
         self._size = MAX_SIZE
+        self._ui_modules = []
 
         # default modules used in the visualisation process
-        from .modules.base import ModuleInterface
-        from .modules.ui import UIClockModule, UISidePanelModule
         self._modules:List[ModuleInterface] = [
-            UIClockModule(3),
-            UISidePanelModule()
+            UIClockModule(3)
         ]
-        if extra_modules != None and isinstance(extra_modules, list):
-            self._modules = self._modules + extra_modules
+        
+        extra_modules = list(extra_modules) if extra_modules else []
+        extra_modules.append(IDEBroadcastModule(self))        
+        self._modules = self._modules + extra_modules
 
         # Add visualizations for prototypes, places, and transitions,
         # but not for places and transitions that are part of prototypes.
@@ -591,9 +601,6 @@ class Visualisation:
 
         self.__screen.get_width()
         self.__win.blit(pygame.transform.smoothscale(self.__screen, (self._size[0], self._size[1])), (0, 0))
-        # draw buttons
-        for button in self.buttons:
-            button.draw(self.__win)
         
         for mod in self._modules:
             mod.render_ui(self.__win)
@@ -692,12 +699,7 @@ class Visualisation:
             propagate = mod.handle_event(event)
             if not propagate:
                 return
-        if event.type == pygame.QUIT:
-            self.__running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            for button in self.buttons:
-                if button.click(event.pos):
-                    return
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             node = self.__get_node_at(event.pos)
             if node is not None:
                 self._selected_nodes = [node], event.pos
@@ -761,100 +763,40 @@ class Visualisation:
         """
         Triggers the game loop showing the visualisation to close.
         """
-        self.__running = False
         self.__playing = False
-
-
-class IDEVisualisation:
-    """
-    Adapter class that wraps the Visualisation class to work within the IDE's PygameWidget.
     
-    This class manages the rendering of a Petri net visualisation onto a pygame surface
-    that can be displayed in the IDE's PygameWidget.
-    """
-    
-    def __init__(self, sim_problem, 
-                 layout_file=None, 
-                 grid_spacing=50, 
-                 node_spacing=100, 
-                 layout_algorithm="sugiyama",
-                 extra_modules=None):
-        """
-        Initialize the IDE visualisation adapter.
-        
-        :param sim_problem: The simulation problem to visualize
-        :param layout_file: Optional file path to load layout from
-        :param grid_spacing: Spacing between grid lines
-        :param node_spacing: Spacing between nodes in layout
-        :param layout_algorithm: Algorithm to use for layout (sugiyama, davidson_harel, grid, auto)
-        :param extra_modules: Additional visualization modules
-        """
-        # Store initialization parameters
-        self._sim_problem = sim_problem
-        self._layout_file = layout_file
-        self._grid_spacing = grid_spacing
-        self._node_spacing = node_spacing
-        self._layout_algorithm = layout_algorithm
-        self._extra_modules = extra_modules if extra_modules is not None else []
-        self._extra_modules += [IDEBroadcastModule(self)]
-        self._ui_modules = []
-        
-
-
-        # Create the base visualisation but don't show it
-        self._viz = Visualisation(
-            sim_problem=sim_problem,
-            layout_file=layout_file,
-            grid_spacing=grid_spacing,
-            node_spacing=node_spacing,
-            layout_algorithm=layout_algorithm,
-            extra_modules=self._extra_modules
-        )
-        
-        # Initialize pygame if not already done
-        if not pygame.get_init():
-            pygame.init()
-        if not pygame.font.get_init():
-            pygame.font.init()
-            
-        self._selected_nodes = None
-        self._dragging = False
-
     def add_ui_module(self, module: ModuleInterface) -> None:
         """
-        Add a UI module to the visualisation.
+        Add a UI module to the visualisation (for IDE integration).
         
         :param module: The module to add
         """
         self._ui_modules.append(module)
-        
+    
     def get_nodes(self):
         """Get the dictionary of visualization nodes."""
-        return self._viz._nodes
+        return self._nodes
     
     def get_edges(self):
         """Get the list of edges."""
-        return self._viz._edges
+        return self._edges
     
     def get_problem(self):
         """Get the simulation problem."""
-        return self._viz._problem
+        return self._problem
     
     def get_modules(self):
         """Get the visualization modules."""
-        return self._viz._modules
+        return self._modules
     
     def render(self, surface: pygame.Surface) -> None:
         """
-        Render the Petri net visualization onto the provided pygame surface.
+        Render the Petri net visualization onto the provided pygame surface (for IDE integration).
         
         :param surface: The pygame surface to render onto
         """
-        # Fill background
-        from simpn.visualisation.base import TUE_GREY
-        
         # Get zoom level
-        zoom_level = self._viz._zoom_level
+        zoom_level = self._zoom_level
         
         # Create a scaled surface for zooming
         scaled_width = int(surface.get_width() / zoom_level)
@@ -863,12 +805,12 @@ class IDEVisualisation:
         scaled_surface.fill(TUE_GREY)
         
         # Draw edges on scaled surface
-        for edge in self._viz._edges:
+        for edge in self._edges:
             edge.draw(scaled_surface)
         
         # Draw nodes on scaled surface
-        for node in self._viz._nodes.values():
-            node._curr_time = self._viz._problem.clock
+        for node in self._nodes.values():
+            node._curr_time = self._problem.clock
             node.draw(scaled_surface)
         
         # Scale the surface back to original size and blit
@@ -878,7 +820,7 @@ class IDEVisualisation:
     
     def handle_mouse_press(self, pos: Tuple[int, int], button: int) -> Optional[object]:
         """
-        Handle mouse press events.
+        Handle mouse press events (for IDE integration).
         
         :param pos: (x, y) position of the mouse click
         :param button: Mouse button pressed (1=left, 2=middle, 3=right)
@@ -896,7 +838,7 @@ class IDEVisualisation:
                 )
                 return node
             else:
-                self._selected_nodes = list(self._viz._nodes.values()), pos
+                self._selected_nodes = list(self._nodes.values()), pos
                 pygame.event.post(
                     create_event(
                         SELECTION_CLEAR,
@@ -907,23 +849,23 @@ class IDEVisualisation:
     
     def handle_mouse_release(self, pos: Tuple[int, int], button: int) -> None:
         """
-        Handle mouse release events.
+        Handle mouse release events (for IDE integration).
         
         :param pos: (x, y) position of the mouse release
         :param button: Mouse button released
         """
         if button == 1 and self._selected_nodes is not None:
-            self._drag(snap=True, pos=pos)
+            self._drag_nodes(snap=True, pos=pos)
             self._selected_nodes = None
     
     def handle_mouse_motion(self, pos: Tuple[int, int]) -> None:
         """
-        Handle mouse motion events.
+        Handle mouse motion events (for IDE integration).
         
         :param pos: (x, y) position of the mouse
         """
         if self._selected_nodes is not None:
-            self._drag(pos=pos)
+            self._drag_nodes(pos=pos)
     
     def _get_node_at(self, pos: Tuple[int, int]) -> Optional[object]:
         """
@@ -932,14 +874,14 @@ class IDEVisualisation:
         :param pos: (x, y) position to check
         :return: The node at the position, or None
         """
-        scaled_pos = (pos[0] / self._viz._zoom_level, pos[1] / self._viz._zoom_level)
-        for node in self._viz._nodes.values():
+        scaled_pos = (pos[0] / self._zoom_level, pos[1] / self._zoom_level)
+        for node in self._nodes.values():
             if node.get_pos()[0] - max(node._width/2, 10) <= scaled_pos[0] <= node.get_pos()[0] + max(node._width/2, 10) and \
             node.get_pos()[1] - max(node._height/2, 10) <= scaled_pos[1] <= node.get_pos()[1] + max(node._height/2, 10):
                 return node
         return None
     
-    def _drag(self, snap: bool = False, pos: Optional[Tuple[int, int]] = None) -> None:
+    def _drag_nodes(self, snap: bool = False, pos: Optional[Tuple[int, int]] = None) -> None:
         """
         Drag the selected nodes.
         
@@ -952,67 +894,50 @@ class IDEVisualisation:
         nodes = self._selected_nodes[0]
         org_pos = self._selected_nodes[1]
         new_pos = pos if pos is not None else (0, 0)
-        x_delta = (new_pos[0] - org_pos[0]) / self._viz._zoom_level
-        y_delta = (new_pos[1] - org_pos[1]) / self._viz._zoom_level
+        x_delta = (new_pos[0] - org_pos[0]) / self._zoom_level
+        y_delta = (new_pos[1] - org_pos[1]) / self._zoom_level
         
         for node in nodes:
             new_x = node.get_pos()[0] + x_delta
             new_y = node.get_pos()[1] + y_delta
             if snap:
-                new_x = round(new_x/self._viz._grid_spacing)*self._viz._grid_spacing
-                new_y = round(new_y/self._viz._grid_spacing)*self._viz._grid_spacing
+                new_x = round(new_x/self._grid_spacing)*self._grid_spacing
+                new_y = round(new_y/self._grid_spacing)*self._grid_spacing
             node.set_pos((new_x, new_y))
         
         self._selected_nodes = nodes, new_pos
     
     def step(self) -> object:
         """
-        Execute one step of the simulation.
+        Execute one step of the simulation (for IDE integration).
         
         :return: The fired binding, or None
         """
-        for mode in self._viz._modules:
-            mode.pre_event_loop(self._viz._problem)
+        for mode in self._modules:
+            mode.pre_event_loop(self._problem)
 
-        fired_binding = self._viz._problem.step()
+        fired_binding = self._problem.step()
         
         if fired_binding is not None:
-            for mod in self._viz._modules:
-                mod.firing(fired_binding, self._viz._problem)
+            for mod in self._modules:
+                mod.firing(fired_binding, self._problem)
 
-        for mod in self._viz._modules:
-            mod.post_event_loop(self._viz._problem)
+        for mod in self._modules:
+            mod.post_event_loop(self._problem)
             
-        
         return fired_binding
-    
-    def save_layout(self, filename: str) -> None:
-        """
-        Save the current layout to a file.
-        
-        :param filename: Path to save the layout file
-        """
-        self._viz.save_layout(filename)
     
     def get_zoom_level(self) -> float:
         """Get the current zoom level."""
-        return self._viz._zoom_level
+        return self._zoom_level
     
     def set_zoom_level(self, zoom: float) -> None:
         """Set the zoom level."""
-        self._viz._zoom_level = max(0.3, min(zoom, 3.0))
-    
-    def zoom(self, action: str) -> None:
-        """
-        Zoom the visualization.
-        
-        :param action: One of 'increase', 'decrease', 'reset'
-        """
-        self._viz.zoom(action)
+        self._zoom_level = max(0.3, min(zoom, 3.0))
 
     def handle_broadcast_event(self, type, args, kwargs):
         """
-        Passes along the lower event pygame events upwards.
+        Passes along the lower event pygame events upwards (for IDE integration).
         """
         
         if type == BroadcastType.create:
