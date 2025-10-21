@@ -2,10 +2,77 @@
 Integration layer between the existing Visualisation class and the IDE PygameWidget.
 This module adapts the base.py Visualisation to work within a PyQt6 widget.
 """
-
+from enum import Enum
 import pygame
 from typing import Optional, Tuple
 from simpn.visualisation.base import Visualisation
+
+from simpn.visualisation.modules.base import ModuleInterface
+
+class BroadcastType(Enum):
+    """
+    Enumeration of broadcast event types.
+    """
+    create = 1
+    pre_event_loop = 2
+    handle_event = 3
+    render_sim = 4
+    render_ui = 5
+    firing = 6
+    post_event_loop = 7
+
+class IDEBroadcastModule(ModuleInterface):
+    """
+    A module that broadcasts events to the IDE integration layer.
+    This module can be used to send information about user interactions
+    back to the IDE for further processing.
+    """
+    
+    def __init__(self, ide_integration: 'IDEVisualisation'):
+        super().__init__()
+        self._ide_integration = ide_integration
+
+    def create(self, *args, **kwargs):
+        self._ide_integration.handle_broadcast_event(
+            BroadcastType.create, args, kwargs
+        )
+        return True
+
+    def pre_event_loop(self, *args, **kwargs):
+        self._ide_integration.handle_broadcast_event(
+            BroadcastType.pre_event_loop, args, kwargs
+        )
+        return True
+
+    def handle_event(self, *args, **kwargs):
+        self._ide_integration.handle_broadcast_event(
+            BroadcastType.handle_event, args, kwargs
+        )
+        return True
+
+    def render_sim(self, *args, **kwargs):
+        self._ide_integration.handle_broadcast_event(
+            BroadcastType.render_sim, args, kwargs
+        )
+        return True
+    
+    def render_ui(self, *args, **kwargs):
+        self._ide_integration.handle_broadcast_event(
+            BroadcastType.render_ui, args, kwargs
+        )
+        return True
+    
+    def firing(self, *args, **kwargs):
+        self._ide_integration.handle_broadcast_event(
+            BroadcastType.firing, args, kwargs
+        )
+        return True
+    
+    def post_event_loop(self, *args, **kwargs):
+        self._ide_integration.handle_broadcast_event(
+            BroadcastType.post_event_loop, args, kwargs
+        )
+        return True
 
 
 class IDEVisualisation:
@@ -38,8 +105,12 @@ class IDEVisualisation:
         self._grid_spacing = grid_spacing
         self._node_spacing = node_spacing
         self._layout_algorithm = layout_algorithm
-        self._extra_modules = extra_modules
+        self._extra_modules = extra_modules if extra_modules is not None else []
+        self._extra_modules += [IDEBroadcastModule(self)]
+        self._ui_modules = []
         
+
+
         # Create the base visualisation but don't show it
         self._viz = Visualisation(
             sim_problem=sim_problem,
@@ -47,7 +118,7 @@ class IDEVisualisation:
             grid_spacing=grid_spacing,
             node_spacing=node_spacing,
             layout_algorithm=layout_algorithm,
-            extra_modules=extra_modules
+            extra_modules=self._extra_modules
         )
         
         # Initialize pygame if not already done
@@ -58,6 +129,14 @@ class IDEVisualisation:
             
         self._selected_nodes = None
         self._dragging = False
+
+    def add_ui_module(self, module: ModuleInterface) -> None:
+        """
+        Add a UI module to the visualisation.
+        
+        :param module: The module to add
+        """
+        self._ui_modules.append(module)
         
     def get_nodes(self):
         """Get the dictionary of visualization nodes."""
@@ -102,10 +181,6 @@ class IDEVisualisation:
             node._curr_time = self._viz._problem.clock
             node.draw(scaled_surface)
         
-        # Render simulation modules on scaled surface
-        for mod in self._viz._modules:
-            mod.render_sim(scaled_surface)
-        
         # Scale the surface back to original size and blit
         surface.fill(TUE_GREY)
         scaled_back = pygame.transform.smoothscale(scaled_surface, (surface.get_width(), surface.get_height()))
@@ -119,15 +194,13 @@ class IDEVisualisation:
         :param button: Mouse button pressed (1=left, 2=middle, 3=right)
         :return: The node that was clicked, or None
         """
-        if button == 1:  # Left click
-            node = self._get_node_at(pos)
-            if node is not None:
-                self._selected_nodes = [node], pos
-                self._dragging = True
-                return node
-            else:
-                self._selected_nodes = list(self._viz._nodes.values()), pos
-                self._dragging = True
+        if button == 1:
+            pygame.event.post(
+                pygame.event.Event(
+                    pygame.MOUSEBUTTONDOWN, 
+                    {'pos': pos, 'button': button}
+                )
+            )
         return None
     
     def handle_mouse_release(self, pos: Tuple[int, int], button: int) -> None:
@@ -137,10 +210,13 @@ class IDEVisualisation:
         :param pos: (x, y) position of the mouse release
         :param button: Mouse button released
         """
-        if button == 1 and self._selected_nodes is not None:
-            self._drag(pos, snap=True)
-            self._selected_nodes = None
-            self._dragging = False
+        if button == 1:
+            pygame.event.post(
+                pygame.event.Event(
+                    pygame.MOUSEBUTTONUP, 
+                    {'pos': pos, 'button': button}
+                )
+            )
     
     def handle_mouse_motion(self, pos: Tuple[int, int]) -> None:
         """
@@ -148,51 +224,12 @@ class IDEVisualisation:
         
         :param pos: (x, y) position of the mouse
         """
-        if self._dragging and self._selected_nodes is not None:
-            self._drag(pos, snap=False)
-    
-    def _get_node_at(self, pos: Tuple[int, int]) -> Optional[object]:
-        """
-        Get the node at the specified position.
-        
-        :param pos: (x, y) position to check
-        :return: Node at position or None
-        """
-        # Scale position by zoom level
-        zoom_level = self._viz._zoom_level
-        scaled_pos = (pos[0] / zoom_level, pos[1] / zoom_level)
-        
-        for node in self._viz._nodes.values():
-            node_pos = node.get_pos()
-            if (node_pos[0] - max(node._width/2, 10) <= scaled_pos[0] <= node_pos[0] + max(node._width/2, 10) and
-                node_pos[1] - max(node._height/2, 10) <= scaled_pos[1] <= node_pos[1] + max(node._height/2, 10)):
-                return node
-        return None
-    
-    def _drag(self, new_pos: Tuple[int, int], snap: bool = False) -> None:
-        """
-        Drag selected nodes to a new position.
-        
-        :param new_pos: New mouse position
-        :param snap: Whether to snap to grid
-        """
-        if self._selected_nodes is None:
-            return
-            
-        nodes, org_pos = self._selected_nodes
-        zoom_level = self._viz._zoom_level
-        x_delta = (new_pos[0] - org_pos[0]) / zoom_level
-        y_delta = (new_pos[1] - org_pos[1]) / zoom_level
-        
-        for node in nodes:
-            new_x = node.get_pos()[0] + x_delta
-            new_y = node.get_pos()[1] + y_delta
-            if snap:
-                new_x = round(new_x / self._grid_spacing) * self._grid_spacing
-                new_y = round(new_y / self._grid_spacing) * self._grid_spacing
-            node.set_pos((new_x, new_y))
-        
-        self._selected_nodes = nodes, new_pos
+        pygame.event.post(
+            pygame.event.Event(
+                pygame.MOUSEMOTION,
+                {'pos': pos, 'rel': (0,0), 'buttons': (0,0,0)}
+            )
+        )
     
     def step(self) -> object:
         """
@@ -200,11 +237,18 @@ class IDEVisualisation:
         
         :return: The fired binding, or None
         """
+        for mode in self._viz._modules:
+            mode.pre_event_loop(self._viz._problem)
+
         fired_binding = self._viz._problem.step()
         
         if fired_binding is not None:
             for mod in self._viz._modules:
                 mod.firing(fired_binding, self._viz._problem)
+
+        for mod in self._viz._modules:
+            mod.post_event_loop(self._viz._problem)
+            
         
         return fired_binding
     
@@ -231,3 +275,34 @@ class IDEVisualisation:
         :param action: One of 'increase', 'decrease', 'reset'
         """
         self._viz.zoom(action)
+
+    def handle_broadcast_event(self, type, args, kwargs):
+        """
+        Passes along the lower event pygame events upwards.
+        """
+        
+        if type == BroadcastType.create:
+            for mod in self._ui_modules:
+                mod.create(*args, **kwargs)
+        elif type == BroadcastType.pre_event_loop:
+            for mod in self._ui_modules:
+                mod.pre_event_loop(*args, **kwargs)
+        elif type == BroadcastType.handle_event:
+            event = args[0]
+            for mod in self._ui_modules:
+                mod.handle_event(event, *args[1:], **kwargs)
+        elif type == BroadcastType.render_sim:
+            screen = args[0]
+            for mod in self._ui_modules:
+                mod.render_sim(screen, *args[1:], **kwargs)
+        elif type == BroadcastType.render_ui:
+            window = args[0]
+            for mod in self._ui_modules:
+                mod.render_ui(window, *args[1:], **kwargs)
+        elif type == BroadcastType.firing:
+            fired = args[0]
+            for mod in self._ui_modules:
+                mod.firing(fired, *args[1:], **kwargs)
+        elif type == BroadcastType.post_event_loop:
+            for mod in self._ui_modules:
+                mod.post_event_loop(*args, **kwargs)

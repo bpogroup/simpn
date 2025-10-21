@@ -1,10 +1,19 @@
 import pygame
 import threading
 from PyQt6.QtCore import Qt, QSize, pyqtSignal, QTimer
-from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
-from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QPushButton, 
-                             QHBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QStyle)
+from PyQt6.QtGui import (
+    QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
+)
+from PyQt6.QtWidgets import (
+    QMainWindow, QWidget, QVBoxLayout, QPushButton, 
+    QHBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, 
+    QSizePolicy, QStyle)
 
+from simpn.visualisation.modules.base import ModuleInterface
+from simpn.visualisation.events import NODE_CLICKED, SELECTION_CLEAR, check_event
+from simpn.simulator import Describable
+
+from typing import List, Tuple
 
 class PygameWidget(QLabel):
     """Widget that renders pygame surface as a QLabel"""
@@ -30,8 +39,8 @@ class PygameWidget(QLabel):
     def set_visualisation(self, viz):
         """Set the visualisation to render."""
         self._viz = viz
-        
-    def get_visualisation(self):
+
+    def get_visualisation(self) -> 'ide_integration.IDEVisualisation':
         """Get the current visualisation."""
         return self._viz
         
@@ -127,11 +136,19 @@ class PygameWidget(QLabel):
         super().wheelEvent(event)
 
 
-class DebugPanel(QWidget):
+class DebugPanel(QWidget, ModuleInterface):
     """Debug panel for textual debugging information"""
+
+    # Signals for communication with the UI thread
+    text_signal = pyqtSignal(str)
+    
+
     def __init__(self, parent=None):
         super().__init__(parent)
         
+        self._selected = None
+        self._description = None
+
         # Main layout
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
@@ -142,6 +159,8 @@ class DebugPanel(QWidget):
         self.text_edit.setReadOnly(True)
         self.text_edit.setPlaceholderText("Debug messages will appear here...")
         layout.addWidget(self.text_edit)
+
+        self.send_text = self.text_signal.connect(self.write_warning)
         
         self.setMinimumHeight(100)
     
@@ -165,11 +184,32 @@ class DebugPanel(QWidget):
         """Clear all text from the debug panel"""
         self.text_edit.clear()
 
+    def handle_event(self, event: pygame.event.Event) -> None:
+        """
+        Handle a pygame event (part of ModuleInterface).
+        
+        :param event: The pygame event to handle
+        """
+        event_text = str(event).replace('<', '&lt;').replace('>', '&gt;')
+        self.text_signal.emit(
+            f"DebugPanel received event: {event_text}"
+        )
 
-class AttributePanel(QWidget):
+
+class AttributePanel(QWidget,ModuleInterface):
     """Attribute panel for displaying node/object attributes"""
+    
+    # Signals for communication with the UI thread
+    description_update_signal = pyqtSignal(list)
+    description_update_selected = pyqtSignal(object)
+    update_signal = pyqtSignal()
+    clear_signal = pyqtSignal()
+    
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        self._selected = None
+        self._description = None
         
         # Main layout
         layout = QVBoxLayout()
@@ -183,18 +223,134 @@ class AttributePanel(QWidget):
         layout.addWidget(self.text_edit)
         
         self.setMinimumWidth(200)
+
+        # Connect signals to slots (this ensures UI updates happen on the main thread)
+        self.description_update_signal.connect(self._update_description_ui)
+        self.description_update_selected.connect(self._update_selected)
+        self.clear_signal.connect(self._clear_attributes_ui)
+        self.update_signal.connect(self._refresh)
     
     def set_attributes(self, attributes_dict):
-        """Set attributes from a dictionary"""
+        """
+        Set attributes from a dictionary
+        
+        :param attributes_dict: Dictionary of attribute names and values
+        """
         text = ""
         for key, value in attributes_dict.items():
             text += f"<b>{key}:</b> {value}<br>"
         self.text_edit.setHtml(text)
-    
-    def clear_attributes(self):
-        """Clear all attributes"""
+
+    def _clear_attributes_ui(self):
+        """
+        Clears the text in the attribute panel.
+        """
         self.text_edit.clear()
 
+    def set_selected(self, selected: Describable):
+        """
+        Emits signal to update selected node for the attribute panel.
+
+        :param selected: The selected model node from the simulation
+        """
+        self.description_update_selected.emit(selected)
+
+    def _update_selected(self, selected: Describable):
+        """
+        Update selected node for the attribute panel.
+
+        :param selected: The selected model node from the simulation
+        """
+        self._selected = selected
+
+    def _refresh(self):
+        """
+        Updates the attribute panel based on the selected object.
+        """
+        if self._selected is not None:
+            des = self._selected._model_node.get_description()
+            self._update_description_ui(des)
+
+    def refresh(self):
+        """
+        Emits a signal to refresh the attribute panel.
+        """
+        self.update_signal.emit()
+
+    def set_description(self, 
+            description: List[Tuple[str, Describable.Style]]):
+        """Triggers an update of the description.
+
+        :param description: List of sections to add as html
+        """
+        self.description_update_signal.emit(description)
+
+    def _update_description_ui(self, 
+            description: List[Tuple[str, Describable.Style]]):
+        """
+        Set attributes from a description
+        
+        :param description: List of sections to add as html
+        """
+        
+        self._description = description
+        panel_text = """<head>
+        <style> 
+        table {
+            margin-left: 20px;
+        }
+
+        td {
+            border: 1px solid gray;
+            padding: 5px;
+            margin: 5px;
+        }
+        </style>
+        </head>
+        <body>
+        <main>"""
+
+        for text, style in description:
+            if style == Describable.Style.HEADING:
+                panel_text += f"<h2>{text}</h2>"
+            elif style == Describable.Style.NORMAL:
+                panel_text += f"<p>{text}</p>"
+            elif style == Describable.Style.BOXED:
+                panel_text += f"""<table><tr><td>{text}</td></tr></table>"""
+            elif style == Describable.Style.BOLD:
+                panel_text += f"<p><b>{text}</b></p>"
+            else:
+                panel_text += text
+
+        panel_text += "</main></body>"
+        self.text_edit.setHtml(panel_text)
+
+    def clear_attributes(self):
+        """Clear all attributes (thread-safe)"""
+        # Emit signal instead of directly updating UI
+        self.clear_signal.emit()
+    
+    def handle_event(self, event: pygame.event.Event) -> None:
+        """
+        Handle a pygame event (part of ModuleInterface).
+        
+        :param event: The pygame event to handle
+        """
+        if check_event(event, NODE_CLICKED):
+            self._selected = event.node
+            self._description = event.node._model_node.get_description()
+            self.set_selected(self._selected)
+            self.set_description(self._description)
+        elif check_event(event, SELECTION_CLEAR):
+            self.set_selected(None)
+            self.set_description([])
+            self.clear_attributes()
+
+    def firing(self, *args, **kwargs):
+        """
+        Called after a binding is fired in the simulation.
+        """
+        self.refresh()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -501,8 +657,11 @@ class MainWindow(QMainWindow):
             # Create the visualisation adapter
             viz = IDEVisualisation(
                 sim_problem=sim_problem,
-                layout_file=layout_file
+                layout_file=layout_file,
             )
+
+            viz.add_ui_module(self.debug_panel)
+            viz.add_ui_module(self.attribute_panel)
             
             # Set it in the pygame widget
             self.pygame_widget.set_visualisation(viz)
@@ -518,6 +677,9 @@ class MainWindow(QMainWindow):
             
             # Update the display
             self.pygame_widget.update_display()
+
+            self._pthread = threading.Thread(target=self._play_loop, daemon=True)
+            self._pthread.start()
                         
         except Exception as e:
             self.debug_panel.write_error(f"Failed to load simulation: {str(e)}")
@@ -538,18 +700,27 @@ class MainWindow(QMainWindow):
             self.play_action.setEnabled(False)
             self.step_action.setEnabled(False)
             self.stop_action.setEnabled(True)
-            threading.Thread(target=self._play_loop, daemon=True).start()
+            
     
     def _play_loop(self):
         """The main play loop that runs in a separate thread."""
         import time
-        while self._playing:
+        clock = pygame.time.Clock()
+        now = time.time()
+        last_tick = now
+        while True:
+            now = time.time()
             viz = self.pygame_widget.get_visualisation()
+            pygame_viz = viz._viz
             if viz is not None:
-                viz.step()
-                # Schedule UI update on the main thread
+                for event in pygame.event.get():
+                    pygame_viz._Visualisation__handle_event(event)
+                if self._playing and last_tick + (self._play_step_delay / 1000.0) < now:
+                        viz.step()
+                        
+                        last_tick = now
                 self.pygame_widget.update_display()
-            time.sleep(self._play_step_delay / 1000.0)  # Convert ms to seconds
+                clock.tick(30)
     
     def stop_simulation(self):
         """Stop continuous simulation playback."""
@@ -557,6 +728,8 @@ class MainWindow(QMainWindow):
         self.play_action.setEnabled(True)
         self.step_action.setEnabled(True)
         self.stop_action.setEnabled(False)
+        self._pthread.stop()
+        self._pthread = None
     
     def faster_simulation(self):
         """Increase simulation speed by decreasing delay."""

@@ -655,10 +655,10 @@ class Visualisation:
                 return node
         return None
 
-    def __drag(self, snap=False):
+    def __drag(self, snap=False, pos=None):
         nodes = self._selected_nodes[0]
         org_pos = self._selected_nodes[1]
-        new_pos = pygame.mouse.get_pos()
+        new_pos = pos if pos is not None else pygame.mouse.get_pos()
         x_delta = (new_pos[0] - org_pos[0]) / self._zoom_level
         y_delta = (new_pos[1] - org_pos[1]) / self._zoom_level
         for node in nodes:
@@ -699,10 +699,15 @@ class Visualisation:
                     )
                 )
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self._selected_nodes is not None:
-            self.__drag(snap=True)
+            self.__drag(
+                snap=True, 
+                pos=event.pos if event.pos is not None else None
+            )
             self._selected_nodes = None
         elif event.type == pygame.MOUSEMOTION and self._selected_nodes is not None:
-            self.__drag()
+            self.__drag(
+                pos=event.pos if event.pos is not None else None    
+            )
         elif event.type == pygame.VIDEORESIZE:
             self._size = event.size
         elif event.type == pygame.KEYDOWN:
