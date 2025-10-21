@@ -466,6 +466,8 @@ class MainWindow(QMainWindow):
         # Initialize simulation control variables
         self._playing = False
         self._play_step_delay = 500  # milliseconds between steps
+        self._pthread = None
+        self._thread_running = False  # Flag to control the thread loop
         
         # Create debug panel as a dock widget
         self.debug_dock = QDockWidget("Debug Console", self)
@@ -678,6 +680,8 @@ class MainWindow(QMainWindow):
             # Update the display
             self.pygame_widget.update_display()
 
+            # Start the background thread for continuous updates
+            self._thread_running = True
             self._pthread = threading.Thread(target=self._play_loop, daemon=True)
             self._pthread.start()
                         
@@ -705,22 +709,20 @@ class MainWindow(QMainWindow):
     def _play_loop(self):
         """The main play loop that runs in a separate thread."""
         import time
-        clock = pygame.time.Clock()
         now = time.time()
         last_tick = now
-        while True:
+        while self._thread_running:
             now = time.time()
             viz = self.pygame_widget.get_visualisation()
-            pygame_viz = viz._viz
             if viz is not None:
-                for event in pygame.event.get():
-                    pygame_viz._Visualisation__handle_event(event)
+                # Don't call pygame.event.get() here - it causes threading issues on macOS
+                # PyQt6 handles all events through its own event system
                 if self._playing and last_tick + (self._play_step_delay / 1000.0) < now:
                         viz.step()
                         
                         last_tick = now
                 self.pygame_widget.update_display()
-                clock.tick(30)
+            time.sleep(0.033)  # Sleep for ~30 FPS instead of using pygame clock
     
     def stop_simulation(self):
         """Stop continuous simulation playback."""
@@ -728,8 +730,6 @@ class MainWindow(QMainWindow):
         self.play_action.setEnabled(True)
         self.step_action.setEnabled(True)
         self.stop_action.setEnabled(False)
-        self._pthread.stop()
-        self._pthread = None
     
     def faster_simulation(self):
         """Increase simulation speed by decreasing delay."""
@@ -766,4 +766,18 @@ class MainWindow(QMainWindow):
             viz.zoom("reset")
             self.debug_panel.write_text(f"Zoom: 100%")
             self.pygame_widget.update_display()
+    
+    def closeEvent(self, event):
+        """Handle window close event - stop the background thread cleanly."""
+        # Stop the background thread
+        self._thread_running = False
+        self._playing = False
+        
+        # Wait for thread to finish (with timeout)
+        if self._pthread is not None and self._pthread.is_alive():
+            self._pthread.join(timeout=1.0)
+        
+        # Accept the close event
+        event.accept()
+
 
