@@ -394,8 +394,13 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         # Set up the main window
-        self.setWindowTitle("Pygame and PyQt Example")
+        self.setWindowTitle("SimPN")
         self.setGeometry(100, 100, 800, 600)
+        
+        # Set window icon
+        logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'logo.png')
+        if os.path.exists(logo_path):
+            self.setWindowIcon(QIcon(logo_path))
 
         # Create pygame widget
         self.pygame_widget = PygameWidget(640, 480)
@@ -895,6 +900,11 @@ class Visualisation:
         self.extra_modules = extra_modules if extra_modules is not None else []
 
         self.app = QApplication(sys.argv)
+        
+        # Set application icon for taskbar/dock
+        logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'logo.png')
+        if os.path.exists(logo_path):
+            self.app.setWindowIcon(QIcon(logo_path))
 
         if sim_problem is None:
             self.main_window = MainWindow(as_application=True)
