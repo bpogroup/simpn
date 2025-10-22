@@ -166,6 +166,14 @@ class Node:
     
     def get_id(self):
         return self._model_node.get_id()
+    
+    def get_rect(self):
+        return pygame.Rect(
+            self._pos[0] - self._half_width,
+            self._pos[1] - self._half_height,
+            self._width,
+            self._height
+        )
             
 class TokenShower(Node):
     """
@@ -548,29 +556,6 @@ class ModelPanel:
                 id, x, y = line.strip().split(",")
                 if id in self._nodes:
                     self._nodes[id].set_pos((int(x), int(y)))
-
-    def __get_node_at(self, pos):
-        scaled_pos = (pos[0] / self._zoom_level, pos[1] / self._zoom_level)
-        for node in self._nodes.values():
-            if node.get_pos()[0] - max(node._width/2, 10) <= scaled_pos[0] <= node.get_pos()[0] + max(node._width/2, 10) and \
-            node.get_pos()[1] - max(node._height/2, 10) <= scaled_pos[1] <= node.get_pos()[1] + max(node._height/2, 10):
-                return node
-        return None
-
-    def __drag(self, snap=False, pos=None):
-        nodes = self._selected_nodes[0]
-        org_pos = self._selected_nodes[1]
-        new_pos = pos if pos is not None else pygame.mouse.get_pos()
-        x_delta = (new_pos[0] - org_pos[0]) / self._zoom_level
-        y_delta = (new_pos[1] - org_pos[1]) / self._zoom_level
-        for node in nodes:
-            new_x = node.get_pos()[0] + x_delta
-            new_y = node.get_pos()[1] + y_delta
-            if snap:
-                new_x = round(new_x/self._grid_spacing)*self._grid_spacing
-                new_y = round(new_y/self._grid_spacing)*self._grid_spacing
-            node.set_pos((new_x, new_y))
-        self._selected_nodes = nodes, new_pos
 
     def zoom(self, action):
         """
