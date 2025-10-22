@@ -6,20 +6,12 @@ to enhance the user interface with clocks, panels, and other controls.
 """
 import pygame
 from pygame.surface import Surface
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from simpn.simulator import Describable
-
-from simpn.visualisation.constants import TUE_GREY, TUE_BLUE, TUE_LIGHTBLUE, LINE_WIDTH, TEXT_SIZE, TUE_RED
+from simpn.visualisation.constants import TUE_GREY, TUE_BLUE, TUE_LIGHTBLUE, LINE_WIDTH
 from simpn.assets import get_img_asset
-from simpn.visualisation.events import (
-    EventType, IEventHandler, check_event, NODE_CLICKED, SELECTION_CLEAR
-)
-from simpn.visualisation.text import prevent_overflow_while_rendering
+from simpn.visualisation.events import EventType, IEventHandler, check_event
 
 
-class UIClockModule:
+class UIClockModule(IEventHandler):
     """
     This modules handles creating a clock in the top right corner to
     show the current simulation time to a predefined precision.
@@ -64,16 +56,6 @@ class UIClockModule:
         elif check_event(event, EventType.RENDER_UI):
             self._render_clock(event.window)
         
-        # Handle pygame mouse events for clock interaction
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if self._clock_rect and self._clock_rect.collidepoint(event.pos):
-                # on left click increase precision
-                if event.button == 1:
-                    self._precision += 1
-                # on right click decrease precision
-                elif event.button == 3:
-                    self._precision = max(1, self._precision - 1)
-
         return True
     
     def _render_clock(self, window: Surface):

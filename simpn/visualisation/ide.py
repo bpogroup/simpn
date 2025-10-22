@@ -6,17 +6,14 @@ from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QApplication
 from typing import List, Tuple, TYPE_CHECKING
+from simpn.visualisation.ui_modules import UIClockModule
 
 if TYPE_CHECKING:
     from simpn.simulator import Describable
     from simpn.visualisation.base import Node
 
 from simpn.visualisation import ModelPanel
-# Modules now implement IEventHandler directly
-from simpn.visualisation.events import (
-    EventType, IEventHandler, EventDispatcher,
-    NODE_CLICKED, SELECTION_CLEAR, check_event
-)
+from simpn.visualisation.events import EventDispatcher, check_event, create_event, EventType
 
 
 class PygameWidget(QLabel):
@@ -147,13 +144,7 @@ class PygameWidget(QLabel):
 class DebugPanel(QWidget):
     """
     Debug panel for textual debugging information.
-    
-    Implements IEventHandler interface to receive visualization events.
-    """
-
-    # Signals for communication with the UI thread
-    text_signal = pyqtSignal(str)
-    
+    """    
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -169,11 +160,8 @@ class DebugPanel(QWidget):
         # Text area for debug messages
         self.text_edit = QTextEdit()
         self.text_edit.setReadOnly(True)
-        self.text_edit.setPlaceholderText("Debug messages will appear here...")
         layout.addWidget(self.text_edit)
 
-        self.send_text = self.text_signal.connect(self.write_warning)
-        
         self.setMinimumHeight(100)
     
     def write_text(self, text):
@@ -197,16 +185,6 @@ class DebugPanel(QWidget):
         self.text_edit.clear()
 
     def handle_event(self, event: pygame.event.Event) -> bool:
-        """
-        Handle a pygame event (part of IEventHandler interface).
-        
-        :param event: The pygame event to handle
-        :return: True to propagate event to other handlers
-        """
-        event_text = str(event).replace('<', '&lt;').replace('>', '&gt;')
-        self.text_signal.emit(
-            f"DebugPanel received event: {event_text}"
-        )
         return True
 
 
@@ -368,10 +346,11 @@ class AttributePanel(QWidget):
         :param event: The pygame event to handle
         :return: True to propagate event to other handlers
         """
-        if check_event(event, NODE_CLICKED):
-            # Set the selected node - _update_selected will fetch and display the description
+        if check_event(event, EventType.NODE_CLICKED):
             self.set_selected(event.node)
-        elif check_event(event, SELECTION_CLEAR):
+        elif check_event(event, EventType.BINDING_FIRED):
+            self.refresh()
+        elif check_event(event, EventType.SELECTION_CLEAR):
             self.set_selected(None)
             self.clear_attributes()
         return True
@@ -762,16 +741,33 @@ class MainWindow(QMainWindow):
         :param sim_problem: The simulation problem to visualize
         :param layout_file: Optional layout file path
         """
-        try:            
-            # Create the visualisation
-            viz = model_panel
+        try:
+            # If there is an existing simulation, stop its thread, deregister event handlers
+            if self.pygame_widget.get_visualisation() is not None:
+                if self._thread_running:
+                    self._thread_running = False
+                    if self._pthread is not None and self._pthread.is_alive():
+                        self._pthread.join(timeout=1.0)
+                # Deregister event handlers
+                self._event_dispatcher.unregister_handler(self.pygame_widget.get_visualisation())
+                self._event_dispatcher.unregister_handler(self.clock_module)
+                self._event_dispatcher.unregister_handler(self.attribute_panel)
 
-            viz.add_ui_module(self.debug_panel)
-            viz.add_ui_module(self.attribute_panel)
-            
+            # Create the clock
+            self.clock_module = UIClockModule()
+
+            # Attach event handlers
+            self._event_dispatcher.register_handler(model_panel)
+            self._event_dispatcher.register_handler(self.clock_module)
+            self._event_dispatcher.register_handler(self.attribute_panel)
+
             # Set it in the pygame widget
-            self.pygame_widget.set_visualisation(viz)
-            
+            self.pygame_widget.set_visualisation(model_panel)
+
+            # Dispatch the VISUALIZATION_CREATED event
+            evt = create_event(EventType.VISUALIZATION_CREATED, sim=model_panel.get_problem())
+            self._event_dispatcher.dispatch(self, evt)            
+
             # Enable simulation controls
             self.step_action.setEnabled(True)
             self.play_action.setEnabled(True)
@@ -884,6 +880,9 @@ class MainWindow(QMainWindow):
         # Accept the close event
         event.accept()
 
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        return True
+
 
 class Visualisation:
     def __init__(self, sim_problem=None, 
@@ -900,23 +899,26 @@ class Visualisation:
         self.extra_modules = extra_modules if extra_modules is not None else []
 
         self.app = QApplication(sys.argv)
+        self.event_dispatcher = EventDispatcher()
         
         # Set application icon for taskbar/dock
         logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'logo.png')
         if os.path.exists(logo_path):
             self.app.setWindowIcon(QIcon(logo_path))
 
+        # Create the main window
         if sim_problem is None:
             self.main_window = MainWindow(as_application=True)
+            self.event_dispatcher.register_handler(self.main_window)
         else:
             self.main_window = MainWindow(as_application=False)
+            self.event_dispatcher.register_handler(self.main_window)
             model_panel = ModelPanel(
                 sim_problem,
                 layout_file=layout_file,
                 grid_spacing=grid_spacing,
                 node_spacing=node_spacing,
-                layout_algorithm=layout_algorithm,
-                extra_modules=extra_modules
+                layout_algorithm=layout_algorithm
             )
             self.main_window.set_simulation(model_panel)            
 

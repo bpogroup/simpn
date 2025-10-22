@@ -7,11 +7,7 @@ import math
 from enum import Enum, auto
 from typing import Optional, Tuple, List
 import simpn
-from simpn.visualisation.events import (
-    EventType, EventDispatcher, IEventHandler, 
-    create_event, check_event, NODE_CLICKED, SELECTION_CLEAR
-)
-# Modules now implement IEventHandler directly
+from simpn.visualisation.events import EventType, IEventHandler, create_event
 from simpn.visualisation.constants import (
     MAX_SIZE, TUE_RED, TUE_LIGHTRED, TUE_BLUE, TUE_LIGHTBLUE, TUE_GREY, WHITE,
     STANDARD_NODE_WIDTH, STANDARD_NODE_HEIGHT, LINE_WIDTH, ARROW_WIDTH, ARROW_HEIGHT,
@@ -357,88 +353,6 @@ class TransitionViz(Node):
         screen.blit(label, (text_x_pos, text_y_pos))
 
 
-class BroadcastType(Enum):
-    """
-    Enumeration of broadcast event types.
-    """
-    create = 1
-    pre_event_loop = 2
-    handle_event = 3
-    render_sim = 4
-    render_ui = 5
-    firing = 6
-    post_event_loop = 7
-
-
-class IDEBroadcastModule:
-    """
-    A module that broadcasts events to the IDE integration layer.
-    This module can be used to send information about user interactions
-    back to the IDE for further processing.
-    
-    NOTE: This module does NOT participate in the unified event system
-    to avoid infinite recursion. It only serves to broadcast lifecycle
-    events to the IDE layer.
-    """
-    
-    def __init__(self, visualisation: 'ModelPanel'):
-        self._visualisation = visualisation
-
-    def handle_event(self, event) -> bool:
-        """
-        Override to prevent this module from processing events through the
-        unified event system (which would cause infinite recursion).
-        This module only broadcasts events OUT to the IDE, not receives them.
-        """
-        # Extract event type and data
-        event_type = event.type if hasattr(event, 'type') else None
-        
-        # Only broadcast mouse click events to IDE (not lifecycle events)
-        if event_type == EventType.NODE_CLICKED or event_type == EventType.SELECTION_CLEAR:
-            self._visualisation.handle_broadcast_event(
-                BroadcastType.handle_event, (event,), {}
-            )
-        
-        # Always return True to allow event propagation to other modules
-        return True
-
-    def create(self, *args, **kwargs):
-        self._visualisation.handle_broadcast_event(
-            BroadcastType.create, args, kwargs
-        )
-        return True
-
-    def pre_event_loop(self, *args, **kwargs):
-        self._visualisation.handle_broadcast_event(
-            BroadcastType.pre_event_loop, args, kwargs
-        )
-        return True
-    
-    def render_sim(self, *args, **kwargs):
-        self._visualisation.handle_broadcast_event(
-            BroadcastType.render_sim, args, kwargs
-        )
-        return True
-    
-    def render_ui(self, *args, **kwargs):
-        self._visualisation.handle_broadcast_event(
-            BroadcastType.render_ui, args, kwargs
-        )
-        return True
-    
-    def firing(self, *args, **kwargs):
-        self._visualisation.handle_broadcast_event(
-            BroadcastType.firing, args, kwargs
-        )
-        return True
-    
-    def post_event_loop(self, *args, **kwargs):
-        self._visualisation.handle_broadcast_event(
-            BroadcastType.post_event_loop, args, kwargs
-        )
-        return True
-
-
 class ModelPanel:
     """
     A class for visualizing the provided simulation problem as a Petri net.
@@ -461,8 +375,7 @@ class ModelPanel:
                  layout_file=None, 
                  grid_spacing=50, 
                  node_spacing=100, 
-                 layout_algorithm="sugiyama",
-                 extra_modules:List=None):
+                 layout_algorithm="sugiyama"):
         """
         Initialize the visualization.
         
@@ -471,7 +384,6 @@ class ModelPanel:
         :param grid_spacing: Spacing between grid lines
         :param node_spacing: Spacing between nodes in layout
         :param layout_algorithm: Algorithm to use for layout (sugiyama, davidson_harel, grid, auto)
-        :param extra_modules: Additional visualization modules
         """
         self._grid_spacing = grid_spacing
         self._node_spacing = node_spacing
@@ -485,25 +397,7 @@ class ModelPanel:
         self._selected_nodes = None        
         self._zoom_level = 1.0
         self._size = MAX_SIZE
-        self._ui_modules = []
-        
-        # Create centralized event dispatcher
-        self._event_dispatcher = EventDispatcher()
-
-        # default modules used in the visualisation process
-        from simpn.visualisation.ui_modules import UIClockModule
-        self._modules: List[IEventHandler] = [
-            UIClockModule(3)
-        ]
-        
-        extra_modules = list(extra_modules) if extra_modules else []
-        extra_modules.append(IDEBroadcastModule(self))        
-        self._modules = self._modules + extra_modules
-        
-        # Register all modules as event handlers
-        for module in self._modules:
-            self._event_dispatcher.register_handler(module)
-
+                
         # Add visualizations for prototypes, places, and transitions,
         # but not for places and transitions that are part of prototypes.
         element_to_prototype = dict()  # mapping of prototype element ids to prototype ids
@@ -569,10 +463,6 @@ class ModelPanel:
                 print("WARNING: could not load the layout because of the exception below.\nauto-layout will be used.\n", e)
         if not layout_loaded:
             self.__layout()        
-
-        # Dispatch VISUALIZATION_CREATED event to all modules
-        evt = create_event(EventType.VISUALIZATION_CREATED, sim=self._problem)
-        self._event_dispatcher.dispatch(evt)
     
     def play(self):
         self.__playing = True
@@ -582,7 +472,7 @@ class ModelPanel:
             if fired_binding != None:
                 # Dispatch BINDING_FIRED event
                 evt = create_event(EventType.BINDING_FIRED, fired=fired_binding, sim=self._problem)
-                self._event_dispatcher.dispatch(evt)
+                self._event_dispatcher.dispatch(self, evt)
 
             pygame.time.delay(self._play_step_delay)
 
@@ -612,14 +502,14 @@ class ModelPanel:
         
         # Dispatch RENDER_SIM event
         evt = create_event(EventType.RENDER_SIM, screen=self.__screen)
-        self._event_dispatcher.dispatch(evt)
+        self._event_dispatcher.dispatch(self, evt)
 
         self.__screen.get_width()
         self.__win.blit(pygame.transform.smoothscale(self.__screen, (self._size[0], self._size[1])), (0, 0))
         
         # Dispatch RENDER_UI event
         evt = create_event(EventType.RENDER_UI, window=self.__win)
-        self._event_dispatcher.dispatch(evt)
+        self._event_dispatcher.dispatch(self, evt)
 
         # flip
         pygame.display.flip()
@@ -729,17 +619,7 @@ class ModelPanel:
         Triggers the game loop showing the visualisation to close.
         """
         self.__playing = False
-    
-    def add_ui_module(self, module: IEventHandler) -> None:
-        """
-        Add a UI module to the visualisation (for IDE integration).
         
-        :param module: The module to add (must implement IEventHandler)
-        """
-        self._ui_modules.append(module)
-        # Register the module with the event dispatcher
-        self._event_dispatcher.register_handler(module)
-    
     def get_nodes(self):
         """Get the dictionary of visualization nodes."""
         return self._nodes
@@ -751,11 +631,7 @@ class ModelPanel:
     def get_problem(self):
         """Get the simulation problem."""
         return self._problem
-    
-    def get_modules(self):
-        """Get the visualization modules."""
-        return self._modules
-    
+        
     def render(self, surface: pygame.Surface) -> None:
         """
         Render the Petri net visualization onto the provided pygame surface (for IDE integration).
@@ -787,7 +663,7 @@ class ModelPanel:
         
         # Dispatch RENDER_UI event to all modules
         evt = create_event(EventType.RENDER_UI, window=surface)
-        self._event_dispatcher.dispatch(evt)
+        self._event_dispatcher.dispatch(self, evt)
     
     def handle_mouse_press(self, pos: Tuple[int, int], button: int) -> Optional[object]:
         """
@@ -803,13 +679,13 @@ class ModelPanel:
                 self._selected_nodes = [node], pos
                 # Dispatch event through centralized dispatcher
                 evt = create_event(EventType.NODE_CLICKED, node=node)
-                self._event_dispatcher.dispatch(evt)
+                self._event_dispatcher.dispatch(self, evt)
                 return node
             else:
                 self._selected_nodes = list(self._nodes.values()), pos
                 # Dispatch event through centralized dispatcher
                 evt = create_event(EventType.SELECTION_CLEAR)
-                self._event_dispatcher.dispatch(evt)
+                self._event_dispatcher.dispatch(self, evt)
         return None
     
     def handle_mouse_release(self, pos: Tuple[int, int], button: int) -> None:
@@ -880,19 +756,19 @@ class ModelPanel:
         """
         # Dispatch PRE_EVENT_LOOP event
         evt = create_event(EventType.PRE_EVENT_LOOP, sim=self._problem)
-        self._event_dispatcher.dispatch(evt)
+        self._event_dispatcher.dispatch(self, evt)
 
         fired_binding = self._problem.step()
         
         if fired_binding is not None:
             # Dispatch BINDING_FIRED event
             evt = create_event(EventType.BINDING_FIRED, fired=fired_binding, sim=self._problem)
-            self._event_dispatcher.dispatch(evt)
+            self._event_dispatcher.dispatch(self, evt)
 
         # Dispatch POST_EVENT_LOOP event
         evt = create_event(EventType.POST_EVENT_LOOP, sim=self._problem)
-        self._event_dispatcher.dispatch(evt)
-            
+        self._event_dispatcher.dispatch(self, evt)
+
         return fired_binding
     
     def get_zoom_level(self) -> float:
@@ -903,41 +779,5 @@ class ModelPanel:
         """Set the zoom level."""
         self._zoom_level = max(0.3, min(zoom, 3.0))
 
-    def handle_broadcast_event(self, type, args, kwargs):
-        """
-        Passes along the lower event pygame events upwards (for IDE integration).
-        """
-        # Map broadcast types to event types and dispatch through the unified event system
-        event_type_map = {
-            BroadcastType.create: EventType.VISUALIZATION_CREATED,
-            BroadcastType.pre_event_loop: EventType.PRE_EVENT_LOOP,
-            BroadcastType.post_event_loop: EventType.POST_EVENT_LOOP,
-            BroadcastType.firing: EventType.BINDING_FIRED,
-            BroadcastType.render_sim: EventType.RENDER_SIM,
-            BroadcastType.render_ui: EventType.RENDER_UI,
-        }
-        
-        # For handle_event, just pass it through directly
-        if type == BroadcastType.handle_event:
-            event = args[0]
-            self._event_dispatcher.dispatch(event)
-        elif type in event_type_map:
-            # Create appropriate event based on broadcast type
-            event_type = event_type_map[type]
-            event_kwargs = dict(kwargs)
-            
-            # Add standard attributes based on type
-            if type == BroadcastType.create:
-                event_kwargs['sim'] = args[0] if args else self._problem
-            elif type in [BroadcastType.pre_event_loop, BroadcastType.post_event_loop]:
-                event_kwargs['sim'] = args[0] if args else self._problem
-            elif type == BroadcastType.firing:
-                event_kwargs['fired'] = args[0] if args else None
-                event_kwargs['sim'] = args[1] if len(args) > 1 else self._problem
-            elif type == BroadcastType.render_sim:
-                event_kwargs['screen'] = args[0] if args else None
-            elif type == BroadcastType.render_ui:
-                event_kwargs['window'] = args[0] if args else None
-            
-            evt = create_event(event_type, **event_kwargs)
-            self._event_dispatcher.dispatch(evt)
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        return True

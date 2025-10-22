@@ -1,38 +1,3 @@
-"""
-Unified event system for the visualization framework.
-
-This module provides a clean, type-safe event-driven architecture with:
-1. Centralized event type definitions (EventType enum)
-2. Event dispatcher (EventDispatcher class) for routing events
-3. Event handler interface (IEventHandler Protocol)
-4. Uniform event creation (create_event function)
-5. Type-safe event checking (check_event function)
-
-All visualization modules implement the IEventHandler interface by providing
-a handle_event(event) -> bool method. The method should:
-  - Check event types using check_event()
-  - Access event attributes directly (e.g., event.sim, event.window)
-  - Return True to propagate to other handlers, False to stop
-
-Example - Creating a visualization module:
-    from simpn.visualisation.events import EventType, check_event
-    
-    class MyModule:
-        def handle_event(self, event) -> bool:
-            if check_event(event, EventType.VISUALIZATION_CREATED):
-                self.initialize(event.sim)
-            elif check_event(event, EventType.RENDER_UI):
-                self.draw(event.window)
-            return True  # Allow other modules to handle
-    
-Example - Using the dispatcher:
-    dispatcher = EventDispatcher()
-    dispatcher.register_handler(MyModule())
-    
-    evt = create_event(EventType.NODE_CLICKED, node=my_node)
-    dispatcher.dispatch(evt)
-"""
-
 from enum import Enum, auto
 from typing import List, Protocol
 from pygame.event import Event
@@ -40,32 +5,14 @@ from pygame import USEREVENT
 
 
 class EventType(Enum):
-    """
-    Centralized definition of all custom event types in the visualization system.
-    
-    To add a new event type:
-    1. Add it to this enum
-    2. Add it to the legacy string mapping if backward compatibility is needed
-    3. Document when/where it should be fired
-    """
-    # Lifecycle events
-    VISUALIZATION_CREATED = auto()      # Fired once during visualization initialization; includes 'sim' attribute
+    VISUALIZATION_CREATED = auto()      # Fired when visualization is created; includes 'sim' attribute
     PRE_EVENT_LOOP = auto()             # Fired at start of each game loop; includes 'sim' attribute
     POST_EVENT_LOOP = auto()            # Fired at end of each game loop; includes 'sim' attribute
     BINDING_FIRED = auto()              # Fired when simulation binding fires; includes 'fired' and 'sim' attributes
-    
-    # Rendering events
     RENDER_SIM = auto()                 # Fired during simulation rendering; includes 'screen' attribute
     RENDER_UI = auto()                  # Fired during UI rendering; includes 'window' attribute
-    
-    # User interaction events
     NODE_CLICKED = auto()               # Fired when a node is clicked; includes 'node' attribute
     SELECTION_CLEAR = auto()            # Fired when selection is cleared; no additional attributes
-
-
-# Legacy string constants for backward compatibility
-NODE_CLICKED = "node.clicked"
-SELECTION_CLEAR = "selection.clear"
 
 
 class IEventHandler(Protocol):
@@ -91,45 +38,55 @@ class EventDispatcher:
     
     Handlers are called in the order they were registered. If a handler returns False,
     event propagation stops.
+
+    Handlers can be registered to listen to specific event types. If none are specified, they listen to all events.
     """
-    
+
     def __init__(self):
-        self._handlers: List[IEventHandler] = []
-    
-    def register_handler(self, handler: IEventHandler) -> None:
+        self._handlers: dict[EventType, List[IEventHandler]] = {}
+
+    def register_handler(self, handler: IEventHandler, listens_to: List[EventType] = None) -> None:
         """
-        Register an event handler.
+        Register an event handler to listen to specific event types.
+        Also sets the event dispatcher reference on the handler.
         
         :param handler: The handler to register (must implement IEventHandler)
+        :param listens_to: The event types to listen to (defaults to all events)
         """
-        if handler not in self._handlers:
-            self._handlers.append(handler)
-    
+
+        if listens_to is None:
+            listens_to = list(EventType)
+        for event_type in listens_to:
+            if event_type not in self._handlers:
+                self._handlers[event_type] = []
+            self._handlers[event_type].append(handler)
+        handler._event_dispatcher = self
+
     def unregister_handler(self, handler: IEventHandler) -> None:
         """
         Unregister an event handler.
+        Also clears the event dispatcher reference on the handler.
         
         :param handler: The handler to unregister
         """
-        if handler in self._handlers:
-            self._handlers.remove(handler)
-    
-    def dispatch(self, event: Event) -> bool:
+        for event_type in self._handlers:
+            if handler in self._handlers[event_type]:
+                self._handlers[event_type].remove(handler)
+        handler._event_dispatcher = None
+
+    def dispatch(self, source, event: Event) -> bool:
         """
-        Dispatch an event to all registered handlers.
+        Dispatch an event to all registered handlers except the source to prevent infinite loops.
         
         :param event: The event to dispatch
         :return: True if the event propagated to all handlers, False if stopped early
         """
-        for handler in self._handlers:
-            if not handler.handle_event(event):
-                return False
+        for handler in self._handlers.get(event.event_type, []):
+            if handler is not source:
+                if not handler.handle_event(event):
+                    return False
         return True
     
-    def clear(self) -> None:
-        """Clear all registered handlers."""
-        self._handlers.clear()
-
 
 def create_event(event_type: EventType | str, **kwargs) -> Event:
     """
@@ -140,40 +97,15 @@ def create_event(event_type: EventType | str, **kwargs) -> Event:
     :param event_type: The type of event (EventType enum or legacy string)
     :param kwargs: Event attributes (e.g., node=my_node, position=(x,y))
     :return: A pygame Event
-    """
-    # Convert string to enum if needed
-    if isinstance(event_type, str):
-        event_type = _string_to_event_type(event_type)
-    
+    """    
     return Event(
         USEREVENT + 1,
         event_type=event_type,
         **kwargs
     )
 
-
 def check_event(event: Event, event_type: EventType | str) -> bool:
     """
-    Checks whether the event matches the desired type.
-    
-    :param event: The pygame event to check
-    :param event_type: The type to check for (EventType enum or legacy string)
-    :return: True if the event matches the type
+    Check if a pygame event matches a specific event type.
     """
-    if event.type != USEREVENT + 1:
-        return False
-    
-    # Convert string to enum if needed
-    if isinstance(event_type, str):
-        event_type = _string_to_event_type(event_type)
-    
     return getattr(event, 'event_type', None) == event_type
-
-
-def _string_to_event_type(type_str: str) -> EventType:
-    """Convert legacy string event type to EventType enum."""
-    mapping = {
-        NODE_CLICKED: EventType.NODE_CLICKED,
-        SELECTION_CLEAR: EventType.SELECTION_CLEAR,
-    }
-    return mapping.get(type_str, None)
