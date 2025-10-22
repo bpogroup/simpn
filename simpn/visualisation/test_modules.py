@@ -1,16 +1,17 @@
 """
-This module containers helpers for testing out the module pipeline 
-through the `Visualisation` class.
+Test helpers for validating the visualization module pipeline.
+
+This module provides utilities for testing that visualization modules
+are receiving and handling events correctly.
 """
 
-from .base import ModuleInterface
-from simpn.visualisation.events import EventType, check_event
+from simpn.visualisation.events import EventType, IEventHandler, check_event
 
-class CheckerModule(ModuleInterface):
+
+class CheckerModule:
     """Test module to verify all events are being dispatched correctly."""
     
     def __init__(self):
-        super().__init__()
         self.create_called = False 
         self.pre_called = False 
         self.handle_event_called = False

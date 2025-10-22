@@ -178,12 +178,12 @@ def create_dummy_bpmn(structured=False):
 
 if __name__ == "__main__":
     from simpn.visualisation import Visualisation
-    from simpn.visualisation.modules.ui import UISidePanelModule
+    # UISidePanelModule has been removed
 
     vis = Visualisation(
         create_dummy_bpmn(),
         extra_modules=[
-            UISidePanelModule()
+            # UISidePanelModule() - removed
         ]
     )
 

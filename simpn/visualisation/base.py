@@ -11,7 +11,7 @@ from simpn.visualisation.events import (
     EventType, EventDispatcher, IEventHandler, 
     create_event, check_event, NODE_CLICKED, SELECTION_CLEAR
 )
-from simpn.visualisation.modules.base import ModuleInterface
+# Modules now implement IEventHandler directly
 from simpn.visualisation.constants import (
     MAX_SIZE, TUE_RED, TUE_LIGHTRED, TUE_BLUE, TUE_LIGHTBLUE, TUE_GREY, WHITE,
     STANDARD_NODE_WIDTH, STANDARD_NODE_HEIGHT, LINE_WIDTH, ARROW_WIDTH, ARROW_HEIGHT,
@@ -370,7 +370,7 @@ class BroadcastType(Enum):
     post_event_loop = 7
 
 
-class IDEBroadcastModule(ModuleInterface):
+class IDEBroadcastModule:
     """
     A module that broadcasts events to the IDE integration layer.
     This module can be used to send information about user interactions
@@ -382,7 +382,6 @@ class IDEBroadcastModule(ModuleInterface):
     """
     
     def __init__(self, visualisation: 'ModelPanel'):
-        super().__init__()
         self._visualisation = visualisation
 
     def handle_event(self, event) -> bool:
@@ -492,8 +491,8 @@ class ModelPanel:
         self._event_dispatcher = EventDispatcher()
 
         # default modules used in the visualisation process
-        from simpn.visualisation.modules.ui import UIClockModule
-        self._modules:List[ModuleInterface] = [
+        from simpn.visualisation.ui_modules import UIClockModule
+        self._modules: List[IEventHandler] = [
             UIClockModule(3)
         ]
         
@@ -731,11 +730,11 @@ class ModelPanel:
         """
         self.__playing = False
     
-    def add_ui_module(self, module: ModuleInterface) -> None:
+    def add_ui_module(self, module: IEventHandler) -> None:
         """
         Add a UI module to the visualisation (for IDE integration).
         
-        :param module: The module to add
+        :param module: The module to add (must implement IEventHandler)
         """
         self._ui_modules.append(module)
         # Register the module with the event dispatcher

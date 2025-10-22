@@ -1,26 +1,34 @@
 """
-Module to handle the creation and handling of custom events
-within the pygame loop.
+Unified event system for the visualization framework.
 
-This module provides a unified event system with:
+This module provides a clean, type-safe event-driven architecture with:
 1. Centralized event type definitions (EventType enum)
-2. Event dispatcher (EventDispatcher class)
-3. Event handler interface (IEventHandler)
-4. Uniform event production (create_event function)
+2. Event dispatcher (EventDispatcher class) for routing events
+3. Event handler interface (IEventHandler Protocol)
+4. Uniform event creation (create_event function)
+5. Type-safe event checking (check_event function)
 
-Example usage:
-    # Define a handler
-    class MyHandler(IEventHandler):
-        def handle_event(self, event: Event) -> bool:
-            if check_event(event, EventType.NODE_CLICKED):
-                print(f"Clicked: {event.node}")
-            return True  # Propagate to other handlers
+All visualization modules implement the IEventHandler interface by providing
+a handle_event(event) -> bool method. The method should:
+  - Check event types using check_event()
+  - Access event attributes directly (e.g., event.sim, event.window)
+  - Return True to propagate to other handlers, False to stop
+
+Example - Creating a visualization module:
+    from simpn.visualisation.events import EventType, check_event
     
-    # Create dispatcher and register handlers
+    class MyModule:
+        def handle_event(self, event) -> bool:
+            if check_event(event, EventType.VISUALIZATION_CREATED):
+                self.initialize(event.sim)
+            elif check_event(event, EventType.RENDER_UI):
+                self.draw(event.window)
+            return True  # Allow other modules to handle
+    
+Example - Using the dispatcher:
     dispatcher = EventDispatcher()
-    dispatcher.register_handler(MyHandler())
+    dispatcher.register_handler(MyModule())
     
-    # Create and dispatch an event
     evt = create_event(EventType.NODE_CLICKED, node=my_node)
     dispatcher.dispatch(evt)
 """

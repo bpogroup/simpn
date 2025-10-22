@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from simpn.visualisation.base import Node
 
 from simpn.visualisation import ModelPanel
-from simpn.visualisation.modules.base import ModuleInterface
+# Modules now implement IEventHandler directly
 from simpn.visualisation.events import (
     EventType, IEventHandler, EventDispatcher,
     NODE_CLICKED, SELECTION_CLEAR, check_event
@@ -144,8 +144,12 @@ class PygameWidget(QLabel):
         super().wheelEvent(event)
 
 
-class DebugPanel(QWidget, ModuleInterface):
-    """Debug panel for textual debugging information"""
+class DebugPanel(QWidget):
+    """
+    Debug panel for textual debugging information.
+    
+    Implements IEventHandler interface to receive visualization events.
+    """
 
     # Signals for communication with the UI thread
     text_signal = pyqtSignal(str)
@@ -206,8 +210,12 @@ class DebugPanel(QWidget, ModuleInterface):
         return True
 
 
-class AttributePanel(QWidget,ModuleInterface):
-    """Attribute panel for displaying node/object attributes"""
+class AttributePanel(QWidget):
+    """
+    Attribute panel for displaying node/object attributes.
+    
+    Implements IEventHandler interface to receive visualization events.
+    """
     
     # Signals for communication with the UI thread
     description_update_signal = pyqtSignal(list)

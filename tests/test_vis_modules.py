@@ -9,9 +9,9 @@ import pygame
 from simpn.simulator import SimProblem, SimToken
 from simpn.helpers import Place, Transition
 from simpn.visualisation import Visualisation
-from simpn.visualisation.modules.testers import CheckerModule
-from simpn.visualisation.modules.ui import UIClockModule
-from simpn.visualisation.modules.ui import UISidePanelModule
+from simpn.visualisation.test_modules import CheckerModule
+from simpn.visualisation.ui_modules import UIClockModule
+# UISidePanelModule has been removed
 
 
 class PipelineTests(unittest.TestCase):
@@ -340,9 +340,7 @@ class UISidePanelTests(unittest.TestCase):
 
     @staticmethod
     def get_side_panel_module(vis):
-        for m in vis._modules:
-            if isinstance(m, UISidePanelModule):
-                return m
+        # UISidePanelModule has been removed
         return None
 
     @staticmethod
