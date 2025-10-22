@@ -5,14 +5,16 @@ of simulation problems.
 import pygame
 from pygame.surface import Surface
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from simpn.simulator import Describable
 
 from simpn.visualisation.modules.base import ModuleInterface
-from simpn.visualisation.base import TUE_GREY, TUE_BLUE, TUE_LIGHTBLUE, LINE_WIDTH, TEXT_SIZE, TUE_RED, LINE_WIDTH
+from simpn.visualisation.constants import TUE_GREY, TUE_BLUE, TUE_LIGHTBLUE, LINE_WIDTH, TEXT_SIZE, TUE_RED
 from simpn.assets import get_img_asset
 from simpn.visualisation.events import check_event, NODE_CLICKED, SELECTION_CLEAR
 from simpn.visualisation.text import prevent_overflow_while_rendering
-from simpn.simulator import Describable
 
 class UIClockModule(ModuleInterface):
     """
@@ -222,6 +224,8 @@ class UISidePanelModule(ModuleInterface):
         return super().render_ui(window, *args, **kwargs)
     
     def _render_description(self, window:pygame.surface.Surface):
+        from simpn.simulator import Describable
+        
         info_surface = pygame.surface.Surface(self.panel.size, pygame.SRCALPHA)
         pos_x = 32
         pos_y = 16

@@ -5,11 +5,14 @@ import sys
 from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QApplication
-from simpn.simulator import Describable
-from simpn.visualisation.ide_integration import ModelPanel
+from typing import List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from simpn.simulator import Describable
+
+from simpn.visualisation import ModelPanel
 from simpn.visualisation.modules.base import ModuleInterface
 from simpn.visualisation.events import NODE_CLICKED, SELECTION_CLEAR, check_event
-from typing import List, Tuple
 
 
 class PygameWidget(QLabel):
@@ -245,7 +248,7 @@ class AttributePanel(QWidget,ModuleInterface):
         """
         self.text_edit.clear()
 
-    def set_selected(self, selected: Describable):
+    def set_selected(self, selected: 'Describable'):
         """
         Emits signal to update selected node for the attribute panel.
 
@@ -253,7 +256,7 @@ class AttributePanel(QWidget,ModuleInterface):
         """
         self.description_update_selected.emit(selected)
 
-    def _update_selected(self, selected: Describable):
+    def _update_selected(self, selected: 'Describable'):
         """
         Update selected node for the attribute panel.
 
@@ -276,7 +279,7 @@ class AttributePanel(QWidget,ModuleInterface):
         self.update_signal.emit()
 
     def set_description(self, 
-            description: List[Tuple[str, Describable.Style]]):
+            description: List[Tuple[str, 'Describable.Style']]):
         """Triggers an update of the description.
 
         :param description: List of sections to add as html
@@ -284,12 +287,13 @@ class AttributePanel(QWidget,ModuleInterface):
         self.description_update_signal.emit(description)
 
     def _update_description_ui(self, 
-            description: List[Tuple[str, Describable.Style]]):
+            description: List[Tuple[str, 'Describable.Style']]):
         """
         Set attributes from a description
         
         :param description: List of sections to add as html
         """
+        from simpn.simulator import Describable
         
         self._description = description
         panel_text = """<head>

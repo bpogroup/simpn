@@ -1,31 +1,19 @@
-import igraph
 import os
-import traceback
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-import simpn.assets as assets
-from simpn.visualisation.events import create_event, NODE_CLICKED, SELECTION_CLEAR
-from enum import Enum, auto
-from typing import List, Tuple
+import igraph
 import threading
 import math
+from enum import Enum, auto
+from typing import Optional, Tuple, List
 import simpn
-
-MAX_SIZE = 1920, 1080
-# colors
-TUE_RED = (200, 25, 25)
-TUE_LIGHTRED = (249, 204, 204)
-TUE_BLUE = (16, 16, 115)
-TUE_LIGHTBLUE = (188, 188, 246)
-TUE_GREY = (242, 242, 242)
-WHITE = (255, 255, 255)
-# sizes
-STANDARD_NODE_WIDTH, STANDARD_NODE_HEIGHT = 50, 50
-LINE_WIDTH = 2
-ARROW_WIDTH, ARROW_HEIGHT = 12, 10
-TEXT_SIZE = 16
-BUTTON_POSITION = (16, 16)
-BUTTON_SIZE = (50, 50)
+from simpn.visualisation.events import create_event, NODE_CLICKED, SELECTION_CLEAR
+from simpn.visualisation.modules.base import ModuleInterface
+from simpn.visualisation.constants import (
+    MAX_SIZE, TUE_RED, TUE_LIGHTRED, TUE_BLUE, TUE_LIGHTBLUE, TUE_GREY, WHITE,
+    STANDARD_NODE_WIDTH, STANDARD_NODE_HEIGHT, LINE_WIDTH, ARROW_WIDTH, ARROW_HEIGHT,
+    TEXT_SIZE, BUTTON_POSITION, BUTTON_SIZE
+)
 
 
 class Shape(Enum):
@@ -73,8 +61,19 @@ class Edge:
             self.set_end_hook(Hook.LEFT)
         else:
             self.set_end_hook(Hook.RIGHT)
-        start = pygame.Vector2(self._start[0].hook(self._start[1]))
-        end = pygame.Vector2(self._end[0].hook(self._end[1]))
+        
+        # Get hook positions
+        start_hook_pos = self._start[0].hook(self._start[1])
+        end_hook_pos = self._end[0].hook(self._end[1])
+        
+        # If hook positions are not valid
+        if start_hook_pos is None or not isinstance(start_hook_pos, tuple) or len(start_hook_pos) != 2 or start_hook_pos[0] is None or start_hook_pos[1] is None:
+            start_hook_pos = self._start[0].get_pos()  # Fallback to center
+        if end_hook_pos is None or not isinstance(end_hook_pos, tuple) or len(end_hook_pos) != 2 or end_hook_pos[0] is None or end_hook_pos[1] is None:
+            end_hook_pos = self._end[0].get_pos()  # Fallback to center
+            
+        start = pygame.Vector2(start_hook_pos)
+        end = pygame.Vector2(end_hook_pos)
         arrow = start - end
         angle = arrow.angle_to(pygame.Vector2(0, -1))
         body_length = arrow.length() - ARROW_HEIGHT
@@ -150,13 +149,15 @@ class Node:
 
     def hook(self, hook_pos):
         if hook_pos == Hook.LEFT:
-            return self._pos[0] - self._half_width, self._pos[1]
+            result = (self._pos[0] - self._half_width, self._pos[1])
         elif hook_pos == Hook.RIGHT:
-            return self._pos[0] + self._half_width, self._pos[1]
+            result = (self._pos[0] + self._half_width, self._pos[1])
         elif hook_pos == Hook.TOP:
-            return self._pos[0], self._pos[1] - self._half_height
+            result = (self._pos[0], self._pos[1] - self._half_height)
         elif hook_pos == Hook.BOTTOM:
-            return self._pos[0], self._pos[1] + self._half_height
+            result = (self._pos[0], self._pos[1] + self._half_height)
+        
+        return result
 
     def set_pos(self, pos):
         self._pos = pos
@@ -351,40 +352,81 @@ class TransitionViz(Node):
         text_x_pos = self._pos[0] - int(label.get_width()/2)
         text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
         screen.blit(label, (text_x_pos, text_y_pos))
+
+
+class BroadcastType(Enum):
+    """
+    Enumeration of broadcast event types.
+    """
+    create = 1
+    pre_event_loop = 2
+    handle_event = 3
+    render_sim = 4
+    render_ui = 5
+    firing = 6
+    post_event_loop = 7
+
+
+class IDEBroadcastModule(ModuleInterface):
+    """
+    A module that broadcasts events to the IDE integration layer.
+    This module can be used to send information about user interactions
+    back to the IDE for further processing.
+    """
     
-class Button:
-    """
-    A button as it will be drawn. The action is a function that will be executed when the button is clicked.
-    The button image will be scaled to the specified size.
+    def __init__(self, visualisation: 'ModelPanel'):
+        super().__init__()
+        self._visualisation = visualisation
 
-    :param image: The image to be displayed on the button.
-    :param action: The function to be executed when the button is clicked.
-    :param size: The size of the button (default: BUTTON_SIZE).
-    """
-    def __init__(self, image, action, size=BUTTON_SIZE):
-        self.image = image
-        self.image = pygame.transform.smoothscale(self.image, size)
-        self.position = None
-        self.button_rect = None
-        self.action = action
+    def create(self, *args, **kwargs):
+        self._visualisation.handle_broadcast_event(
+            BroadcastType.create, args, kwargs
+        )
+        return True
 
-    def draw(self, screen):
-        screen.blit(self.image, self.position)
+    def pre_event_loop(self, *args, **kwargs):
+        self._visualisation.handle_broadcast_event(
+            BroadcastType.pre_event_loop, args, kwargs
+        )
+        return True
 
-    def set_position(self, pos):
-        self.position = pos
-        self.button_rect = self.image.get_rect(topleft=self.position)
+    def handle_event(self, *args, **kwargs):
+        self._visualisation.handle_broadcast_event(
+            BroadcastType.handle_event, args, kwargs
+        )
+        return True
 
-    def click(self, pos):
-        x, y = pos
-        if self.button_rect.collidepoint(x, y):
-            self.action()
-            return True
-        return False
+    def render_sim(self, *args, **kwargs):
+        self._visualisation.handle_broadcast_event(
+            BroadcastType.render_sim, args, kwargs
+        )
+        return True
+    
+    def render_ui(self, *args, **kwargs):
+        self._visualisation.handle_broadcast_event(
+            BroadcastType.render_ui, args, kwargs
+        )
+        return True
+    
+    def firing(self, *args, **kwargs):
+        self._visualisation.handle_broadcast_event(
+            BroadcastType.firing, args, kwargs
+        )
+        return True
+    
+    def post_event_loop(self, *args, **kwargs):
+        self._visualisation.handle_broadcast_event(
+            BroadcastType.post_event_loop, args, kwargs
+        )
+        return True
 
-class Visualisation:
+
+class ModelPanel:
     """
     A class for visualizing the provided simulation problem as a Petri net.
+    
+    This class can work both in standalone mode (with show() method) and in IDE mode
+    (with render() method for integration with Qt widgets).
 
     Attributes:
     - sim_problem (SimProblem): the simulation problem to visualize
@@ -395,7 +437,7 @@ class Visualisation:
 
     Methods:
     - save_layout(self, filename): saves the layout to a file
-    - show(self): shows the visualisation
+    - render(self, surface): renders the visualization onto a pygame surface (for IDE integration)
     """
     def __init__(self, sim_problem, 
                  layout_file=None, 
@@ -403,21 +445,21 @@ class Visualisation:
                  node_spacing=100, 
                  layout_algorithm="sugiyama",
                  extra_modules:List=None):
-        pygame.init()
-        pygame.font.init()
-        pygame.display.set_caption('Petri Net Visualisation')
-        # assets.create_assets(assets.images, "assets")
-        icon = pygame.image.load(
-            assets.get_img_asset("logo.png")
-        )
-        pygame.display.set_icon(icon)
-
+        """
+        Initialize the visualization.
+        
+        :param sim_problem: The simulation problem to visualize
+        :param layout_file: Optional file path to load layout from
+        :param grid_spacing: Spacing between grid lines
+        :param node_spacing: Spacing between nodes in layout
+        :param layout_algorithm: Algorithm to use for layout (sugiyama, davidson_harel, grid, auto)
+        :param extra_modules: Additional visualization modules
+        """
         self._grid_spacing = grid_spacing
         self._node_spacing = node_spacing
         self._layout_algorithm = layout_algorithm
 
         self.__playing = False
-        self.__running = False
         self._play_step_delay = 500
         self._problem = sim_problem
         self._nodes = dict()
@@ -425,19 +467,17 @@ class Visualisation:
         self._selected_nodes = None        
         self._zoom_level = 1.0
         self._size = MAX_SIZE
-        self.buttons = []
+        self._ui_modules = []
 
         # default modules used in the visualisation process
-        from .modules.base import ModuleInterface
-        from .modules.ui import UIClockModule, UISidePanelModule
+        from simpn.visualisation.modules.ui import UIClockModule
         self._modules:List[ModuleInterface] = [
-            UIClockModule(3),
-            UISidePanelModule()
+            UIClockModule(3)
         ]
-        if extra_modules != None and isinstance(extra_modules, list):
-            self._modules = self._modules + extra_modules
-
-        self.__create_buttons_closed_menu()
+        
+        extra_modules = list(extra_modules) if extra_modules else []
+        extra_modules.append(IDEBroadcastModule(self))        
+        self._modules = self._modules + extra_modules
 
         # Add visualizations for prototypes, places, and transitions,
         # but not for places and transitions that are part of prototypes.
@@ -508,32 +548,6 @@ class Visualisation:
         for mod in self._modules:
             mod.create(self._problem)
     
-    def __create_buttons_open_menu(self):
-        self.buttons = []
-        self.buttons.append(Button(pygame.image.load(assets.get_img_asset("flip_close.png")), self.action_hide_buttons, size=(BUTTON_SIZE[0], int(BUTTON_SIZE[1]/2))))
-        self.buttons.append(Button(pygame.image.load(assets.get_img_asset("step.png")), self.action_step))
-        self.buttons.append(Button(pygame.image.load(assets.get_img_asset("play.png")), self.action_play))
-        self.buttons.append(Button(pygame.image.load(assets.get_img_asset("stop.png")), self.action_stop))
-        self.buttons.append(Button(pygame.image.load(assets.get_img_asset("faster.png")), self.action_faster))
-        self.buttons.append(Button(pygame.image.load(assets.get_img_asset("slower.png")), self.action_slower))
-
-        # Set button positions
-        position = BUTTON_POSITION
-        for button in self.buttons:
-            button.set_position(position)
-            position = (position[0], position[1] + button.button_rect.height + 4)
-
-    def __create_buttons_closed_menu(self):
-        show_button = Button(pygame.image.load(assets.get_img_asset("flip_open.png")), self.action_show_buttons, size=(BUTTON_SIZE[0], int(BUTTON_SIZE[1]/2)))
-        show_button.set_position(BUTTON_POSITION)
-        self.buttons = [show_button]
-
-    def action_hide_buttons(self):
-        self.__create_buttons_closed_menu()
-    
-    def action_show_buttons(self):
-        self.__create_buttons_open_menu()
-    
     def play(self):
         self.__playing = True
         while self.__playing:
@@ -574,9 +588,6 @@ class Visualisation:
 
         self.__screen.get_width()
         self.__win.blit(pygame.transform.smoothscale(self.__screen, (self._size[0], self._size[1])), (0, 0))
-        # draw buttons
-        for button in self.buttons:
-            button.draw(self.__win)
         
         for mod in self._modules:
             mod.render_ui(self.__win)
@@ -675,12 +686,7 @@ class Visualisation:
             propagate = mod.handle_event(event)
             if not propagate:
                 return
-        if event.type == pygame.QUIT:
-            self.__running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            for button in self.buttons:
-                if button.click(event.pos):
-                    return
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             node = self.__get_node_at(event.pos)
             if node is not None:
                 self._selected_nodes = [node], event.pos
@@ -744,44 +750,216 @@ class Visualisation:
         """
         Triggers the game loop showing the visualisation to close.
         """
-        self.__running = False
         self.__playing = False
-
-    def show(self):
+    
+    def add_ui_module(self, module: ModuleInterface) -> None:
         """
-        Displays the Petri net visualisation in a window.
-        The method will block further execution until the window is closed.
-
-        The visualisation can be interacted with using the mouse and keyboard.
-        The spacebar can be used to step through the Petri net problem.
-        The mouse can be used to drag nodes around.
+        Add a UI module to the visualisation (for IDE integration).
+        
+        :param module: The module to add
         """
-        self.__win = pygame.display.set_mode(self._size, pygame.RESIZABLE) # the window
+        self._ui_modules.append(module)
+    
+    def get_nodes(self):
+        """Get the dictionary of visualization nodes."""
+        return self._nodes
+    
+    def get_edges(self):
+        """Get the list of edges."""
+        return self._edges
+    
+    def get_problem(self):
+        """Get the simulation problem."""
+        return self._problem
+    
+    def get_modules(self):
+        """Get the visualization modules."""
+        return self._modules
+    
+    def render(self, surface: pygame.Surface) -> None:
+        """
+        Render the Petri net visualization onto the provided pygame surface (for IDE integration).
         
-        clock = pygame.time.Clock()
+        :param surface: The pygame surface to render onto
+        """
+        # Get zoom level
+        zoom_level = self._zoom_level
         
-        self.__running = True
-        while self.__running:
+        # Create a scaled surface for zooming
+        scaled_width = int(surface.get_width() / zoom_level)
+        scaled_height = int(surface.get_height() / zoom_level)
+        scaled_surface = pygame.Surface((scaled_width, scaled_height))
+        scaled_surface.fill(TUE_GREY)
+        
+        # Draw edges on scaled surface
+        for edge in self._edges:
+            edge.draw(scaled_surface)
+        
+        # Draw nodes on scaled surface
+        for node in self._nodes.values():
+            node._curr_time = self._problem.clock
+            node.draw(scaled_surface)
+        
+        # Scale the surface back to original size and blit
+        surface.fill(TUE_GREY)
+        scaled_back = pygame.transform.smoothscale(scaled_surface, (surface.get_width(), surface.get_height()))
+        surface.blit(scaled_back, (0, 0))
+        
+        # Render UI modules on the final surface
+        for mod in self._modules:
+            mod.render_ui(surface)
+    
+    def handle_mouse_press(self, pos: Tuple[int, int], button: int) -> Optional[object]:
+        """
+        Handle mouse press events (for IDE integration).
+        
+        :param pos: (x, y) position of the mouse click
+        :param button: Mouse button pressed (1=left, 2=middle, 3=right)
+        :return: The node that was clicked, or None
+        """
+        if button == 1:
+            node = self._get_node_at(pos)
+            if node is not None:
+                self._selected_nodes = [node], pos
+                pygame.event.post(
+                    create_event(
+                        NODE_CLICKED,
+                        { 'node' : node }
+                    )
+                )
+                return node
+            else:
+                self._selected_nodes = list(self._nodes.values()), pos
+                pygame.event.post(
+                    create_event(
+                        SELECTION_CLEAR,
+                        {}
+                    )
+                )
+        return None
+    
+    def handle_mouse_release(self, pos: Tuple[int, int], button: int) -> None:
+        """
+        Handle mouse release events (for IDE integration).
+        
+        :param pos: (x, y) position of the mouse release
+        :param button: Mouse button released
+        """
+        if button == 1 and self._selected_nodes is not None:
+            self._drag_nodes(snap=True, pos=pos)
+            self._selected_nodes = None
+    
+    def handle_mouse_motion(self, pos: Tuple[int, int]) -> None:
+        """
+        Handle mouse motion events (for IDE integration).
+        
+        :param pos: (x, y) position of the mouse
+        """
+        if self._selected_nodes is not None:
+            self._drag_nodes(pos=pos)
+    
+    def _get_node_at(self, pos: Tuple[int, int]) -> Optional[object]:
+        """
+        Get the node at the given position.
+        
+        :param pos: (x, y) position to check
+        :return: The node at the position, or None
+        """
+        scaled_pos = (pos[0] / self._zoom_level, pos[1] / self._zoom_level)
+        for node in self._nodes.values():
+            if node.get_pos()[0] - max(node._width/2, 10) <= scaled_pos[0] <= node.get_pos()[0] + max(node._width/2, 10) and \
+            node.get_pos()[1] - max(node._height/2, 10) <= scaled_pos[1] <= node.get_pos()[1] + max(node._height/2, 10):
+                return node
+        return None
+    
+    def _drag_nodes(self, snap: bool = False, pos: Optional[Tuple[int, int]] = None) -> None:
+        """
+        Drag the selected nodes.
+        
+        :param snap: Whether to snap to grid
+        :param pos: Position to drag to (if None, uses current mouse position)
+        """
+        if self._selected_nodes is None:
+            return
+            
+        nodes = self._selected_nodes[0]
+        org_pos = self._selected_nodes[1]
+        new_pos = pos if pos is not None else (0, 0)
+        x_delta = (new_pos[0] - org_pos[0]) / self._zoom_level
+        y_delta = (new_pos[1] - org_pos[1]) / self._zoom_level
+        
+        for node in nodes:
+            new_x = node.get_pos()[0] + x_delta
+            new_y = node.get_pos()[1] + y_delta
+            if snap:
+                new_x = round(new_x/self._grid_spacing)*self._grid_spacing
+                new_y = round(new_y/self._grid_spacing)*self._grid_spacing
+            node.set_pos((new_x, new_y))
+        
+        self._selected_nodes = nodes, new_pos
+    
+    def step(self) -> object:
+        """
+        Execute one step of the simulation (for IDE integration).
+        
+        :return: The fired binding, or None
+        """
+        for mode in self._modules:
+            mode.pre_event_loop(self._problem)
 
+        fired_binding = self._problem.step()
+        
+        if fired_binding is not None:
             for mod in self._modules:
-                mod.pre_event_loop(self._problem)
+                mod.firing(fired_binding, self._problem)
 
-            for event in pygame.event.get():
-                self.__handle_event(event)
-            try:
-                self.__draw()
-            except Exception:
-                print("Error while drawing the visualisation.")
-                print(traceback.format_exc())
-                self.__running = False
+        for mod in self._modules:
+            mod.post_event_loop(self._problem)
+            
+        return fired_binding
+    
+    def get_zoom_level(self) -> float:
+        """Get the current zoom level."""
+        return self._zoom_level
+    
+    def set_zoom_level(self, zoom: float) -> None:
+        """Set the zoom level."""
+        self._zoom_level = max(0.3, min(zoom, 3.0))
 
-            for mod in self._modules:
-                mod.post_event_loop(self._problem)
-
-            clock.tick(30)
+    def handle_broadcast_event(self, type, args, kwargs):
+        """
+        Passes along the lower event pygame events upwards (for IDE integration).
+        """
         
-        self.__playing = False
-        pygame.time.delay(self._play_step_delay)
-        pygame.display.quit()
-        pygame.quit()
-
+        if type == BroadcastType.create:
+            for mod in self._modules:
+                if not isinstance(mod, IDEBroadcastModule):
+                    mod.create(*args, **kwargs)
+        elif type == BroadcastType.pre_event_loop:
+            for mod in self._modules:
+                if not isinstance(mod, IDEBroadcastModule):
+                    mod.pre_event_loop(*args, **kwargs)
+        elif type == BroadcastType.handle_event:
+            event = args[0]
+            for mod in self._modules:
+                if not isinstance(mod, IDEBroadcastModule):
+                    mod.handle_event(event, *args[1:], **kwargs)
+        elif type == BroadcastType.render_sim:
+            screen = args[0]
+            for mod in self._modules:
+                if not isinstance(mod, IDEBroadcastModule):
+                    mod.render_sim(screen, *args[1:], **kwargs)
+        elif type == BroadcastType.render_ui:
+            window = args[0]
+            for mod in self._modules:
+                if not isinstance(mod, IDEBroadcastModule):
+                    mod.render_ui(window, *args[1:], **kwargs)
+        elif type == BroadcastType.firing:
+            fired = args[0]
+            for mod in self._modules:
+                if not isinstance(mod, IDEBroadcastModule):
+                    mod.firing(fired, *args[1:], **kwargs)
+        elif type == BroadcastType.post_event_loop:
+            for mod in self._modules:
+                if not isinstance(mod, IDEBroadcastModule):
+                    mod.post_event_loop(*args, **kwargs)

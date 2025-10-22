@@ -1,0 +1,22 @@
+"""
+Constants used throughout the visualisation module.
+"""
+
+# Screen size
+MAX_SIZE = 1920, 1080
+
+# Colors
+TUE_RED = (200, 25, 25)
+TUE_LIGHTRED = (249, 204, 204)
+TUE_BLUE = (16, 16, 115)
+TUE_LIGHTBLUE = (188, 188, 246)
+TUE_GREY = (242, 242, 242)
+WHITE = (255, 255, 255)
+
+# Sizes
+STANDARD_NODE_WIDTH, STANDARD_NODE_HEIGHT = 50, 50
+LINE_WIDTH = 2
+ARROW_WIDTH, ARROW_HEIGHT = 12, 10
+TEXT_SIZE = 16
+BUTTON_POSITION = (16, 16)
+BUTTON_SIZE = (50, 50)
