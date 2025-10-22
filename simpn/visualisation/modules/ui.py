@@ -47,10 +47,14 @@ class UIClockModule(ModuleInterface):
         self._font = pygame.font.SysFont('Calibri', self._font_size)
 
     def pre_event_loop(self, sim, *args, **kwargs):
+        # For IDE mode, we want instant clock updates
+        # The actual update happens in post_event_loop after the step
+        pass
+    
+    def post_event_loop(self, sim, *args, **kwargs):
+        # Update clock immediately after simulation step
         self._target = sim.clock
-        if self._time < self._target:
-            push = max(self._pusher, (self._target - self._time) * self._pusher)
-            self._time = min(self._target, self._time + push)
+        self._time = self._target  # Instant update for IDE
         self._format = f"{round(self._time, self._precision)}"
 
     def render_ui(self, window:Surface, *args, **kwargs):

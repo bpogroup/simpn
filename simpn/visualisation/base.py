@@ -904,16 +904,18 @@ class ModelPanel:
         
         :return: The fired binding, or None
         """
-        for mode in self._modules:
+        # Notify all modules (regular and UI) about pre-event
+        all_modules = list(self._modules) + list(self._ui_modules)
+        for mode in all_modules:
             mode.pre_event_loop(self._problem)
 
         fired_binding = self._problem.step()
         
         if fired_binding is not None:
-            for mod in self._modules:
+            for mod in all_modules:
                 mod.firing(fired_binding, self._problem)
 
-        for mod in self._modules:
+        for mod in all_modules:
             mod.post_event_loop(self._problem)
             
         return fired_binding

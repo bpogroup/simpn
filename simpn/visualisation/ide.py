@@ -9,6 +9,7 @@ from typing import List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from simpn.simulator import Describable
+    from simpn.visualisation.base import Node
 
 from simpn.visualisation import ModelPanel
 from simpn.visualisation.modules.base import ModuleInterface
@@ -90,6 +91,15 @@ class PygameWidget(QLabel):
             # If we have a visualisation, let it handle the event
             if self._viz is not None:
                 node = self._viz.handle_mouse_press((x, y), 1)
+                
+                # Process any pygame events that were posted (like NODE_CLICKED)
+                for pygame_event in pygame.event.get():
+                    # Dispatch the event to all modules (both regular and UI modules)
+                    all_modules = list(self._viz._modules) + list(self._viz._ui_modules)
+                    for mod in all_modules:
+                        if hasattr(mod, 'handle_event'):
+                            mod.handle_event(pygame_event)
+                
                 if node is not None:
                     # Update display to show any selection changes
                     self.update_display()
@@ -105,6 +115,15 @@ class PygameWidget(QLabel):
             # If we have a visualisation, let it handle the event
             if self._viz is not None:
                 self._viz.handle_mouse_release((x, y), 1)
+                
+                # Process any pygame events that were posted
+                for pygame_event in pygame.event.get():
+                    # Dispatch the event to all modules (both regular and UI modules)
+                    all_modules = list(self._viz._modules) + list(self._viz._ui_modules)
+                    for mod in all_modules:
+                        if hasattr(mod, 'handle_event'):
+                            mod.handle_event(pygame_event)
+                
                 self.update_display()
         super().mouseReleaseEvent(event)
     
@@ -247,22 +266,34 @@ class AttributePanel(QWidget,ModuleInterface):
         Clears the text in the attribute panel.
         """
         self.text_edit.clear()
+    
+    def _clear_description_ui(self):
+        """
+        Clears the description in the attribute panel.
+        """
+        self.text_edit.clear()
 
-    def set_selected(self, selected: 'Describable'):
+    def set_selected(self, selected: 'Node'):
         """
         Emits signal to update selected node for the attribute panel.
 
-        :param selected: The selected model node from the simulation
+        :param selected: The selected visualization node (not the model node)
         """
         self.description_update_selected.emit(selected)
 
-    def _update_selected(self, selected: 'Describable'):
+    def _update_selected(self, selected: 'Node'):
         """
         Update selected node for the attribute panel.
 
-        :param selected: The selected model node from the simulation
+        :param selected: The selected visualization node (not the model node)
         """
         self._selected = selected
+        # Immediately fetch and display the description when a node is selected
+        if self._selected is not None and hasattr(self._selected, '_model_node'):
+            description = self._selected._model_node.get_description()
+            self._update_description_ui(description)
+        else:
+            self._clear_description_ui()
 
     def _refresh(self):
         """
@@ -339,13 +370,10 @@ class AttributePanel(QWidget,ModuleInterface):
         :param event: The pygame event to handle
         """
         if check_event(event, NODE_CLICKED):
-            self._selected = event.node
-            self._description = event.node._model_node.get_description()
-            self.set_selected(self._selected)
-            self.set_description(self._description)
+            # Set the selected node - _update_selected will fetch and display the description
+            self.set_selected(event.node)
         elif check_event(event, SELECTION_CLEAR):
             self.set_selected(None)
-            self.set_description([])
             self.clear_attributes()
 
     def firing(self, *args, **kwargs):
