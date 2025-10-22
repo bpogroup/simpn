@@ -13,7 +13,9 @@ if TYPE_CHECKING:
 from simpn.visualisation.modules.base import ModuleInterface
 from simpn.visualisation.constants import TUE_GREY, TUE_BLUE, TUE_LIGHTBLUE, LINE_WIDTH, TEXT_SIZE, TUE_RED
 from simpn.assets import get_img_asset
-from simpn.visualisation.events import check_event, NODE_CLICKED, SELECTION_CLEAR
+from simpn.visualisation.events import (
+    EventType, IEventHandler, check_event, NODE_CLICKED, SELECTION_CLEAR
+)
 from simpn.visualisation.text import prevent_overflow_while_rendering
 
 class UIClockModule(ModuleInterface):
@@ -35,29 +37,50 @@ class UIClockModule(ModuleInterface):
         self._target = 0
         self._pusher = 1.0 / (self._precision + 1)
         self._font_size = 12
+        self._clock_img = None
+        self._clock_rect = None
+        self._font = None
+        self._format = "0.0"
 
-    def create(self, sim, *args, **kwargs):
-        self._time = sim.clock
-        self._format = f"{round(self._time, self._precision)}"
-        self._clock_img = pygame.image.load(get_img_asset("clock.png"))
-        self._clock_img = pygame.transform.smoothscale(
-            self._clock_img, self.CLOCK_SIZE
-        )
-        self._clock_rect = self._clock_img.get_rect()
-        self._font = pygame.font.SysFont('Calibri', self._font_size)
+    def handle_event(self, event, *args, **kwargs):
+        """Handle all events through the unified event system."""
+        # Handle lifecycle events
+        if check_event(event, EventType.VISUALIZATION_CREATED):
+            self._time = event.sim.clock
+            self._format = f"{round(self._time, self._precision)}"
+            self._clock_img = pygame.image.load(get_img_asset("clock.png"))
+            self._clock_img = pygame.transform.smoothscale(
+                self._clock_img, self.CLOCK_SIZE
+            )
+            self._clock_rect = self._clock_img.get_rect()
+            self._font = pygame.font.SysFont('Calibri', self._font_size)
+        
+        elif check_event(event, EventType.POST_EVENT_LOOP):
+            # Update clock immediately after simulation step
+            self._target = event.sim.clock
+            self._time = self._target
+            self._format = f"{round(self._time, self._precision)}"
+        
+        elif check_event(event, EventType.RENDER_UI):
+            self._render_clock(event.window)
+        
+        # Handle pygame mouse events for clock interaction
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if self._clock_rect and self._clock_rect.collidepoint(event.pos):
+                # on left click increase precision
+                if event.button == 1:
+                    self._precision += 1
+                # on right click decrease precision
+                elif event.button == 3:
+                    self._precision = max(1, self._precision - 1)
 
-    def pre_event_loop(self, sim, *args, **kwargs):
-        # For IDE mode, we want instant clock updates
-        # The actual update happens in post_event_loop after the step
-        pass
+        return True
     
-    def post_event_loop(self, sim, *args, **kwargs):
-        # Update clock immediately after simulation step
-        self._target = sim.clock
-        self._time = self._target  # Instant update for IDE
-        self._format = f"{round(self._time, self._precision)}"
-
-    def render_ui(self, window:Surface, *args, **kwargs):
+    def _render_clock(self, window: Surface):
+        """Render the clock UI element."""
+        if not self._clock_rect or not self._font:
+            return
+            
         self._clock_rect.center = (
             self.OFFSET + self._clock_rect.width // 2, 
             window.get_height() - self.OFFSET - self._font_size - self._clock_rect.height // 2
@@ -84,7 +107,7 @@ class UIClockModule(ModuleInterface):
             border_radius=5
         )
         
-        # handle the font and show it on the scren
+        # handle the font and show it on the screen
         font_length = len(self._format)
         show = self._format[:font_length]
         label = self._font.render(show, True, TUE_BLUE)
@@ -103,19 +126,6 @@ class UIClockModule(ModuleInterface):
 
         #blit image for clock
         window.blit(self._clock_img, self._clock_rect)
-
-    def handle_event(self, event, *args, **kwargs):
-        # check if the event is a mousebuttondown
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if self._clock_rect.collidepoint(event.pos):
-                # on left click increase precision
-                if event.button == 1:
-                    self._precision += 1
-                # on right click decrease precision
-                elif event.button == 3:
-                    self._precision = max(1, self._precision - 1)
-
-        return True
 
 class UISidePanelModule(ModuleInterface):
     """"
@@ -142,42 +152,52 @@ class UISidePanelModule(ModuleInterface):
         self._push_out = 0
         self._description = None # if the description is None, nothing is shown
         self._selected = None
-        self.reset_and_hide_description()
+        self.panel = None
+        self.open_button = None
+        self.close_button = None
+        self.orect = None
+        self.crect = None
 
     def reset_and_hide_description(self):
         self._selected = None
         self._description = None
-
-    def pre_event_loop(self, sim, *args, **kwargs):
-        if self._opened:
-            self._push_out = min(self.PUSH_OUT_MAX, self._push_out + self.PUSH_OUT_SPEED)
-        else:
-            self._push_out = max(0, self._push_out - self.PUSH_OUT_SPEED)
-        if self._selected is not None:
-            self._description = self._selected._model_node.get_description()
-
-    def create(self, sim, *args, **kwargs):
-        self.panel = pygame.rect.Rect(
-            0, self.PANEL_Y_POS, self.PANEL_SIZE[0] + self.PANEL_CLICKER_SIZE[0], self.PANEL_SIZE[1]
-        )
-        self.open_button = pygame.image.load(get_img_asset("flip_open.png"))
-        self.open_button = pygame.transform.rotate(self.open_button, -90)
-        self.open_button = pygame.transform.smoothscale(
-            self.open_button, self.PANEL_CLICKER_SIZE
-        )
-        self.orect = self.open_button.get_rect()
-        self.close_button = pygame.image.load(get_img_asset("flip_close.png"))
-        self.close_button = pygame.transform.rotate(self.close_button, -90)
-        self.close_button = pygame.transform.smoothscale(
-            self.close_button, self.PANEL_CLICKER_SIZE
-        )
-        self.crect = self.close_button.get_rect()
-
-        return super().create(sim, *args, **kwargs)
         
     def handle_event(self, event, *args, **kwargs):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.panel.collidepoint(event.pos):
+        """Handle all events through the unified event system."""
+        # Handle lifecycle events
+        if check_event(event, EventType.VISUALIZATION_CREATED):
+            self.panel = pygame.rect.Rect(
+                0, self.PANEL_Y_POS, self.PANEL_SIZE[0] + self.PANEL_CLICKER_SIZE[0], self.PANEL_SIZE[1]
+            )
+            self.open_button = pygame.image.load(get_img_asset("flip_open.png"))
+            self.open_button = pygame.transform.rotate(self.open_button, -90)
+            self.open_button = pygame.transform.smoothscale(
+                self.open_button, self.PANEL_CLICKER_SIZE
+            )
+            self.orect = self.open_button.get_rect()
+            self.close_button = pygame.image.load(get_img_asset("flip_close.png"))
+            self.close_button = pygame.transform.rotate(self.close_button, -90)
+            self.close_button = pygame.transform.smoothscale(
+                self.close_button, self.PANEL_CLICKER_SIZE
+            )
+            self.crect = self.close_button.get_rect()
+        
+        elif check_event(event, EventType.PRE_EVENT_LOOP):
+            # Animate panel push-out
+            if self._opened:
+                self._push_out = min(self.PUSH_OUT_MAX, self._push_out + self.PUSH_OUT_SPEED)
+            else:
+                self._push_out = max(0, self._push_out - self.PUSH_OUT_SPEED)
+            # Update description if node is selected
+            if self._selected is not None:
+                self._description = self._selected._model_node.get_description()
+        
+        elif check_event(event, EventType.RENDER_UI):
+            self._render_panel(event.window)
+        
+        # Handle pygame mouse events for panel interaction
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if self.panel and self.panel.collidepoint(event.pos):
                 if self.orect.collidepoint(event.pos) and not self._opened:
                     if event.button == 1:
                         self._opened = True
@@ -186,7 +206,8 @@ class UISidePanelModule(ModuleInterface):
                     if event.button == 1:
                         self._opened = False
                 return False
-            
+        
+        # Handle node selection events
         if check_event(event, NODE_CLICKED):
             self._selected = event.node
             self._description = self._selected._model_node.get_description()
@@ -195,10 +216,13 @@ class UISidePanelModule(ModuleInterface):
 
         return True
     
-    def render_ui(self, window, *args, **kwargs):
+    def _render_panel(self, window):
+        """Render the side panel UI element."""
+        if not self.panel or not self.orect or not self.crect:
+            return
+            
         right = window.get_width()
         mid = window.get_height() // 2
-        top = 150
 
         self.orect.y = mid 
         self.orect.x = right - self.orect.width - self._push_out
@@ -207,7 +231,6 @@ class UISidePanelModule(ModuleInterface):
         self.panel.x = right - self._push_out - self.crect.width
         self.panel.height = window.get_height() - self.panel.y
 
-        # if self._push_out > 0:
         pygame.draw.rect(
             window, TUE_LIGHTBLUE, self.panel,
             border_radius=15
@@ -224,8 +247,6 @@ class UISidePanelModule(ModuleInterface):
 
         if self._push_out >= 0 and self._description is not None:
             self._render_description(window)
-
-        return super().render_ui(window, *args, **kwargs)
     
     def _render_description(self, window:pygame.surface.Surface):
         from simpn.simulator import Describable

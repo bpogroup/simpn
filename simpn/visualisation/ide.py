@@ -13,7 +13,10 @@ if TYPE_CHECKING:
 
 from simpn.visualisation import ModelPanel
 from simpn.visualisation.modules.base import ModuleInterface
-from simpn.visualisation.events import NODE_CLICKED, SELECTION_CLEAR, check_event
+from simpn.visualisation.events import (
+    EventType, IEventHandler, EventDispatcher,
+    NODE_CLICKED, SELECTION_CLEAR, check_event
+)
 
 
 class PygameWidget(QLabel):
@@ -89,16 +92,9 @@ class PygameWidget(QLabel):
             self.mouse_pressed.emit(x, y, 1)
             
             # If we have a visualisation, let it handle the event
+            # The visualization will dispatch events through its centralized dispatcher
             if self._viz is not None:
                 node = self._viz.handle_mouse_press((x, y), 1)
-                
-                # Process any pygame events that were posted (like NODE_CLICKED)
-                for pygame_event in pygame.event.get():
-                    # Dispatch the event to all modules (both regular and UI modules)
-                    all_modules = list(self._viz._modules) + list(self._viz._ui_modules)
-                    for mod in all_modules:
-                        if hasattr(mod, 'handle_event'):
-                            mod.handle_event(pygame_event)
                 
                 if node is not None:
                     # Update display to show any selection changes
@@ -113,17 +109,9 @@ class PygameWidget(QLabel):
             self.mouse_released.emit(x, y, 1)
             
             # If we have a visualisation, let it handle the event
+            # The visualization will dispatch events through its centralized dispatcher
             if self._viz is not None:
                 self._viz.handle_mouse_release((x, y), 1)
-                
-                # Process any pygame events that were posted
-                for pygame_event in pygame.event.get():
-                    # Dispatch the event to all modules (both regular and UI modules)
-                    all_modules = list(self._viz._modules) + list(self._viz._ui_modules)
-                    for mod in all_modules:
-                        if hasattr(mod, 'handle_event'):
-                            mod.handle_event(pygame_event)
-                
                 self.update_display()
         super().mouseReleaseEvent(event)
     
@@ -204,16 +192,18 @@ class DebugPanel(QWidget, ModuleInterface):
         """Clear all text from the debug panel"""
         self.text_edit.clear()
 
-    def handle_event(self, event: pygame.event.Event) -> None:
+    def handle_event(self, event: pygame.event.Event) -> bool:
         """
-        Handle a pygame event (part of ModuleInterface).
+        Handle a pygame event (part of IEventHandler interface).
         
         :param event: The pygame event to handle
+        :return: True to propagate event to other handlers
         """
         event_text = str(event).replace('<', '&lt;').replace('>', '&gt;')
         self.text_signal.emit(
             f"DebugPanel received event: {event_text}"
         )
+        return True
 
 
 class AttributePanel(QWidget,ModuleInterface):
@@ -363,11 +353,12 @@ class AttributePanel(QWidget,ModuleInterface):
         # Emit signal instead of directly updating UI
         self.clear_signal.emit()
     
-    def handle_event(self, event: pygame.event.Event) -> None:
+    def handle_event(self, event: pygame.event.Event) -> bool:
         """
-        Handle a pygame event (part of ModuleInterface).
+        Handle a pygame event (part of IEventHandler interface).
         
         :param event: The pygame event to handle
+        :return: True to propagate event to other handlers
         """
         if check_event(event, NODE_CLICKED):
             # Set the selected node - _update_selected will fetch and display the description
@@ -375,6 +366,7 @@ class AttributePanel(QWidget,ModuleInterface):
         elif check_event(event, SELECTION_CLEAR):
             self.set_selected(None)
             self.clear_attributes()
+        return True
 
     def firing(self, *args, **kwargs):
         """
