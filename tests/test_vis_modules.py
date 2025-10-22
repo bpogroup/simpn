@@ -10,7 +10,7 @@ from simpn.simulator import SimProblem, SimToken
 from simpn.helpers import Place, Transition
 from simpn.visualisation import Visualisation
 from simpn.visualisation.test_modules import CheckerModule
-from simpn.visualisation.ui_modules import UIClockModule
+from simpn.visualisation.model_panel_mods import ClockModule
 # UISidePanelModule has been removed
 
 
@@ -190,7 +190,7 @@ class UIClockTests(unittest.TestCase):
         vis.close()
 
     def test_no_crash(self):
-        mod = UIClockModule(1)
+        mod = ClockModule(1)
         vis = Visualisation(
             self.problem,
             extra_modules=[
@@ -204,7 +204,7 @@ class UIClockTests(unittest.TestCase):
         thread.join()
 
     def test_time_matches(self):
-        mod = UIClockModule(1)
+        mod = ClockModule(1)
         vis = Visualisation(
             self.problem,
             extra_modules=[
@@ -225,7 +225,7 @@ class UIClockTests(unittest.TestCase):
         mock_click_event_with_button(rect, button)
 
     def test_increasing_precision(self):
-        mod = UIClockModule(1)
+        mod = ClockModule(1)
         vis = Visualisation(
             self.problem,
             extra_modules=[
@@ -245,7 +245,7 @@ class UIClockTests(unittest.TestCase):
         self.assertEqual(mod._precision, 2)
 
     def test_decreasing_precision(self):
-        mod = UIClockModule(2)
+        mod = ClockModule(2)
         vis = Visualisation(
             self.problem,
             extra_modules=[
@@ -265,7 +265,7 @@ class UIClockTests(unittest.TestCase):
         self.assertEqual(mod._precision, 1)
 
     def test_min_decreasing_precision(self):
-        mod = UIClockModule(1)
+        mod = ClockModule(1)
         vis = Visualisation(
             self.problem,
             extra_modules=[
@@ -289,7 +289,7 @@ class UIClockTests(unittest.TestCase):
         self.assertEqual(mod._precision, 1)
 
     def test_increase_descrease_precision(self):
-        mod = UIClockModule(3)
+        mod = ClockModule(3)
         vis = Visualisation(
             self.problem,
             extra_modules=[

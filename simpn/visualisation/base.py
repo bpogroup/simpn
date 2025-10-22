@@ -1,783 +1,937 @@
-import os
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-import igraph
 import threading
-import math
-from enum import Enum, auto
-from typing import Optional, Tuple, List
-import simpn
-from simpn.visualisation.events import EventType, IEventHandler, create_event
-from simpn.visualisation.constants import (
-    MAX_SIZE, TUE_RED, TUE_LIGHTRED, TUE_BLUE, TUE_LIGHTBLUE, TUE_GREY, WHITE,
-    STANDARD_NODE_WIDTH, STANDARD_NODE_HEIGHT, LINE_WIDTH, ARROW_WIDTH, ARROW_HEIGHT,
-    TEXT_SIZE, BUTTON_POSITION, BUTTON_SIZE
-)
+import os
+import sys
+import traceback
+from PyQt6.QtCore import Qt, QSize, pyqtSignal
+from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QApplication
+from simpn.visualisation.model_panel_mods import ClockModule
+from simpn.visualisation.model_panel import ModelPanel
+from simpn.visualisation.events import EventDispatcher, check_event, create_event, EventType
+
+from typing import List, Tuple, TYPE_CHECKING
+if TYPE_CHECKING:
+    from simpn.simulator import Describable
+    from simpn.visualisation.model_panel import Node
 
 
-class Shape(Enum):
-    TRANSTION = auto()
-    PLACE = auto()
-    EDGE = auto()
+class PygameWidget(QLabel):
+    """Widget that renders pygame surface as a QLabel"""
+    
+    # Signal to emit when mouse is clicked
+    mouse_clicked = pyqtSignal(int, int)
+    # Signal to emit when mouse is pressed (for dragging)
+    mouse_pressed = pyqtSignal(int, int, int)  # x, y, button
+    # Signal to emit when mouse is released
+    mouse_released = pyqtSignal(int, int, int)  # x, y, button
+    # Signal to emit when mouse is moved
+    mouse_moved = pyqtSignal(int, int)  # x, y
+    
+    def __init__(self, width=640, height=480, parent=None):
+        super().__init__(parent)
+        self.width = width
+        self.height = height
+        pygame.init()
+        pygame.font.init()
+        self.surface = pygame.Surface((width, height))
+        self.setMinimumSize(width, height)
+        self._panel = None  # Will hold the ModelPanel instance
 
+    def set_panel(self, panel: ModelPanel):
+        """Set the model panel to render."""
+        self._panel = panel
 
-class Hook(Enum):
-    LEFT = auto()
-    RIGHT = auto()
-    TOP = auto()
-    BOTTOM = auto()
-
-
-class Edge:
-    # An edge from a start node to and end node
-    # start is a pair (node, Hook), where node is start node of the flow and Hook is the hook on that node
-    # end is a pair (node, Hook), where node is start node of the flow and Hook is the hook on that node
-    # intermediate is a list of pairs (x_new, y_new) of intermediate points on the flow, such that the flow
-    #   is routed through these intermediate points. An intermediate point is computed from the previous point (x, y)
-    #   by using (x_new if x_new >= 0 else x, y_new if y_new >= 0 else y)
-    def __init__(self, start, end):
-        self._start = start
-        self._end = end
-
-    def draw(self, screen):
-        start_node_xy = self.get_start_node().get_pos()
-        start_node_width, start_node_height = self.get_start_node()._width, self.get_start_node()._height
-        end_node_xy = self.get_end_node().get_pos()
-        end_node_width, end_node_height = self.get_end_node()._width, self.get_end_node()._height
-        if start_node_xy[1] - start_node_height/2 > end_node_xy[1] + end_node_height/2:
-            self.set_start_hook(Hook.TOP)
-        elif start_node_xy[1] + start_node_height/2 < end_node_xy[1] - end_node_height/2:
-            self.set_start_hook(Hook.BOTTOM)
-        elif start_node_xy[0] - start_node_width/2 > end_node_xy[0] + end_node_width/2:
-            self.set_start_hook(Hook.LEFT)
-        else:
-            self.set_start_hook(Hook.RIGHT)
-        if end_node_xy[1] - end_node_height/2 > start_node_xy[1] + start_node_height/2:
-            self.set_end_hook(Hook.TOP)
-        elif end_node_xy[1] + end_node_height/2 < start_node_xy[1] - start_node_height/2:
-            self.set_end_hook(Hook.BOTTOM)
-        elif end_node_xy[0] - end_node_width/2 > start_node_xy[0] + start_node_width/2:
-            self.set_end_hook(Hook.LEFT)
-        else:
-            self.set_end_hook(Hook.RIGHT)
+    def get_panel(self):
+        """Get the current model panel."""
+        return self._panel
         
-        # Get hook positions
-        start_hook_pos = self._start[0].hook(self._start[1])
-        end_hook_pos = self._end[0].hook(self._end[1])
+    def update_display(self):
+        """Convert pygame surface to QPixmap and display it"""
+        # If we have a visualisation, render it first
+        if self._panel is not None:
+            self._panel.render(self.surface)
         
-        # If hook positions are not valid
-        if start_hook_pos is None or not isinstance(start_hook_pos, tuple) or len(start_hook_pos) != 2 or start_hook_pos[0] is None or start_hook_pos[1] is None:
-            start_hook_pos = self._start[0].get_pos()  # Fallback to center
-        if end_hook_pos is None or not isinstance(end_hook_pos, tuple) or len(end_hook_pos) != 2 or end_hook_pos[0] is None or end_hook_pos[1] is None:
-            end_hook_pos = self._end[0].get_pos()  # Fallback to center
+        # Get the pygame surface as a string buffer
+        data = pygame.image.tostring(self.surface, 'RGB')
+        # Create QImage from the data
+        image = QImage(data, self.width, self.height, self.width * 3, QImage.Format.Format_RGB888)
+        # Convert to QPixmap and display
+        self.setPixmap(QPixmap.fromImage(image))
+    
+    def resizeEvent(self, event):
+        """Handle resize events"""
+        super().resizeEvent(event)
+        # Update the surface size to match the widget size
+        new_width = self.width
+        new_height = self.height
+        if event.size().width() > 0 and event.size().height() > 0:
+            new_width = event.size().width()
+            new_height = event.size().height()
             
-        start = pygame.Vector2(start_hook_pos)
-        end = pygame.Vector2(end_hook_pos)
-        arrow = start - end
-        angle = arrow.angle_to(pygame.Vector2(0, -1))
-        body_length = arrow.length() - ARROW_HEIGHT
-
-        # if the end node does not want to show arrowheads, we simply draw a line from start to end
-        if not self.get_end_node()._show_arrowheads:
-            pygame.draw.line(screen, TUE_BLUE, start, end, int(LINE_WIDTH*1.5))
-            return
-
-        # Create the triangle head around the origin
-        head_verts = [
-            pygame.Vector2(0, ARROW_HEIGHT / 2),  # Center
-            pygame.Vector2(ARROW_WIDTH / 2, -ARROW_HEIGHT / 2),  # Bottomright
-            pygame.Vector2(-ARROW_WIDTH / 2, -ARROW_HEIGHT / 2),  # Bottomleft
-        ]
-        # Rotate and translate the head into place
-        translation = pygame.Vector2(0, arrow.length() - (ARROW_HEIGHT / 2)).rotate(-angle)
-        for i in range(len(head_verts)):
-            head_verts[i].rotate_ip(-angle)
-            head_verts[i] += translation
-            head_verts[i] += start
-
-        pygame.draw.polygon(screen, TUE_BLUE, head_verts)
-
-        # Stop weird shapes when the arrow is shorter than arrow head
-        if arrow.length() >= ARROW_HEIGHT:
-            # Calculate the body rect, rotate and translate into place
-            body_verts = [
-                pygame.Vector2(-LINE_WIDTH / 2, body_length / 2),  # Topleft
-                pygame.Vector2(LINE_WIDTH / 2, body_length / 2),  # Topright
-                pygame.Vector2(LINE_WIDTH / 2, -body_length / 2),  # Bottomright
-                pygame.Vector2(-LINE_WIDTH / 2, -body_length / 2),  # Bottomleft
-            ]
-            translation = pygame.Vector2(0, body_length / 2).rotate(-angle)
-            for i in range(len(body_verts)):
-                body_verts[i].rotate_ip(-angle)
-                body_verts[i] += translation
-                body_verts[i] += start
-
-            pygame.draw.polygon(screen, TUE_BLUE, body_verts)
-
-    def get_shape(self):
-        return Shape.EDGE
-
-    def get_start_node(self):
-        return self._start[0]
+        # Only resize if dimensions actually changed
+        if new_width != self.width or new_height != self.height:
+            self.width = new_width
+            self.height = new_height
+            # Create a new surface with the new size
+            self.surface = pygame.Surface((self.width, self.height))
+            # Update the display immediately
+            self.update_display()
     
-    def get_end_node(self):
-        return self._end[0]
-
-    def set_start_hook(self, hook):
-        self._start = (self._start[0], hook)
-    
-    def set_end_hook(self, hook):
-        self._end = (self._end[0], hook)
-
-
-class Node:
-    def __init__(self, model_node):
-        self._model_node = model_node
-        self._pos = (0, 0)  # the center of the node
-        self._width = STANDARD_NODE_WIDTH
-        self._height = STANDARD_NODE_HEIGHT
-        self._half_width =  self._width / 2
-        self._half_height = self._height / 2
-        self._show_arrowheads = True
+    def mousePressEvent(self, event: QMouseEvent):
+        """Handle mouse press events"""
+        if event.button() == Qt.MouseButton.LeftButton:
+            # Get the click position
+            x = int(event.position().x())
+            y = int(event.position().y())
+            # Emit signals
+            self.mouse_clicked.emit(x, y)
+            self.mouse_pressed.emit(x, y, 1)
             
-    def draw(self, screen):
-        """
-        This adds the drawable aspects of the node unto the given screen.
-        """
-        raise Exception("Node.raise must be implemented at subclass level.")
-
-    def hook(self, hook_pos):
-        if hook_pos == Hook.LEFT:
-            result = (self._pos[0] - self._half_width, self._pos[1])
-        elif hook_pos == Hook.RIGHT:
-            result = (self._pos[0] + self._half_width, self._pos[1])
-        elif hook_pos == Hook.TOP:
-            result = (self._pos[0], self._pos[1] - self._half_height)
-        elif hook_pos == Hook.BOTTOM:
-            result = (self._pos[0], self._pos[1] + self._half_height)
-        
-        return result
-
-    def set_pos(self, pos):
-        self._pos = pos
-    
-    def get_pos(self):
-        return self._pos
-    
-    def get_id(self):
-        return self._model_node.get_id()
-            
-class TokenShower(Node):
-    """
-    Visualises the given set of sorted markings at some (x,y)
-    location.
-
-    Tokens are shown as grey circles if their time is lower than the 
-    current supplied clock time via `set_time`. Otherwise, they are shown
-    as a red token.
-
-    A token count in the center of the ring can be shown via 
-    `show_token_count`.
-    """
-
-    def __init__(self, markings:List['simpn.simulator.SimToken']):
-        super().__init__(None)
-        self._count = len(markings)
-        if (self._count > 0):
-            self._first_token = markings[0]
-            self._last_token = markings[-1]
-        self._visualable_tokens = markings
-        self._rings = False
-        self._token_radius = 5
-        self._inner_ring_offset = (self._width / 2) - (self._token_radius * 2)
-        self._curr_time = None
-        self._show_count = False
-        self._show_timing = False
-        self._show_token_values = False
-
-    def show_many_rings(self, show:bool=True) -> 'TokenShower':
-        """
-        Allow the shower to make more than one ring of tokens.
-        """
-        self._rings = show
-        return self
-
-    def show_token_count(self, show:bool=True) -> 'TokenShower':
-        """
-        Sets whether to show the token count.
-        """
-        self._show_count = show 
-        return self
-    
-    def show_timing_info(self, show:bool=True) -> 'TokenShower':
-        """
-        Sets whether to show timing info about tokens.
-        """
-        self._show_timing = show
-        return self
-
-    def show_token_values(self, show:bool=True) -> 'TokenShower':
-        """
-        Sets whether to show the token values.
-        """
-        self._show_token_values = show
-        return self
-
-    def set_pos(self, pos:Tuple[float, float]) -> 'TokenShower':
-        self._pos = pos
-        return self
-    
-    def set_time(self, clock:float) -> 'TokenShower':
-        self._curr_time = clock 
-        return self
-    
-    def _compute_tokens_in_ring(self, offset:float, radius:float) -> Tuple[int, float]:
-        """
-        Computes the number of tokens in a ring given an offset and radius.
-        """
-        circum = 2 * math.pi * offset
-        n = math.ceil(circum / (radius * 2))
-
-        return n, circum
-
-    def draw(self, screen:pygame.Surface) -> None:
-        """
-        Draws tokens in a ring around the current position of the shower.
-        """
-        bold_font = pygame.font.SysFont('Calibri', TEXT_SIZE, bold=True)
-
-        offset = self._inner_ring_offset
-        n, _ = self._compute_tokens_in_ring(offset, self._token_radius)
-        # draw the ring
-        i = -1
-        for token in self._visualable_tokens:
-            i += 1
-            angle = 2 * math.pi * i / n
-            x_offset = offset * math.cos(angle)
-            y_offset = offset * math.sin(angle)
-            color = TUE_GREY if token.time <= self._curr_time else TUE_RED
-            # draw tokens 
-            pygame.draw.circle(
-                screen, color,
-                (int(self._pos[0] + x_offset), int(self._pos[1] + y_offset)),
-                int(self._token_radius)
-            )
-            pygame.draw.circle(
-                screen, pygame.colordict.THECOLORS.get('black'),
-                (int(self._pos[0] + x_offset), int(self._pos[1] + y_offset)),
-                int(self._token_radius),
-                LINE_WIDTH
-            )
-
-            # should we break or make a larger ring
-            if (i > 0 and i % n == 0):
-                if (self._rings):
-                    i = 0
-                    offset += self._token_radius 
-                    n, _ = self._compute_tokens_in_ring(offset, self._token_radius)
-                    n -= 2
-                else:
-                    break
-
-        # draw label for count 
-        if (self._count > 0 and self._show_count):
-            label = bold_font.render(f"{self._count}", True, TUE_RED)
-            screen.blit(label, 
-                (self._pos[0]-label.get_width() *  0.5, 
-                self._pos[1]-label.get_height() * 0.5)
-            )
-
-        text_x_pos = self._pos[0]
-        text_y_pos = self._pos[1] + self._half_height
-        # draw labels for the timing info
-        if (self._show_timing):
-            last_time = None 
-            first_time = None
-            if self._count > 0:
-                first_time = round(self._first_token.time,2) 
-                mstr = f"first @ {first_time}"
-                label = bold_font.render(mstr, True, TUE_RED)
-                text_y_pos += LINE_WIDTH + int(label.get_height())
-                screen.blit(label, (text_x_pos - label.get_width()/2, text_y_pos))     
-            if self._count > 1:
-                last_time = round(self._last_token.time,2) 
-                mstr = f"last @ {last_time}"
-                label = bold_font.render(mstr, True, TUE_RED)
-                text_y_pos += LINE_WIDTH + int(label.get_height())
-                screen.blit(label, (text_x_pos - label.get_width()/2, text_y_pos)) 
-
-        # draw labels for token values
-        if (self._show_token_values):
-            for token in self._visualable_tokens:
-                label = bold_font.render(str(token.value) + "@" + str(token.time), True, TUE_RED)
-                text_y_pos += LINE_WIDTH + int(label.get_height())
-                screen.blit(label, (text_x_pos - label.get_width()/2, text_y_pos))
-
-class PlaceViz(Node):
-    def __init__(self, model_node):
-        super().__init__(model_node)
-        self._last_time = None
-    
-    def draw(self, screen):
-        pygame.draw.circle(screen, TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._half_height)
-        pygame.draw.circle(screen, TUE_BLUE, (self._pos[0], self._pos[1]), self._half_height, LINE_WIDTH)    
-        font = pygame.font.SysFont('Calibri', TEXT_SIZE)
-        bold_font = pygame.font.SysFont('Calibri', TEXT_SIZE, bold=True)
-
-        # draw label
-        label = font.render(self._model_node.get_id(), True, TUE_BLUE)
-        text_x_pos = self._pos[0] - int(label.get_width()/2)
-        text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
-        screen.blit(label, (text_x_pos, text_y_pos))
-
-        # draw marking as tokens
-        TokenShower(self._model_node.marking) \
-            .set_pos(self._pos) \
-            .set_time(self._curr_time) \
-            .show_token_count() \
-            .draw(screen)    
-
-class TransitionViz(Node):
-    def __init__(self, model_node):
-        super().__init__(model_node)
-    
-    def draw(self, screen):
-        pygame.draw.rect(screen, TUE_LIGHTBLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, self._width, self._height))
-        pygame.draw.rect(screen, TUE_BLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, self._width, self._height), LINE_WIDTH)
-        font = pygame.font.SysFont('Calibri', TEXT_SIZE)
-
-        # draw label
-        label = font.render(self._model_node.get_id(), True, TUE_BLUE)
-        text_x_pos = self._pos[0] - int(label.get_width()/2)
-        text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
-        screen.blit(label, (text_x_pos, text_y_pos))
-
-
-class ModelPanel:
-    """
-    A class for visualizing the provided simulation problem as a Petri net.
-    
-    This class can work both in standalone mode (with show() method) and in IDE mode
-    (with render() method for integration with Qt widgets).
-
-    Attributes:
-    - sim_problem (SimProblem): the simulation problem to visualize
-    - layout_file (str): the file path to the layout file (optional)
-    - grid_spacing (int): the spacing between grid lines (default: 50)
-    - node_spacing (int): the spacing between nodes (default: 100)
-    - layout_algorithm (str): the layout algorithm to use (default: "sugiyama"), possible values: auto, sugiyama, davidson_harel, grid
-
-    Methods:
-    - save_layout(self, filename): saves the layout to a file
-    - render(self, surface): renders the visualization onto a pygame surface (for IDE integration)
-    """
-    def __init__(self, sim_problem, 
-                 layout_file=None, 
-                 grid_spacing=50, 
-                 node_spacing=100, 
-                 layout_algorithm="sugiyama"):
-        """
-        Initialize the visualization.
-        
-        :param sim_problem: The simulation problem to visualize
-        :param layout_file: Optional file path to load layout from
-        :param grid_spacing: Spacing between grid lines
-        :param node_spacing: Spacing between nodes in layout
-        :param layout_algorithm: Algorithm to use for layout (sugiyama, davidson_harel, grid, auto)
-        """
-        self._grid_spacing = grid_spacing
-        self._node_spacing = node_spacing
-        self._layout_algorithm = layout_algorithm
-
-        self.__playing = False
-        self._play_step_delay = 500
-        self._problem = sim_problem
-        self._nodes = dict()
-        self._edges = []
-        self._selected_nodes = None        
-        self._zoom_level = 1.0
-        self._size = MAX_SIZE
+            # If we have a visualisation, let it handle the event
+            # The visualization will dispatch events through its centralized dispatcher
+            if self._panel is not None:
+                node = self._panel.handle_mouse_press((x, y), 1)
                 
-        # Add visualizations for prototypes, places, and transitions,
-        # but not for places and transitions that are part of prototypes.
-        element_to_prototype = dict()  # mapping of prototype element ids to prototype ids
-        viznodes_with_edges = []
-        for prototype in self._problem.prototypes:
-            if prototype.visualize:
-                prototype_viznode = prototype.get_visualisation()
-                self._nodes[prototype.get_id()] = prototype_viznode
-                if prototype.visualize_edges:
-                    viznodes_with_edges.append(prototype_viznode)
-                for event in prototype.events:
-                    element_to_prototype[event.get_id()] = prototype.get_id()
-                for place in prototype.places:
-                    element_to_prototype[place.get_id()] = prototype.get_id()
-        for var in self._problem.places:
-            if var.visualize and var.get_id() not in element_to_prototype:
-                self._nodes[var.get_id()] = var.get_visualisation()
-        for event in self._problem.events:
-            if event.visualize and event.get_id() not in element_to_prototype:
-                event_viznode = event.get_visualisation()
-                self._nodes[event.get_id()] = event_viznode
-                if event.visualize_edges:
-                    viznodes_with_edges.append(event_viznode)
-        # Add visualization for edges.
-        # If an edge is from or to a prototype element, it must be from or to the prototype itself.
-        for viznode in viznodes_with_edges:
-            from_nodes = viznode._model_node.incoming
-            to_nodes = viznode._model_node.outgoing
-            if viznode._model_node.visualization_of_edges is not None:
-                from_nodes = []
-                to_nodes = []
-                for (a, b) in viznode._model_node.visualization_of_edges:
-                    if a == viznode._model_node:
-                        to_nodes.append(b)
-                    else:
-                        from_nodes.append(a)
-            for incoming in from_nodes:
-                if incoming.visualize_edges:
-                    node_id = incoming.get_id()
-                    if node_id.endswith(".queue"):
-                        node_id = node_id[:-len(".queue")]
-                    if node_id in element_to_prototype:
-                        node_id = element_to_prototype[node_id]
-                    if node_id in self._nodes:
-                        other_viznode = self._nodes[node_id]
-                        self._edges.append(Edge(start=(other_viznode, Hook.RIGHT), end=(viznode, Hook.LEFT)))
-            for outgoing in to_nodes:
-                if outgoing.visualize_edges:
-                    node_id = outgoing.get_id()
-                    if node_id.endswith(".queue"):
-                        node_id = node_id[:-len(".queue")]
-                    if node_id in element_to_prototype:
-                        node_id = element_to_prototype[node_id]
-                    if node_id in self._nodes:
-                        other_viznode = self._nodes[node_id]
-                        self._edges.append(Edge(start=(viznode, Hook.RIGHT), end=(other_viznode, Hook.LEFT)))
-        layout_loaded = False
-        if layout_file is not None:
-            try:
-                self.__load_layout(layout_file)
-                layout_loaded = True
-            except FileNotFoundError as e:
-                print("WARNING: could not load the layout because of the exception below.\nauto-layout will be used.\n", e)
-        if not layout_loaded:
-            self.__layout()        
+                if node is not None:
+                    # Update display to show any selection changes
+                    self.update_display()
+        super().mousePressEvent(event)
     
-    def play(self):
-        self.__playing = True
-        while self.__playing:
-            fired_binding = self._problem.step()
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        """Handle mouse release events"""
+        if event.button() == Qt.MouseButton.LeftButton:
+            x = int(event.position().x())
+            y = int(event.position().y())
+            self.mouse_released.emit(x, y, 1)
             
-            if fired_binding != None:
-                # Dispatch BINDING_FIRED event
-                evt = create_event(EventType.BINDING_FIRED, fired=fired_binding, sim=self._problem)
-                self._event_dispatcher.dispatch(self, evt)
-
-            pygame.time.delay(self._play_step_delay)
-
-    def action_faster(self):
-        self._play_step_delay = max(100, self._play_step_delay - 100)
-
-    def action_slower(self):
-        self._play_step_delay = min(1000, self._play_step_delay + 100)
-
-    def action_play(self):
-        if not self.__playing:
-            threading.Thread(target=self.play).start()
-
-    def action_stop(self):
-        self.__playing = False
-
-    def __draw(self):
-        self.__screen = pygame.Surface((self._size[0]/self._zoom_level, self._size[1]/self._zoom_level))
-        self.__win.fill(TUE_GREY)
-        self.__screen.fill(TUE_GREY)
-        for shape in self._edges:
-            shape.draw(self.__screen)
-        for shape in self._nodes.values():
-            shape._curr_time = self._problem.clock
-            shape.draw(self.__screen)
-        # scale the entire screen using the self._zoom_level and draw it in the window
-        
-        # Dispatch RENDER_SIM event
-        evt = create_event(EventType.RENDER_SIM, screen=self.__screen)
-        self._event_dispatcher.dispatch(self, evt)
-
-        self.__screen.get_width()
-        self.__win.blit(pygame.transform.smoothscale(self.__screen, (self._size[0], self._size[1])), (0, 0))
-        
-        # Dispatch RENDER_UI event
-        evt = create_event(EventType.RENDER_UI, window=self.__win)
-        self._event_dispatcher.dispatch(self, evt)
-
-        # flip
-        pygame.display.flip()
-
-    def action_step(self):
-        if not self.__playing:
-            self._problem.step()
+            # If we have a visualisation, let it handle the event
+            # The visualization will dispatch events through its centralized dispatcher
+            if self._panel is not None:
+                self._panel.handle_mouse_release((x, y), 1)
+                self.update_display()
+        super().mouseReleaseEvent(event)
     
-    def __layout(self):
-        graph = igraph.Graph()
-        graph.to_directed()
-        for node in self._nodes.values():
-            graph.add_vertex(node.get_id())
-        for edge in self._edges:            
-            graph.add_edge(edge.get_start_node().get_id(), edge.get_end_node().get_id())        
-        if self._layout_algorithm == "auto":
-            layout = graph.layout(layout="auto", )
-        elif self._layout_algorithm == "sugiyama":
-            layout = graph.layout_sugiyama()
-        elif self._layout_algorithm == "davidson_harel":
-            layout = graph.layout_davidson_harel()
-        elif self._layout_algorithm == "grid":
-            layout = graph.layout_grid()
-        else:
-            raise Exception(f"Unknown layout algorithm: {self._layout_algorithm}")
-        layout.rotate(-90)
-        layout.scale(self._node_spacing)
-        boundaries = layout.boundaries(border=STANDARD_NODE_WIDTH*2)
-        layout.translate(-boundaries[0][0], -boundaries[0][1])
-        canvas_size = layout.boundaries(border=STANDARD_NODE_WIDTH*2)[1]
-        self._size = (min(MAX_SIZE[0], canvas_size[0]), min(MAX_SIZE[1], canvas_size[1]))
-        i = 0
-        for v in graph.vs:
-            xy = layout[i]
-            xy  = (round(xy[0]/self._grid_spacing)*self._grid_spacing, round(xy[1]/self._grid_spacing)*self._grid_spacing)
-            self._nodes[v["name"]].set_pos(xy)
-            i += 1
-
-    def save_layout(self, filename):
-            """
-            Saves the current layout of the nodes to a file.
-            This method can be called after the show method.
-
-            :param filename (str): The name of the file to save the layout to.
-            """
-            with open(filename, "w") as f:
-                f.write("version 2.0\n")
-                f.write(f"{self._zoom_level}\n")
-                f.write(f"{int(self._size[0])},{int(self._size[1])}\n")
-                for node in self._nodes.values():
-                    if "," in node.get_id() or "\n" in node.get_id():
-                        raise Exception("Node " + node.get_id() + ": Saving the layout cannot work if the node id contains a comma or hard return.")
-                    f.write(f"{node.get_id()},{node.get_pos()[0]},{node.get_pos()[1]}\n")
+    def mouseMoveEvent(self, event: QMouseEvent):
+        """Handle mouse move events"""
+        x = int(event.position().x())
+        y = int(event.position().y())
+        self.mouse_moved.emit(x, y)
+        
+        # If we have a visualisation, let it handle dragging
+        if self._panel is not None:
+            self._panel.handle_mouse_motion((x, y))
+            self.update_display()
+        super().mouseMoveEvent(event)
     
-    def __load_layout(self, filename):
-        with open(filename, "r") as f:
-            firstline = f.readline().strip()
-            if firstline == "version 2.0":
-                self._zoom_level = float(f.readline().strip())            
-                self._size = tuple(map(int, f.readline().strip().split(",")))
-            else:
-                self._size = tuple(map(int, firstline.split(",")))
-            for line in f:
-                id, x, y = line.strip().split(",")
-                if id in self._nodes:
-                    self._nodes[id].set_pos((int(x), int(y)))
-
-    def __get_node_at(self, pos):
-        scaled_pos = (pos[0] / self._zoom_level, pos[1] / self._zoom_level)
-        for node in self._nodes.values():
-            if node.get_pos()[0] - max(node._width/2, 10) <= scaled_pos[0] <= node.get_pos()[0] + max(node._width/2, 10) and \
-            node.get_pos()[1] - max(node._height/2, 10) <= scaled_pos[1] <= node.get_pos()[1] + max(node._height/2, 10):
-                return node
-        return None
-
-    def __drag(self, snap=False, pos=None):
-        nodes = self._selected_nodes[0]
-        org_pos = self._selected_nodes[1]
-        new_pos = pos if pos is not None else pygame.mouse.get_pos()
-        x_delta = (new_pos[0] - org_pos[0]) / self._zoom_level
-        y_delta = (new_pos[1] - org_pos[1]) / self._zoom_level
-        for node in nodes:
-            new_x = node.get_pos()[0] + x_delta
-            new_y = node.get_pos()[1] + y_delta
-            if snap:
-                new_x = round(new_x/self._grid_spacing)*self._grid_spacing
-                new_y = round(new_y/self._grid_spacing)*self._grid_spacing
-            node.set_pos((new_x, new_y))
-        self._selected_nodes = nodes, new_pos
-
-    def zoom(self, action):
-        """
-        Zooms the model. Action can be one of: increase, decrease, reset.
-
-        :param action: The zoom action to perform.
-        """
-        if action == "reset":
-            self._zoom_level = 1.0
-        elif action == "decrease":
-            self._zoom_level /= 1.1
-        elif action == "increase":
-            self._zoom_level *= 1.1
-        self._zoom_level = max(0.3, min(self._zoom_level, 3.0))  # clamp zoom level
-
-    def close(self):
-        """
-        Triggers the game loop showing the visualisation to close.
-        """
-        self.__playing = False
-        
-    def get_nodes(self):
-        """Get the dictionary of visualization nodes."""
-        return self._nodes
-    
-    def get_edges(self):
-        """Get the list of edges."""
-        return self._edges
-    
-    def get_problem(self):
-        """Get the simulation problem."""
-        return self._problem
-        
-    def render(self, surface: pygame.Surface) -> None:
-        """
-        Render the Petri net visualization onto the provided pygame surface (for IDE integration).
-        
-        :param surface: The pygame surface to render onto
-        """
-        # Get zoom level
-        zoom_level = self._zoom_level
-        
-        # Create a scaled surface for zooming
-        scaled_width = int(surface.get_width() / zoom_level)
-        scaled_height = int(surface.get_height() / zoom_level)
-        scaled_surface = pygame.Surface((scaled_width, scaled_height))
-        scaled_surface.fill(TUE_GREY)
-        
-        # Draw edges on scaled surface
-        for edge in self._edges:
-            edge.draw(scaled_surface)
-        
-        # Draw nodes on scaled surface
-        for node in self._nodes.values():
-            node._curr_time = self._problem.clock
-            node.draw(scaled_surface)
-        
-        # Scale the surface back to original size and blit
-        surface.fill(TUE_GREY)
-        scaled_back = pygame.transform.smoothscale(scaled_surface, (surface.get_width(), surface.get_height()))
-        surface.blit(scaled_back, (0, 0))
-        
-        # Dispatch RENDER_UI event to all modules
-        evt = create_event(EventType.RENDER_UI, window=surface)
-        self._event_dispatcher.dispatch(self, evt)
-    
-    def handle_mouse_press(self, pos: Tuple[int, int], button: int) -> Optional[object]:
-        """
-        Handle mouse press events (for IDE integration).
-        
-        :param pos: (x, y) position of the mouse click
-        :param button: Mouse button pressed (1=left, 2=middle, 3=right)
-        :return: The node that was clicked, or None
-        """
-        if button == 1:
-            node = self._get_node_at(pos)
-            if node is not None:
-                self._selected_nodes = [node], pos
-                # Dispatch event through centralized dispatcher
-                evt = create_event(EventType.NODE_CLICKED, node=node)
-                self._event_dispatcher.dispatch(self, evt)
-                return node
-            else:
-                self._selected_nodes = list(self._nodes.values()), pos
-                # Dispatch event through centralized dispatcher
-                evt = create_event(EventType.SELECTION_CLEAR)
-                self._event_dispatcher.dispatch(self, evt)
-        return None
-    
-    def handle_mouse_release(self, pos: Tuple[int, int], button: int) -> None:
-        """
-        Handle mouse release events (for IDE integration).
-        
-        :param pos: (x, y) position of the mouse release
-        :param button: Mouse button released
-        """
-        if button == 1 and self._selected_nodes is not None:
-            self._drag_nodes(snap=True, pos=pos)
-            self._selected_nodes = None
-    
-    def handle_mouse_motion(self, pos: Tuple[int, int]) -> None:
-        """
-        Handle mouse motion events (for IDE integration).
-        
-        :param pos: (x, y) position of the mouse
-        """
-        if self._selected_nodes is not None:
-            self._drag_nodes(pos=pos)
-    
-    def _get_node_at(self, pos: Tuple[int, int]) -> Optional[object]:
-        """
-        Get the node at the given position.
-        
-        :param pos: (x, y) position to check
-        :return: The node at the position, or None
-        """
-        scaled_pos = (pos[0] / self._zoom_level, pos[1] / self._zoom_level)
-        for node in self._nodes.values():
-            if node.get_pos()[0] - max(node._width/2, 10) <= scaled_pos[0] <= node.get_pos()[0] + max(node._width/2, 10) and \
-            node.get_pos()[1] - max(node._height/2, 10) <= scaled_pos[1] <= node.get_pos()[1] + max(node._height/2, 10):
-                return node
-        return None
-    
-    def _drag_nodes(self, snap: bool = False, pos: Optional[Tuple[int, int]] = None) -> None:
-        """
-        Drag the selected nodes.
-        
-        :param snap: Whether to snap to grid
-        :param pos: Position to drag to (if None, uses current mouse position)
-        """
-        if self._selected_nodes is None:
-            return
+    def wheelEvent(self, event: QWheelEvent):
+        """Handle mouse wheel events for zooming"""
+        if self._panel is not None:
+            # Get the angle delta (positive = scroll up = zoom in)
+            delta = event.angleDelta().y()
             
-        nodes = self._selected_nodes[0]
-        org_pos = self._selected_nodes[1]
-        new_pos = pos if pos is not None else (0, 0)
-        x_delta = (new_pos[0] - org_pos[0]) / self._zoom_level
-        y_delta = (new_pos[1] - org_pos[1]) / self._zoom_level
+            if delta > 0:
+                self._panel.zoom("increase")
+            else:
+                self._panel.zoom("decrease")
+            
+            # Update display to show zoom change
+            self.update_display()
         
-        for node in nodes:
-            new_x = node.get_pos()[0] + x_delta
-            new_y = node.get_pos()[1] + y_delta
-            if snap:
-                new_x = round(new_x/self._grid_spacing)*self._grid_spacing
-                new_y = round(new_y/self._grid_spacing)*self._grid_spacing
-            node.set_pos((new_x, new_y))
-        
-        self._selected_nodes = nodes, new_pos
-    
-    def step(self) -> object:
-        """
-        Execute one step of the simulation (for IDE integration).
-        
-        :return: The fired binding, or None
-        """
-        # Dispatch PRE_EVENT_LOOP event
-        evt = create_event(EventType.PRE_EVENT_LOOP, sim=self._problem)
-        self._event_dispatcher.dispatch(self, evt)
+        super().wheelEvent(event)
 
-        fired_binding = self._problem.step()
+
+class DebugPanel(QWidget):
+    """
+    Debug panel for textual debugging information.
+    """    
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
         
-        if fired_binding is not None:
-            # Dispatch BINDING_FIRED event
-            evt = create_event(EventType.BINDING_FIRED, fired=fired_binding, sim=self._problem)
-            self._event_dispatcher.dispatch(self, evt)
+        self._selected = None
+        self._description = None
 
-        # Dispatch POST_EVENT_LOOP event
-        evt = create_event(EventType.POST_EVENT_LOOP, sim=self._problem)
-        self._event_dispatcher.dispatch(self, evt)
+        # Main layout
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
+        self.setLayout(layout)
+        
+        # Text area for debug messages
+        self.text_edit = QTextEdit()
+        self.text_edit.setReadOnly(True)
+        layout.addWidget(self.text_edit)
 
-        return fired_binding
+        self.setMinimumHeight(100)
     
-    def get_zoom_level(self) -> float:
-        """Get the current zoom level."""
-        return self._zoom_level
+    def write_text(self, text):
+        """Write text to the debug panel"""
+        self.text_edit.append(text)
     
-    def set_zoom_level(self, zoom: float) -> None:
-        """Set the zoom level."""
-        self._zoom_level = max(0.3, min(zoom, 3.0))
+    def write_error(self, text):
+        """Write error text (in red) to the debug panel"""
+        self.text_edit.append(f'<span style="color: red;">{text}</span>')
+    
+    def write_warning(self, text):
+        """Write warning text (in orange) to the debug panel"""
+        self.text_edit.append(f'<span style="color: orange;">{text}</span>')
+    
+    def write_success(self, text):
+        """Write success text (in green) to the debug panel"""
+        self.text_edit.append(f'<span style="color: green;">{text}</span>')
+    
+    def clear_text(self):
+        """Clear all text from the debug panel"""
+        self.text_edit.clear()
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         return True
+
+
+class AttributePanel(QWidget):
+    """
+    Attribute panel for displaying node/object attributes.
+    
+    Implements IEventHandler interface to receive visualization events.
+    """
+    
+    # Signals for communication with the UI thread
+    description_update_signal = pyqtSignal(list)
+    description_update_selected = pyqtSignal(object)
+    update_signal = pyqtSignal()
+    clear_signal = pyqtSignal()
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self._selected = None
+        self._description = None
+        
+        # Main layout
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
+        self.setLayout(layout)
+        
+        # Text area for attributes
+        self.text_edit = QTextEdit()
+        self.text_edit.setReadOnly(True)
+        self.text_edit.setPlaceholderText("Select an object to view attributes...")
+        layout.addWidget(self.text_edit)
+        
+        self.setMinimumWidth(200)
+
+        # Connect signals to slots (this ensures UI updates happen on the main thread)
+        self.description_update_signal.connect(self._update_description_ui)
+        self.description_update_selected.connect(self._update_selected)
+        self.clear_signal.connect(self._clear_attributes_ui)
+        self.update_signal.connect(self._refresh)
+    
+    def set_attributes(self, attributes_dict):
+        """
+        Set attributes from a dictionary
+        
+        :param attributes_dict: Dictionary of attribute names and values
+        """
+        text = ""
+        for key, value in attributes_dict.items():
+            text += f"<b>{key}:</b> {value}<br>"
+        self.text_edit.setHtml(text)
+
+    def _clear_attributes_ui(self):
+        """
+        Clears the text in the attribute panel.
+        """
+        self.text_edit.clear()
+    
+    def _clear_description_ui(self):
+        """
+        Clears the description in the attribute panel.
+        """
+        self.text_edit.clear()
+
+    def set_selected(self, selected: 'Node'):
+        """
+        Emits signal to update selected node for the attribute panel.
+
+        :param selected: The selected visualization node (not the model node)
+        """
+        self.description_update_selected.emit(selected)
+
+    def _update_selected(self, selected: 'Node'):
+        """
+        Update selected node for the attribute panel.
+
+        :param selected: The selected visualization node (not the model node)
+        """
+        self._selected = selected
+        # Immediately fetch and display the description when a node is selected
+        if self._selected is not None and hasattr(self._selected, '_model_node'):
+            description = self._selected._model_node.get_description()
+            self._update_description_ui(description)
+        else:
+            self._clear_description_ui()
+
+    def _refresh(self):
+        """
+        Updates the attribute panel based on the selected object.
+        """
+        if self._selected is not None:
+            des = self._selected._model_node.get_description()
+            self._update_description_ui(des)
+
+    def refresh(self):
+        """
+        Emits a signal to refresh the attribute panel.
+        """
+        self.update_signal.emit()
+
+    def set_description(self, 
+            description: List[Tuple[str, 'Describable.Style']]):
+        """Triggers an update of the description.
+
+        :param description: List of sections to add as html
+        """
+        self.description_update_signal.emit(description)
+
+    def _update_description_ui(self, 
+            description: List[Tuple[str, 'Describable.Style']]):
+        """
+        Set attributes from a description
+        
+        :param description: List of sections to add as html
+        """
+        from simpn.simulator import Describable
+        
+        self._description = description
+        panel_text = """<head>
+        <style> 
+        table {
+            margin-left: 20px;
+        }
+
+        td {
+            border: 1px solid gray;
+            padding: 5px;
+            margin: 5px;
+        }
+        </style>
+        </head>
+        <body>
+        <main>"""
+
+        for text, style in description:
+            if style == Describable.Style.HEADING:
+                panel_text += f"<h2>{text}</h2>"
+            elif style == Describable.Style.NORMAL:
+                panel_text += f"<p>{text}</p>"
+            elif style == Describable.Style.BOXED:
+                panel_text += f"""<table><tr><td>{text}</td></tr></table>"""
+            elif style == Describable.Style.BOLD:
+                panel_text += f"<p><b>{text}</b></p>"
+            else:
+                panel_text += text
+
+        panel_text += "</main></body>"
+        self.text_edit.setHtml(panel_text)
+
+    def clear_attributes(self):
+        """Clear all attributes (thread-safe)"""
+        # Emit signal instead of directly updating UI
+        self.clear_signal.emit()
+    
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """
+        Handle a pygame event (part of IEventHandler interface).
+        
+        :param event: The pygame event to handle
+        :return: True to propagate event to other handlers
+        """
+        if check_event(event, EventType.NODE_CLICKED):
+            self.set_selected(event.node)
+        elif check_event(event, EventType.BINDING_FIRED):
+            self.refresh()
+        elif check_event(event, EventType.SELECTION_CLEAR):
+            self.set_selected(None)
+            self.clear_attributes()
+        return True
+
+    def firing(self, *args, **kwargs):
+        """
+        Called after a binding is fired in the simulation.
+        """
+        self.refresh()
+
+class MainWindow(QMainWindow):
+    def __init__(self, as_application=False):
+        """
+        Main window for the simulation. The main window can be created from code or by calling the main function below.
+        If it is created from code, it is expected to set a simulation using set_simulation().
+        If it is created as an application, the load button is visible to load a BPMN file, instead.
+
+        :param as_application: If True, the window will be treated as a main application.
+        """
+        super().__init__()
+
+        # Set up the main window
+        self.setWindowTitle("SimPN")
+        self.setGeometry(100, 100, 800, 600)
+        
+        # Set window icon
+        logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'logo.png')
+        if os.path.exists(logo_path):
+            self.setWindowIcon(QIcon(logo_path))
+
+        # Create pygame widget
+        self.pygame_widget = PygameWidget(640, 480)
+
+        # Add the Pygame widget to the main window
+        layout = QVBoxLayout()
+        layout.addWidget(self.pygame_widget)
+
+        central_widget = QWidget(self)
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
+        
+        # Create main toolbar
+        main_toolbar = QToolBar("Main Toolbar")
+        main_toolbar.setMovable(False)
+        main_toolbar.setStyleSheet("""
+            QToolBar {
+                spacing: 5px;
+                padding: 3px;
+                border: none;
+            }
+            QToolButton {
+                padding: 3px;
+                margin: 1px;
+            }
+        """)
+        
+        # Add open button to the toolbar
+        if as_application:
+            open_action = main_toolbar.addAction("Open")
+            open_action.setToolTip("Open a BPMN file")
+            icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'open.png')
+            open_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+            open_action.triggered.connect(self.open_bpmn_file)
+
+            # Add separator
+            main_toolbar.addSeparator()
+
+        # Add Step button to toolbar
+        step_action = main_toolbar.addAction("Step")        
+        step_action.setToolTip("Execute one simulation step")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_step.png')
+        step_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        step_action.triggered.connect(self.step_simulation)
+        step_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.step_action = step_action  # Store reference to enable/disable later
+        
+        # Add Play button to toolbar
+        play_action = main_toolbar.addAction("Play")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_play.png')
+        play_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        play_action.setToolTip("Start continuous simulation")
+        play_action.triggered.connect(self.play_simulation)
+        play_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.play_action = play_action
+        
+        # Add Stop button to toolbar
+        stop_action = main_toolbar.addAction("Stop")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_stop.png')
+        stop_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        stop_action.setToolTip("Stop continuous simulation")
+        stop_action.triggered.connect(self.stop_simulation)
+        stop_action.setEnabled(False)  # Disabled until playing
+        self.stop_action = stop_action
+        
+        # Add separator
+        main_toolbar.addSeparator()
+        
+        # Add Faster button to toolbar
+        faster_action = main_toolbar.addAction("Faster")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_faster.png')
+        faster_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        faster_action.setToolTip("Increase simulation speed")
+        faster_action.triggered.connect(self.faster_simulation)
+        faster_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.faster_action = faster_action
+        
+        # Add Slower button to toolbar
+        slower_action = main_toolbar.addAction("Slower")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_slower.png')
+        slower_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        slower_action.setToolTip("Decrease simulation speed")
+        slower_action.triggered.connect(self.slower_simulation)
+        slower_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.slower_action = slower_action
+        
+        # Add separator
+        main_toolbar.addSeparator()
+        
+        # Add Zoom In button to toolbar
+        zoom_in_action = main_toolbar.addAction("Zoom In")
+        # load the icon from assets/img/zoom-in.png
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'zoom-in.png')
+        zoom_in_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        zoom_in_action.setToolTip("Zoom in (Ctrl++)")
+        zoom_in_action.setShortcut("Ctrl++")
+        zoom_in_action.triggered.connect(self.zoom_in)
+        zoom_in_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.zoom_in_action = zoom_in_action
+        
+        # Add Zoom Out button to toolbar
+        zoom_out_action = main_toolbar.addAction("Zoom Out")
+        # load the icon from assets/img/zoom-out.png
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'zoom-out.png')
+        zoom_out_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        zoom_out_action.setToolTip("Zoom out (Ctrl+-)")
+        zoom_out_action.setShortcut("Ctrl+-")
+        zoom_out_action.triggered.connect(self.zoom_out)
+        zoom_out_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.zoom_out_action = zoom_out_action
+        
+        # Add Zoom Reset button to toolbar
+        zoom_reset_action = main_toolbar.addAction("Zoom 100%")
+        # load the icon from assets/img/zoom-reset.png
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'zoom-reset.png')
+        zoom_reset_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        zoom_reset_action.setToolTip("Reset zoom to 100% (Ctrl+0)")
+        zoom_reset_action.setShortcut("Ctrl+0")
+        zoom_reset_action.triggered.connect(self.zoom_reset)
+        zoom_reset_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.zoom_reset_action = zoom_reset_action
+        
+        # Add toolbar to main window
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, main_toolbar)
+        
+        # Initialize simulation control variables
+        self._playing = False
+        self._play_step_delay = 500  # milliseconds between steps
+        self._pthread = None
+        self._thread_running = False  # Flag to control the thread loop
+        
+        # Create debug panel as a dock widget
+        self.debug_dock = QDockWidget("Debug Console", self)
+        self.debug_panel = DebugPanel()
+        self.debug_dock.setWidget(self.debug_panel)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.debug_dock)
+        
+        # Create toolbar for the debug dock
+        debug_toolbar = QToolBar("Debug Toolbar")
+        debug_toolbar.setMovable(False)
+        debug_toolbar.setStyleSheet("""
+            QToolBar {
+                spacing: 3px;
+                padding: 2px;
+                border: none;
+            }
+            QToolButton {
+                padding: 2px;
+                margin: 0px;
+            }
+        """)
+        
+        # Add title label to toolbar
+        title_label = QLabel("  Debug Console")
+        title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        debug_toolbar.addWidget(title_label)
+        
+        # Add spacer to push buttons to the right
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        debug_toolbar.addWidget(spacer)
+        
+        # Clear button with icon
+        clear_action = debug_toolbar.addAction("Clear")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'clear.png')
+        clear_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        clear_action.setToolTip("Clear debug console")
+        clear_action.triggered.connect(self.debug_panel.clear_text)
+        
+        # Close button with icon
+        close_action = debug_toolbar.addAction("Close")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'close.png')
+        close_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        close_action.setToolTip("Close debug console")
+        close_action.triggered.connect(self.debug_dock.hide)
+        
+        self.debug_dock.setTitleBarWidget(debug_toolbar)
+        
+        # Create attribute panel as a dock widget
+        self.attribute_dock = QDockWidget("Attributes", self)
+        self.attribute_panel = AttributePanel()
+        self.attribute_dock.setWidget(self.attribute_panel)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.attribute_dock)
+        
+        # Create toolbar for the attribute dock
+        attr_toolbar = QToolBar("Attribute Toolbar")
+        attr_toolbar.setMovable(False)
+        attr_toolbar.setStyleSheet("""
+            QToolBar {
+                spacing: 3px;
+                padding: 2px;
+                border: none;
+            }
+            QToolButton {
+                padding: 2px;
+                margin: 0px;
+            }
+        """)
+        
+        # Add title label to attribute toolbar
+        attr_title_label = QLabel("  Attributes")
+        attr_title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        attr_toolbar.addWidget(attr_title_label)
+        
+        # Add spacer to push close button to the right
+        attr_spacer = QWidget()
+        attr_spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        attr_toolbar.addWidget(attr_spacer)
+        
+        # Close button with icon
+        attr_close_action = attr_toolbar.addAction("Close")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'close.png')
+        attr_close_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        attr_close_action.setToolTip("Close attribute panel")
+        attr_close_action.triggered.connect(self.attribute_dock.hide)
+        
+        self.attribute_dock.setTitleBarWidget(attr_toolbar)
+                
+        # Create menu bar
+        self.create_menus()
+    
+    def create_monochrome_icon(self, standard_pixmap):
+        """Create a monochrome version of a standard icon"""
+        # Get the original icon
+        original_icon = self.style().standardIcon(standard_pixmap)
+        pixmap = original_icon.pixmap(QSize(16, 16))
+        
+        # Create a new pixmap with the same size
+        mono_pixmap = QPixmap(pixmap.size())
+        mono_pixmap.fill(Qt.GlobalColor.transparent)
+        
+        # Create a painter to draw the monochrome version
+        painter = QPainter(mono_pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+        painter.fillRect(mono_pixmap.rect(), QColor(100, 100, 100))  # Dark gray
+        painter.end()
+        
+        return QIcon(mono_pixmap)
+    
+    def create_monochrome_icon_from_file(self, file_path):
+        """Create a monochrome version of an icon from a PNG file"""
+        if not os.path.exists(file_path):
+            # Return empty icon if file doesn't exist
+            return QIcon()
+        
+        # Load the pixmap from file
+        pixmap = QPixmap(file_path)
+        
+        # Resize to standard icon size if needed
+        if pixmap.width() != 16 or pixmap.height() != 16:
+            pixmap = pixmap.scaled(QSize(16, 16), Qt.AspectRatioMode.KeepAspectRatio, 
+                                  Qt.TransformationMode.SmoothTransformation)
+        
+        # Create a new pixmap with the same size
+        mono_pixmap = QPixmap(pixmap.size())
+        mono_pixmap.fill(Qt.GlobalColor.transparent)
+        
+        # Create a painter to draw the monochrome version
+        painter = QPainter(mono_pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+        painter.fillRect(mono_pixmap.rect(), QColor(100, 100, 100))  # Dark gray
+        painter.end()
+        
+        return QIcon(mono_pixmap)
+    
+    def create_menus(self):
+        """Create the menu bar"""
+        menubar = self.menuBar()
+        
+        # Window menu
+        window_menu = menubar.addMenu("Window")
+        
+        # Debug View action
+        self.debug_view_action = window_menu.addAction("Debug View")
+        self.debug_view_action.setCheckable(True)
+        self.debug_view_action.setChecked(True)  # Initially visible
+        self.debug_view_action.triggered.connect(self.toggle_debug_panel)
+        
+        # Attribute View action
+        self.attribute_view_action = window_menu.addAction("Attribute View")
+        self.attribute_view_action.setCheckable(True)
+        self.attribute_view_action.setChecked(True)  # Initially visible
+        self.attribute_view_action.triggered.connect(self.toggle_attribute_panel)
+        
+        # Connect the dock widgets' visibility changed signals to update the menu checkmarks
+        self.debug_dock.visibilityChanged.connect(self.on_debug_panel_visibility_changed)
+        self.attribute_dock.visibilityChanged.connect(self.on_attribute_panel_visibility_changed)
+    
+    def toggle_debug_panel(self):
+        """Toggle the visibility of the debug panel"""
+        if self.debug_dock.isVisible():
+            self.debug_dock.hide()
+        else:
+            self.debug_dock.show()
+    
+    def on_debug_panel_visibility_changed(self, visible):
+        """Update the menu checkmark when the debug panel visibility changes"""
+        self.debug_view_action.setChecked(visible)
+    
+    def toggle_attribute_panel(self):
+        """Toggle the visibility of the attribute panel"""
+        if self.attribute_dock.isVisible():
+            self.attribute_dock.hide()
+        else:
+            self.attribute_dock.show()
+    
+    def on_attribute_panel_visibility_changed(self, visible):
+        """Update the menu checkmark when the attribute panel visibility changes"""
+        self.attribute_view_action.setChecked(visible)
+    
+    def on_pygame_mouse_click(self, x, y):
+        """Handle mouse clicks on the pygame widget"""
+        # Display coordinates in attribute panel
+        attrs = {
+            'Click Position': '',
+            'X': x,
+            'Y': y
+        }
+        
+        # If we have a visualisation and a node was clicked, show node info
+        viz = self.pygame_widget.get_panel()
+        if viz is not None:
+            node = viz._get_node_at((x, y))
+            if node is not None:
+                attrs['Node ID'] = node.get_id()
+                attrs['Node Type'] = type(node).__name__
+                if hasattr(node, '_model_node') and node._model_node is not None:
+                    model_node = node._model_node
+                    if hasattr(model_node, 'marking'):
+                        attrs['Token Count'] = len(model_node.marking)
+        
+        self.attribute_panel.set_attributes(attrs)
+    
+    def open_bpmn_file(self):
+        # open a file dialog to select a BPMN file
+        from PyQt6.QtWidgets import QFileDialog
+        file_dialog = QFileDialog(self)
+        file_dialog.setNameFilter("BPMN Files (*.bpmn);;All Files (*)")
+        if file_dialog.exec():
+            selected_files = file_dialog.selectedFiles()
+            if selected_files:
+                bpmn_file = selected_files[0]
+                self.debug_panel.write_text(f"Selected BPMN file: {bpmn_file}")
+                from simpn.bpmn_parser import BPMNParser
+                parser = BPMNParser()
+                parser.parse_file(bpmn_file)
+                simproblem = parser.transform()
+                model_panel = ModelPanel(simproblem)
+                self.set_simulation(model_panel)
+
+    def set_simulation(self, model_panel: ModelPanel):
+        """
+        Load a simulation problem into the IDE.
+        
+        :param sim_problem: The simulation problem to visualize
+        :param layout_file: Optional layout file path
+        """
+        try:
+            # If there is an existing simulation, stop its thread, deregister event handlers
+            if self.pygame_widget.get_panel() is not None:
+                if self._thread_running:
+                    self._thread_running = False
+                    if self._pthread is not None and self._pthread.is_alive():
+                        self._pthread.join(timeout=1.0)
+                # Deregister event handlers
+                self._event_dispatcher.unregister_handler(self.pygame_widget.get_panel())
+                self._event_dispatcher.unregister_handler(self.clock_module)
+                self._event_dispatcher.unregister_handler(self.attribute_panel)
+
+            # Create the clock
+            self.clock_module = ClockModule()
+
+            # Attach event handlers
+            self._event_dispatcher.register_handler(model_panel)
+            self._event_dispatcher.register_handler(self.clock_module)
+            self._event_dispatcher.register_handler(self.attribute_panel)
+
+            # Set it in the pygame widget
+            self.pygame_widget.set_panel(model_panel)
+
+            # Dispatch the VISUALIZATION_CREATED event
+            evt = create_event(EventType.VISUALIZATION_CREATED, sim=model_panel.get_problem())
+            self._event_dispatcher.dispatch(self, evt)            
+
+            # Enable simulation controls
+            self.step_action.setEnabled(True)
+            self.play_action.setEnabled(True)
+            self.faster_action.setEnabled(True)
+            self.slower_action.setEnabled(True)
+            self.zoom_in_action.setEnabled(True)
+            self.zoom_out_action.setEnabled(True)
+            self.zoom_reset_action.setEnabled(True)
+            
+            # Update the display
+            self.pygame_widget.update_display()
+
+            # Start the background thread for continuous updates
+            self._thread_running = True
+            self._pthread = threading.Thread(target=self._play_loop, daemon=True)
+            self._pthread.start()
+                        
+        except Exception as e:
+            self.debug_panel.write_error(f"Failed to load simulation: {str(e)}")
+            self.debug_panel.write_error(traceback.format_exc())
+    
+    def step_simulation(self):
+        """Execute one step of the simulation."""
+        viz = self.pygame_widget.get_panel()
+        if viz is not None:
+            viz.step()
+            self.pygame_widget.update_display()
+    
+    def play_simulation(self):
+        """Start continuous simulation playback."""
+        if not self._playing:
+            self._playing = True
+            self.play_action.setEnabled(False)
+            self.step_action.setEnabled(False)
+            self.stop_action.setEnabled(True)
+            
+    
+    def _play_loop(self):
+        """The main play loop that runs in a separate thread."""
+        import time
+        now = time.time()
+        last_tick = now
+        while self._thread_running:
+            now = time.time()
+            viz = self.pygame_widget.get_panel()
+            if viz is not None:
+                # Don't call pygame.event.get() here - it causes threading issues on macOS
+                # PyQt6 handles all events through its own event system
+                if self._playing and last_tick + (self._play_step_delay / 1000.0) < now:
+                        viz.step()
+                        
+                        last_tick = now
+                self.pygame_widget.update_display()
+            time.sleep(0.033)  # Sleep for ~30 FPS instead of using pygame clock
+    
+    def stop_simulation(self):
+        """Stop continuous simulation playback."""
+        self._playing = False
+        self.play_action.setEnabled(True)
+        self.step_action.setEnabled(True)
+        self.stop_action.setEnabled(False)
+    
+    def faster_simulation(self):
+        """Increase simulation speed by decreasing delay."""
+        self._play_step_delay = max(100, self._play_step_delay - 100)
+        self.debug_panel.write_text(f"Simulation speed: {1000/self._play_step_delay:.1f} steps/second")
+    
+    def slower_simulation(self):
+        """Decrease simulation speed by increasing delay."""
+        self._play_step_delay = min(1000, self._play_step_delay + 100)
+        self.debug_panel.write_text(f"Simulation speed: {1000/self._play_step_delay:.1f} steps/second")
+    
+    def zoom_in(self):
+        """Zoom in on the visualization."""
+        viz = self.pygame_widget.get_panel()
+        if viz is not None:
+            viz.zoom("increase")
+            zoom_level = viz.get_zoom_level()
+            self.debug_panel.write_text(f"Zoom: {zoom_level*100:.0f}%")
+            self.pygame_widget.update_display()
+    
+    def zoom_out(self):
+        """Zoom out on the visualization."""
+        viz = self.pygame_widget.get_panel()
+        if viz is not None:
+            viz.zoom("decrease")
+            zoom_level = viz.get_zoom_level()
+            self.debug_panel.write_text(f"Zoom: {zoom_level*100:.0f}%")
+            self.pygame_widget.update_display()
+    
+    def zoom_reset(self):
+        """Reset zoom to 100%."""
+        viz = self.pygame_widget.get_panel()
+        if viz is not None:
+            viz.zoom("reset")
+            self.debug_panel.write_text(f"Zoom: 100%")
+            self.pygame_widget.update_display()
+    
+    def closeEvent(self, event):
+        """Handle window close event - stop the background thread cleanly."""
+        # Stop the background thread
+        self._thread_running = False
+        self._playing = False
+        
+        # Wait for thread to finish (with timeout)
+        if self._pthread is not None and self._pthread.is_alive():
+            self._pthread.join(timeout=1.0)
+        
+        # Accept the close event
+        event.accept()
+
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        return True
+
+
+class Visualisation:
+    def __init__(self, sim_problem=None, 
+                 layout_file=None, 
+                 grid_spacing=50, 
+                 node_spacing=100, 
+                 layout_algorithm="sugiyama",
+                 extra_modules:List=None):
+        self.sim_problem = sim_problem
+        self.layout_file = layout_file
+        self.grid_spacing = grid_spacing
+        self.node_spacing = node_spacing
+        self.layout_algorithm = layout_algorithm
+        self.extra_modules = extra_modules if extra_modules is not None else []
+
+        self.app = QApplication(sys.argv)
+        self.event_dispatcher = EventDispatcher()
+        
+        # Set application icon for taskbar/dock
+        logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'logo.png')
+        if os.path.exists(logo_path):
+            self.app.setWindowIcon(QIcon(logo_path))
+
+        # Create the main window
+        if sim_problem is None:
+            self.main_window = MainWindow(as_application=True)
+            self.event_dispatcher.register_handler(self.main_window)
+        else:
+            self.main_window = MainWindow(as_application=False)
+            self.event_dispatcher.register_handler(self.main_window)
+            model_panel = ModelPanel(
+                sim_problem,
+                layout_file=layout_file,
+                grid_spacing=grid_spacing,
+                node_spacing=node_spacing,
+                layout_algorithm=layout_algorithm
+            )
+            self.main_window.set_simulation(model_panel)            
+
+    def show(self):
+        self.main_window.show()
+        self.app.exec()
+    
+    def save_layout(self, layout_file: str):
+        """Save the current layout to a file."""
+        viz = self.main_window.pygame_widget.get_panel()
+        if viz is not None:
+            viz.save_layout(layout_file)
+
+
+if __name__ == "__main__":
+    visualisation = Visualisation()
+    visualisation.show()

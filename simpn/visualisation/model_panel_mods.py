@@ -1,8 +1,5 @@
 """
-UI modules for the visualization framework.
-
-This module contains UI components that can be added to visualizations
-to enhance the user interface with clocks, panels, and other controls.
+This file contains modules that can appear on the (PyGame) model panel.
 """
 import pygame
 from pygame.surface import Surface
@@ -11,9 +8,9 @@ from simpn.assets import get_img_asset
 from simpn.visualisation.events import EventType, IEventHandler, check_event
 
 
-class UIClockModule(IEventHandler):
+class ClockModule(IEventHandler):
     """
-    This modules handles creating a clock in the top right corner to
+    This modules handles creating a clock to
     show the current simulation time to a predefined precision.
 
     :param `precision=2`:
