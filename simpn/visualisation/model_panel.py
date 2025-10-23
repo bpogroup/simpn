@@ -741,5 +741,9 @@ class ModelPanel:
         """Set the zoom level."""
         self._zoom_level = max(0.3, min(zoom, 3.0))
 
+    def listen_to(self):
+        """Specify which event types this handler listens to."""
+        return []  # ModelPanel doesn't listen to any events currently
+
     def handle_event(self, event: pygame.event.Event) -> bool:
         return True

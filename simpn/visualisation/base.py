@@ -1,6 +1,7 @@
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import threading
-import os
 import sys
 from pathlib import Path
 from PyQt6.QtCore import Qt, QSize, QSettings, QStandardPaths
@@ -183,6 +184,10 @@ class DebugPanel(QWidget):
         """Clear all text from the debug panel"""
         self.text_edit.clear()
 
+    def listen_to(self):
+        """Specify which event types this handler listens to."""
+        return []  # DebugPanel doesn't listen to any events currently
+
     def handle_event(self, event: pygame.event.Event) -> bool:
         return True
 
@@ -298,6 +303,10 @@ class AttributePanel(QWidget):
 
         panel_text += "</main></body>"
         self.text_edit.setHtml(panel_text)
+    
+    def listen_to(self):
+        """Specify which event types this handler listens to."""
+        return [EventType.NODE_CLICKED, EventType.BINDING_FIRED, EventType.SELECTION_CLEAR]
     
     def handle_event(self, event: pygame.event.Event) -> bool:
         """
@@ -924,6 +933,10 @@ class MainWindow(QMainWindow):
 
         # Accept the close event
         event.accept()
+
+    def listen_to(self):
+        """Specify which event types this handler listens to."""
+        return []  # MainWindow doesn't listen to any events currently
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         return True

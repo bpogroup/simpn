@@ -29,8 +29,15 @@ class IEventHandler(Protocol):
         :param event: The pygame event to handle
         :return: True if the event should propagate to other handlers, False to stop propagation
         """
-        ...
+        raise NotImplementedError("Must implement handle_event method")
 
+    def listen_to(self) -> List[EventType]:
+        """
+        Specify which event types this handler listens to.
+        
+        :return: A list of EventType enums
+        """
+        raise NotImplementedError("Must implement listen_to method")
 
 class EventDispatcher:
     """
@@ -45,17 +52,15 @@ class EventDispatcher:
     def __init__(self):
         self._handlers: dict[EventType, List[IEventHandler]] = {}
 
-    def register_handler(self, handler: IEventHandler, listens_to: List[EventType] = None) -> None:
+    def register_handler(self, handler: IEventHandler) -> None:
         """
         Register an event handler to listen to specific event types.
         Also sets the event dispatcher reference on the handler.
         
         :param handler: The handler to register (must implement IEventHandler)
-        :param listens_to: The event types to listen to (defaults to all events)
         """
-
-        if listens_to is None:
-            listens_to = list(EventType)
+        listens_to = handler.listen_to()
+        
         for event_type in listens_to:
             if event_type not in self._handlers:
                 self._handlers[event_type] = []

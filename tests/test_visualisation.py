@@ -76,18 +76,26 @@ class TestEventDispatching(unittest.TestCase):
         panel.action_stop()
     
     def test_register_single_handler(self):
-        handler = DummyEventHandler()
-        self.event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
+        class RenderUIHandler(DummyEventHandler):
+            def listen_to(self):
+                return [EventType.RENDER_UI]
+        
+        handler = RenderUIHandler()
+        self.event_dispatcher.register_handler(handler)
         
         self.run_simulation(duration_ms=1000)
         
         self.assertTrue(handler.render_ui_called)
 
     def test_register_multiple_handlers(self):
-        handler1 = DummyEventHandler()
-        handler2 = DummyEventHandler()
-        self.event_dispatcher.register_handler(handler1, [EventType.RENDER_UI])
-        self.event_dispatcher.register_handler(handler2, [EventType.RENDER_UI])
+        class RenderUIHandler(DummyEventHandler):
+            def listen_to(self):
+                return [EventType.RENDER_UI]
+        
+        handler1 = RenderUIHandler()
+        handler2 = RenderUIHandler()
+        self.event_dispatcher.register_handler(handler1)
+        self.event_dispatcher.register_handler(handler2)
         
         self.run_simulation(duration_ms=1000)
         
@@ -95,8 +103,12 @@ class TestEventDispatching(unittest.TestCase):
         self.assertTrue(handler2.render_ui_called)
 
     def test_handler_multiple_event_types(self):
-        handler = DummyEventHandler()
-        self.event_dispatcher.register_handler(handler, [EventType.RENDER_UI, EventType.BINDING_FIRED])
+        class MultiEventHandler(DummyEventHandler):
+            def listen_to(self):
+                return [EventType.RENDER_UI, EventType.BINDING_FIRED]
+        
+        handler = MultiEventHandler()
+        self.event_dispatcher.register_handler(handler)
         
         self.run_simulation(duration_ms=1500)
         
@@ -104,8 +116,12 @@ class TestEventDispatching(unittest.TestCase):
         self.assertTrue(handler.binding_fired_called)
 
     def test_unregister_handler(self):
-        handler = DummyEventHandler()
-        self.event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
+        class RenderUIHandler(DummyEventHandler):
+            def listen_to(self):
+                return [EventType.RENDER_UI]
+        
+        handler = RenderUIHandler()
+        self.event_dispatcher.register_handler(handler)
         self.event_dispatcher.unregister_handler(handler)
         
         self.run_simulation(duration_ms=1000)
@@ -113,8 +129,12 @@ class TestEventDispatching(unittest.TestCase):
         self.assertFalse(handler.render_ui_called)
 
     def test_handler_not_called_for_unregistered_event(self):
-        handler = DummyEventHandler()
-        self.event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
+        class RenderUIHandler(DummyEventHandler):
+            def listen_to(self):
+                return [EventType.RENDER_UI]
+        
+        handler = RenderUIHandler()
+        self.event_dispatcher.register_handler(handler)
         
         self.run_simulation(duration_ms=1500)
         
@@ -122,10 +142,18 @@ class TestEventDispatching(unittest.TestCase):
         self.assertFalse(handler.binding_fired_called)
 
     def test_multiple_handlers_independent(self):
-        handler1 = DummyEventHandler()
-        handler2 = DummyEventHandler()
-        self.event_dispatcher.register_handler(handler1, [EventType.RENDER_UI])
-        self.event_dispatcher.register_handler(handler2, [EventType.BINDING_FIRED])
+        class RenderUIHandler(DummyEventHandler):
+            def listen_to(self):
+                return [EventType.RENDER_UI]
+        
+        class BindingFiredHandler(DummyEventHandler):
+            def listen_to(self):
+                return [EventType.BINDING_FIRED]
+        
+        handler1 = RenderUIHandler()
+        handler2 = BindingFiredHandler()
+        self.event_dispatcher.register_handler(handler1)
+        self.event_dispatcher.register_handler(handler2)
         
         self.run_simulation(duration_ms=1500)
         
@@ -204,18 +232,26 @@ class TestBasicVisualisation(unittest.TestCase):
         self.run_simulation(duration_ms=1500)
 
     def test_render_ui(self):
-        handler = DummyEventHandler()
+        class RenderUIHandler(DummyEventHandler):
+            def listen_to(self):
+                return [EventType.RENDER_UI]
+        
+        handler = RenderUIHandler()
         # Register the handler to listen for RENDER_UI events
-        self.event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
+        self.event_dispatcher.register_handler(handler)
         
         self.run_simulation(duration_ms=1500)
 
         self.assertTrue(handler.render_ui_called)
 
     def test_firing(self):
-        handler = DummyEventHandler()
+        class BindingFiredHandler(DummyEventHandler):
+            def listen_to(self):
+                return [EventType.BINDING_FIRED]
+        
+        handler = BindingFiredHandler()
         # Register the handler to listen for BINDING_FIRED events
-        self.event_dispatcher.register_handler(handler, [EventType.BINDING_FIRED])
+        self.event_dispatcher.register_handler(handler)
 
         self.run_simulation(duration_ms=1500)
 
@@ -264,8 +300,12 @@ class TestBasicVisualisation(unittest.TestCase):
 
     def test_mouse_click_on_node(self):
         """Test clicking on a node in the visualization."""
-        handler = DummyEventHandler()
-        self.event_dispatcher.register_handler(handler, [EventType.NODE_CLICKED])
+        class NodeClickedHandler(DummyEventHandler):
+            def listen_to(self):
+                return [EventType.NODE_CLICKED]
+        
+        handler = NodeClickedHandler()
+        self.event_dispatcher.register_handler(handler)
         
         panel = self.main_window.pygame_widget.get_panel()
         self.main_window.show()

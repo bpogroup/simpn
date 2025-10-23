@@ -31,6 +31,10 @@ class ClockModule(IEventHandler):
         self._font = None
         self._format = "0.0"
 
+    def listen_to(self):
+        """Specify which event types this handler listens to."""
+        return [EventType.VISUALIZATION_CREATED, EventType.POST_EVENT_LOOP, EventType.RENDER_UI]
+
     def handle_event(self, event, *args, **kwargs):
         """Handle all events through the unified event system."""
         # Handle lifecycle events
