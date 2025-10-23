@@ -1,10 +1,9 @@
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-import threading
 import sys
 from pathlib import Path
-from PyQt6.QtCore import Qt, QSize, QSettings, QStandardPaths
+from PyQt6.QtCore import Qt, QSize, QSettings, QStandardPaths, QTimer
 from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QApplication, QFileDialog
 from simpn.visualisation.model_panel_mods import ClockModule
@@ -332,6 +331,7 @@ class MainWindow(QMainWindow):
         If it is created from code, it is expected to set a simulation using set_simulation().
         If it is created as an application, the load button is visible to load a BPMN file, instead.
 
+        :param event_dispatcher: The event dispatcher for handling visualization events
         :param as_application: If True, the window will be treated as a main application.
         """
         super().__init__()
@@ -490,8 +490,14 @@ class MainWindow(QMainWindow):
         # Initialize simulation control variables
         self._playing = False
         self._play_step_delay = 500  # milliseconds between steps
-        self._pthread = None
-        self._thread_running = False  # Flag to control the thread loop
+        
+        # Create timers for play mode and display updates
+        self._play_timer = QTimer(self)
+        self._play_timer.timeout.connect(self._on_play_timer)
+        
+        self._display_timer = QTimer(self)
+        self._display_timer.timeout.connect(self._on_display_timer)
+        self._display_timer.start(33)  # ~30 FPS
         
         # Create debug panel as a dock widget
         self.debug_dock = QDockWidget("Debug Console", self)
@@ -759,12 +765,8 @@ class MainWindow(QMainWindow):
         :param sim_problem: The simulation problem to visualize
         :param layout_file: Optional layout file path
         """
-        # If there is an existing simulation, stop its thread, deregister event handlers
+        # If there is an existing simulation, deregister event handlers
         if self.pygame_widget.get_panel() is not None:
-            if self._thread_running:
-                self._thread_running = False
-                if self._pthread is not None and self._pthread.is_alive():
-                    self._pthread.join(timeout=1.0)
             # Deregister event handlers
             self._event_dispatcher.unregister_handler(self.pygame_widget.get_panel())
             self._event_dispatcher.unregister_handler(self.clock_module)
@@ -801,12 +803,7 @@ class MainWindow(QMainWindow):
         self.clock_decrease_action.setEnabled(True)
         
         # Update the display
-        self.pygame_widget.update_display()
-
-        # Start the background thread for continuous updates
-        self._thread_running = True
-        self._pthread = threading.Thread(target=self._play_loop, daemon=True)
-        self._pthread.start()                        
+        self.pygame_widget.update_display()                        
     
     def step_simulation(self):
         """Execute one step of the simulation."""
@@ -823,24 +820,19 @@ class MainWindow(QMainWindow):
             self.step_action.setEnabled(False)
             self.stop_action.setEnabled(True)
             self.reset_action.setEnabled(False)
-            
-    def _play_loop(self):
-        """The main play loop that runs in a separate thread."""
-        import time
-        now = time.time()
-        last_tick = now
-        while self._thread_running:
-            now = time.time()
-            viz = self.pygame_widget.get_panel()
-            if viz is not None:
-                # Don't call pygame.event.get() here - it causes threading issues on macOS
-                # PyQt6 handles all events through its own event system
-                if self._playing and last_tick + (self._play_step_delay / 1000.0) < now:
-                        viz.step()
-                        
-                        last_tick = now
-                self.pygame_widget.update_display()
-            time.sleep(0.033)  # Sleep for ~30 FPS instead of using pygame clock
+            self._play_timer.start(self._play_step_delay)
+    
+    def _on_play_timer(self):
+        """Called by timer to execute simulation steps during play mode."""
+        viz = self.pygame_widget.get_panel()
+        if viz is not None and self._playing:
+            viz.step()
+    
+    def _on_display_timer(self):
+        """Called by timer to update the display (~30 FPS)."""
+        viz = self.pygame_widget.get_panel()
+        if viz is not None:
+            self.pygame_widget.update_display()
     
     def save_layout(self):
         """Save the current layout to a file if a file is currently open."""
@@ -865,6 +857,7 @@ class MainWindow(QMainWindow):
     def stop_simulation(self):
         """Stop continuous simulation playback."""
         self._playing = False
+        self._play_timer.stop()
         self.play_action.setEnabled(True)
         self.step_action.setEnabled(True)
         self.stop_action.setEnabled(False)
@@ -883,10 +876,14 @@ class MainWindow(QMainWindow):
     def faster_simulation(self):
         """Increase simulation speed by decreasing delay."""
         self._play_step_delay = max(100, self._play_step_delay - 100)
+        if self._playing:
+            self._play_timer.setInterval(self._play_step_delay)
     
     def slower_simulation(self):
         """Decrease simulation speed by increasing delay."""
         self._play_step_delay = min(1000, self._play_step_delay + 100)
+        if self._playing:
+            self._play_timer.setInterval(self._play_step_delay)
     
     def zoom_in(self):
         """Zoom in on the visualization."""
@@ -920,14 +917,11 @@ class MainWindow(QMainWindow):
             self.clock_module.decrease_precision()
 
     def closeEvent(self, event):
-        """Handle window close event - stop the background thread cleanly."""
-        # Stop the background thread
-        self._thread_running = False
+        """Handle window close event - stop timers cleanly."""
+        # Stop the timers
         self._playing = False
-        
-        # Wait for thread to finish (with timeout)
-        if self._pthread is not None and self._pthread.is_alive():
-            self._pthread.join(timeout=1.0)
+        self._play_timer.stop()
+        self._display_timer.stop()
         
         self.save_layout()
 
