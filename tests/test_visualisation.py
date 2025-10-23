@@ -1,7 +1,7 @@
 import unittest
 from time import time, sleep
 import threading
-from tests.utils import mock_click_event_with_button, TestEventHandler
+from tests.utils import TestEventHandler
 from tests.dummy_problems import create_dummy_bpmn, create_dummy_pn
 import pygame
 from PyQt6.QtWidgets import QApplication
@@ -57,19 +57,18 @@ class EventDispatchingTests(unittest.TestCase):
         self.assertTrue(handler.render_ui_called)
         self.assertTrue(handler.binding_fired_called)
 
-    # TODO: Fix this test
-    # def test_unregister_handler(self):
-    #     handler = TestEventHandler()
-    #     vis = Visualisation(self.problem)
-    #     vis.event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
-    #     vis.event_dispatcher.unregister_handler(handler, [EventType.RENDER_UI])
+    def test_unregister_handler(self):
+        handler = TestEventHandler()
+        vis = Visualisation(self.problem)
+        vis.event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
+        vis.event_dispatcher.unregister_handler(handler)
         
-    #     thread = threading.Thread(target=BasicVisualisationTests.quick_close, args=[vis, 1.0])
-    #     thread.start()
-    #     vis.show()
-    #     thread.join()
+        thread = threading.Thread(target=BasicVisualisationTests.quick_close, args=[vis, 1.0])
+        thread.start()
+        vis.show()
+        thread.join()
         
-    #     self.assertFalse(handler.render_ui_called)
+        self.assertFalse(handler.render_ui_called)
 
     def test_handler_not_called_for_unregistered_event(self):
         handler = TestEventHandler()
@@ -160,31 +159,31 @@ class BasicVisualisationTests(unittest.TestCase):
 
         self.assertTrue(handler.binding_fired_called)
 
-    # TODO: Fix this test
-    # def test_node_clicked_event(self):
-    #     handler = TestEventHandler()
-    #     vis = Visualisation(self.problem)
-    #     panel = vis.main_window.pygame_widget.get_panel()
-    #     # Register the handler to listen for NODE_CLICKED events
-    #     vis.event_dispatcher.register_handler(handler, [EventType.NODE_CLICKED])
+    def test_node_clicked_event(self):
+        handler = TestEventHandler()
+        vis = Visualisation(self.problem)
+        panel = vis.main_window.pygame_widget.get_panel()
+        # Register the handler to listen for NODE_CLICKED events
+        vis.event_dispatcher.register_handler(handler, [EventType.NODE_CLICKED])
 
-    #     thread = threading.Thread(target=self.quick_close, args=[vis, 1.5])
-    #     thread.start()
-    #     vis.show()
+        thread = threading.Thread(target=self.quick_close, args=[vis, 1.5])
 
-    #     # Find a node to click on
-    #     node_rect = None
-    #     for node in panel._nodes.values():
-    #         if isinstance(node, Node):
-    #             node_rect = node.get_rect()
-    #             break
+        # Find a node to click on and simulate a mouse press directly
+        node_to_click = None
+        for node in panel._nodes.values():
+            if isinstance(node, Node):
+                node_to_click = node
+                break
+        
+        # Directly call handle_mouse_press with the node's position
+        if node_to_click is not None:
+            panel.handle_mouse_press(node_to_click.get_pos(), 1)
 
-    #     if node_rect:
-    #         mock_click_event_with_button(node_rect, button=1)
+        thread.start()
+        vis.show()
+        thread.join()
 
-    #     thread.join()
-
-    #     self.assertTrue(handler.node_clicked_called)
+        self.assertTrue(handler.node_clicked_called)
 
     # TODO: Create a test for the Clock
     # TODO: fix the clock's higher and lower precision on click
