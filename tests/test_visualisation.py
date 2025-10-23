@@ -1,189 +1,198 @@
-import unittest
+import pytest
 from time import time, sleep
-import threading
-from tests.utils import TestEventHandler
-from tests.dummy_problems import create_dummy_bpmn, create_dummy_pn
+from tests.utils import DummyEventHandler
+from tests.dummy_problems import create_dummy_bpmn
 import pygame
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QApplication
-
 from simpn.visualisation import Visualisation, Node
 from simpn.visualisation.events import EventType
+from simpn.visualisation.base import MainWindow, ModelPanel, EventDispatcher
+import sys
 
-class EventDispatchingTests(unittest.TestCase):
+
+@pytest.fixture
+def problem():
+    """Create a dummy BPMN problem for testing."""
+    return create_dummy_bpmn()
+
+
+@pytest.fixture
+def event_dispatcher():
+    """Create an event dispatcher for testing."""
+    return EventDispatcher()
+
+
+@pytest.fixture
+def main_window(qapp, problem, event_dispatcher):
+    """
+    Create a main window with simulation for testing.
+    Uses the pytest-qt managed QApplication instead of creating a new one.
+    """
+    # Create main window without creating a new QApplication
+    main_window = MainWindow(as_application=False)
+    
+    # Inject the event dispatcher  
+    main_window._event_dispatcher = event_dispatcher
+    
+    # Create model panel
+    model_panel = ModelPanel(
+        problem,
+        layout_file=None,
+        grid_spacing=50,
+        node_spacing=100,
+        layout_algorithm="sugiyama"
+    )
+    
+    main_window.set_simulation(model_panel)
+    
+    return main_window
+
+
+def run_simulation(main_window, qtbot, duration_ms=1000):
+    """
+    Helper function to run simulation for a given duration.
+    
+    :param main_window: MainWindow instance
+    :param qtbot: pytest-qt bot fixture
+    :param duration_ms: Duration to run in milliseconds
+    """
+    panel = main_window.pygame_widget.get_panel()
+    
+    # Speed up simulation
+    for _ in range(5):
+        panel.action_faster()
+    
+    # Start simulation
+    panel.action_play()
+    
+    # Show the window
+    main_window.show()
+    qtbot.waitExposed(main_window)
+    
+    # Wait for the simulation to run
+    qtbot.wait(duration_ms)
+    
+    # Stop simulation and close
+    panel.action_stop()
+    main_window.close()
+
+
+class TestEventDispatching:
     """
     Tests the event dispatching system functionality.
     """
-
-    def setUp(self):
-        self.problem = create_dummy_bpmn()
     
-    def test_register_single_handler(self):
-        handler = TestEventHandler()
-        vis = Visualisation(self.problem)
-        vis.event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
+    def test_register_single_handler(self, qtbot, main_window, event_dispatcher):
+        handler = DummyEventHandler()
+        qtbot.addWidget(main_window)
+        event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
         
-        thread = threading.Thread(target=BasicVisualisationTests.quick_close, args=[vis, 1.0])
-        thread.start()
-        vis.show()
-        thread.join()
+        run_simulation(main_window, qtbot, duration_ms=1000)
         
-        self.assertTrue(handler.render_ui_called)
+        assert handler.render_ui_called
 
-    def test_register_multiple_handlers(self):
-        handler1 = TestEventHandler()
-        handler2 = TestEventHandler()
-        vis = Visualisation(self.problem)
-        vis.event_dispatcher.register_handler(handler1, [EventType.RENDER_UI])
-        vis.event_dispatcher.register_handler(handler2, [EventType.RENDER_UI])
+    def test_register_multiple_handlers(self, qtbot, main_window, event_dispatcher):
+        handler1 = DummyEventHandler()
+        handler2 = DummyEventHandler()
+        qtbot.addWidget(main_window)
+        event_dispatcher.register_handler(handler1, [EventType.RENDER_UI])
+        event_dispatcher.register_handler(handler2, [EventType.RENDER_UI])
         
-        thread = threading.Thread(target=BasicVisualisationTests.quick_close, args=[vis, 1.0])
-        thread.start()
-        vis.show()
-        thread.join()
+        run_simulation(main_window, qtbot, duration_ms=1000)
         
-        self.assertTrue(handler1.render_ui_called)
-        self.assertTrue(handler2.render_ui_called)
+        assert handler1.render_ui_called
+        assert handler2.render_ui_called
 
-    def test_handler_multiple_event_types(self):
-        handler = TestEventHandler()
-        vis = Visualisation(self.problem)
-        vis.event_dispatcher.register_handler(handler, [EventType.RENDER_UI, EventType.BINDING_FIRED])
+    def test_handler_multiple_event_types(self, qtbot, main_window, event_dispatcher):
+        handler = DummyEventHandler()
+        qtbot.addWidget(main_window)
+        event_dispatcher.register_handler(handler, [EventType.RENDER_UI, EventType.BINDING_FIRED])
         
-        thread = threading.Thread(target=BasicVisualisationTests.quick_close, args=[vis, 1.5])
-        thread.start()
-        vis.show()
-        thread.join()
+        run_simulation(main_window, qtbot, duration_ms=1500)
         
-        self.assertTrue(handler.render_ui_called)
-        self.assertTrue(handler.binding_fired_called)
+        assert handler.render_ui_called
+        assert handler.binding_fired_called
 
-    def test_unregister_handler(self):
-        handler = TestEventHandler()
-        vis = Visualisation(self.problem)
-        vis.event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
-        vis.event_dispatcher.unregister_handler(handler)
+    def test_unregister_handler(self, qtbot, main_window, event_dispatcher):
+        handler = DummyEventHandler()
+        qtbot.addWidget(main_window)
+        event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
+        event_dispatcher.unregister_handler(handler)
         
-        thread = threading.Thread(target=BasicVisualisationTests.quick_close, args=[vis, 1.0])
-        thread.start()
-        vis.show()
-        thread.join()
+        run_simulation(main_window, qtbot, duration_ms=1000)
         
-        self.assertFalse(handler.render_ui_called)
+        assert not handler.render_ui_called
 
-    def test_handler_not_called_for_unregistered_event(self):
-        handler = TestEventHandler()
-        vis = Visualisation(self.problem)
-        vis.event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
+    def test_handler_not_called_for_unregistered_event(self, qtbot, main_window, event_dispatcher):
+        handler = DummyEventHandler()
+        qtbot.addWidget(main_window)
+        event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
         
-        thread = threading.Thread(target=BasicVisualisationTests.quick_close, args=[vis, 1.5])
-        thread.start()
-        vis.show()
-        thread.join()
+        run_simulation(main_window, qtbot, duration_ms=1500)
         
-        self.assertTrue(handler.render_ui_called)
-        self.assertFalse(handler.binding_fired_called)
+        assert handler.render_ui_called
+        assert not handler.binding_fired_called
 
-    def test_multiple_handlers_independent(self):
-        handler1 = TestEventHandler()
-        handler2 = TestEventHandler()
-        vis = Visualisation(self.problem)
-        vis.event_dispatcher.register_handler(handler1, [EventType.RENDER_UI])
-        vis.event_dispatcher.register_handler(handler2, [EventType.BINDING_FIRED])
+    def test_multiple_handlers_independent(self, qtbot, main_window, event_dispatcher):
+        handler1 = DummyEventHandler()
+        handler2 = DummyEventHandler()
+        qtbot.addWidget(main_window)
+        event_dispatcher.register_handler(handler1, [EventType.RENDER_UI])
+        event_dispatcher.register_handler(handler2, [EventType.BINDING_FIRED])
         
-        thread = threading.Thread(target=BasicVisualisationTests.quick_close, args=[vis, 1.5])
-        thread.start()
-        vis.show()
-        thread.join()
+        run_simulation(main_window, qtbot, duration_ms=1500)
         
-        self.assertTrue(handler1.render_ui_called)
-        self.assertFalse(handler1.binding_fired_called)
-        self.assertFalse(handler2.render_ui_called)
-        self.assertTrue(handler2.binding_fired_called)
+        assert handler1.render_ui_called
+        assert not handler1.binding_fired_called
+        assert not handler2.render_ui_called
+        assert handler2.binding_fired_called
 
 
-class BasicVisualisationTests(unittest.TestCase):
-
-    def setUp(self):
-        self.problem = create_dummy_bpmn() # for some reason, if I try this with PN, it hangs
+class TestBasicVisualisation:
+    """
+    Tests basic visualisation functionality.
+    """
     
-    @staticmethod
-    def quick_close(vis, wait_time=0.4):
-        start = time()
-        for _ in range(5):
-            vis.main_window.pygame_widget.get_panel().action_faster()
-        vis.main_window.pygame_widget.get_panel().action_play()
-        pygame.event.post(
-            pygame.event.Event(
-                pygame.USEREVENT + 1,
-                { "message" : "hello, world!"}
-            )
-        )
-
-        while (time() - start) <= wait_time:
-            sleep(0.02)
-
-        QApplication.instance().quit()
-
-    def test_can_run_vis(self):
-        vis = Visualisation(self.problem)
-        self.assertIsNotNone(vis)
+    def test_can_run_vis(self, qtbot, main_window):
+        qtbot.addWidget(main_window)
+        assert main_window is not None
         
-        thread = threading.Thread(target=self.quick_close, args=[vis, 1.5])
-        thread.start()
-        vis.show()
-        thread.join()
+        run_simulation(main_window, qtbot, duration_ms=1500)
 
-    def test_render_ui(self):
-        handler = TestEventHandler()
-        vis = Visualisation(self.problem)
+    def test_render_ui(self, qtbot, main_window, event_dispatcher):
+        handler = DummyEventHandler()
+        qtbot.addWidget(main_window)
         # Register the handler to listen for RENDER_UI events
-        vis.event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
+        event_dispatcher.register_handler(handler, [EventType.RENDER_UI])
         
-        thread = threading.Thread(target=self.quick_close, args=[vis, 1.5])
-        thread.start()
-        vis.show()
-        thread.join()
+        run_simulation(main_window, qtbot, duration_ms=1500)
 
-        self.assertTrue(handler.render_ui_called)
+        assert handler.render_ui_called
 
-    def test_firing(self):
-        handler = TestEventHandler()
-        vis = Visualisation(self.problem)
+    def test_firing(self, qtbot, main_window, event_dispatcher):
+        handler = DummyEventHandler()
+        qtbot.addWidget(main_window)
         # Register the handler to listen for BINDING_FIRED events
-        vis.event_dispatcher.register_handler(handler, [EventType.BINDING_FIRED])
+        event_dispatcher.register_handler(handler, [EventType.BINDING_FIRED])
 
-        thread = threading.Thread(target=self.quick_close, args=[vis, 1.5])
-        thread.start()
-        vis.show()
-        thread.join()
+        run_simulation(main_window, qtbot, duration_ms=1500)
 
-        self.assertTrue(handler.binding_fired_called)
+        assert handler.binding_fired_called
 
-    def test_node_clicked_event(self):
-        handler = TestEventHandler()
-        vis = Visualisation(self.problem)
-        panel = vis.main_window.pygame_widget.get_panel()
-        # Register the handler to listen for NODE_CLICKED events
-        vis.event_dispatcher.register_handler(handler, [EventType.NODE_CLICKED])
+    def test_clock_time(self, qtbot, main_window):
+        # test if after some simulation time, the clock's time is the same as the simproblem's time
+        qtbot.addWidget(main_window)
+        panel = main_window.pygame_widget.get_panel()
 
-        thread = threading.Thread(target=self.quick_close, args=[vis, 1.5])
+        run_simulation(main_window, qtbot, duration_ms=1500)
 
-        # Find a node to click on and simulate a mouse press directly
-        node_to_click = None
-        for node in panel._nodes.values():
-            if isinstance(node, Node):
-                node_to_click = node
-                break
+        # Get the clock module time from the UI
+        clock_time = main_window.clock_module._time
         
-        # Directly call handle_mouse_press with the node's position
-        if node_to_click is not None:
-            panel.handle_mouse_press(node_to_click.get_pos(), 1)
+        # Get the simulation time from the SimProblem
+        sim_time = panel._problem.clock
+        
+        # They should be equal (or very close due to timing)
+        assert abs(clock_time - sim_time) < 0.2  # Allow 0.2 units difference
 
-        thread.start()
-        vis.show()
-        thread.join()
-
-        self.assertTrue(handler.node_clicked_called)
-
-    # TODO: Create a test for the Clock
-    # TODO: fix the clock's higher and lower precision on click

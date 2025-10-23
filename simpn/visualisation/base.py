@@ -3,7 +3,7 @@ import threading
 import os
 import sys
 import traceback
-from PyQt6.QtCore import Qt, QSize, pyqtSignal
+from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QApplication
 from simpn.visualisation.model_panel_mods import ClockModule
@@ -18,16 +18,7 @@ if TYPE_CHECKING:
 
 class PygameWidget(QLabel):
     """Widget that renders pygame surface as a QLabel"""
-    
-    # Signal to emit when mouse is clicked
-    mouse_clicked = pyqtSignal(int, int)
-    # Signal to emit when mouse is pressed (for dragging)
-    mouse_pressed = pyqtSignal(int, int, int)  # x, y, button
-    # Signal to emit when mouse is released
-    mouse_released = pyqtSignal(int, int, int)  # x, y, button
-    # Signal to emit when mouse is moved
-    mouse_moved = pyqtSignal(int, int)  # x, y
-    
+        
     def __init__(self, width=640, height=480, parent=None):
         super().__init__(parent)
         self.width = width
@@ -79,49 +70,27 @@ class PygameWidget(QLabel):
             self.update_display()
     
     def mousePressEvent(self, event: QMouseEvent):
-        """Handle mouse press events"""
-        if event.button() == Qt.MouseButton.LeftButton:
-            # Get the click position
+        """Handle mouse press events by deferring to the model panel"""
+        if self._panel is not None:
             x = int(event.position().x())
             y = int(event.position().y())
-            # Emit signals
-            self.mouse_clicked.emit(x, y)
-            self.mouse_pressed.emit(x, y, 1)
-            
-            # If we have a visualisation, let it handle the event
-            # The visualization will dispatch events through its centralized dispatcher
-            if self._panel is not None:
-                node = self._panel.handle_mouse_press((x, y), 1)
-                
-                if node is not None:
-                    # Update display to show any selection changes
-                    self.update_display()
+            self._panel.handle_mouse_press((x, y), event.button())            
         super().mousePressEvent(event)
     
     def mouseReleaseEvent(self, event: QMouseEvent):
-        """Handle mouse release events"""
-        if event.button() == Qt.MouseButton.LeftButton:
+        """Handle mouse release events by deferring to the model panel"""
+        if self._panel is not None:
             x = int(event.position().x())
             y = int(event.position().y())
-            self.mouse_released.emit(x, y, 1)
-            
-            # If we have a visualisation, let it handle the event
-            # The visualization will dispatch events through its centralized dispatcher
-            if self._panel is not None:
-                self._panel.handle_mouse_release((x, y), 1)
-                self.update_display()
+            self._panel.handle_mouse_release((x, y), event.button())
         super().mouseReleaseEvent(event)
     
     def mouseMoveEvent(self, event: QMouseEvent):
-        """Handle mouse move events"""
-        x = int(event.position().x())
-        y = int(event.position().y())
-        self.mouse_moved.emit(x, y)
-        
-        # If we have a visualisation, let it handle dragging
+        """Handle mouse move events by deferring to the model panel"""
         if self._panel is not None:
+            x = int(event.position().x())
+            y = int(event.position().y())
             self._panel.handle_mouse_motion((x, y))
-            self.update_display()
         super().mouseMoveEvent(event)
     
     def wheelEvent(self, event: QWheelEvent):
@@ -194,13 +163,7 @@ class AttributePanel(QWidget):
     
     Implements IEventHandler interface to receive visualization events.
     """
-    
-    # Signals for communication with the UI thread
-    description_update_signal = pyqtSignal(list)
-    description_update_selected = pyqtSignal(object)
-    update_signal = pyqtSignal()
-    clear_signal = pyqtSignal()
-    
+        
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -219,12 +182,6 @@ class AttributePanel(QWidget):
         layout.addWidget(self.text_edit)
         
         self.setMinimumWidth(200)
-
-        # Connect signals to slots (this ensures UI updates happen on the main thread)
-        self.description_update_signal.connect(self._update_description_ui)
-        self.description_update_selected.connect(self._update_selected)
-        self.clear_signal.connect(self._clear_attributes_ui)
-        self.update_signal.connect(self._refresh)
     
     def set_attributes(self, attributes_dict):
         """
@@ -249,14 +206,6 @@ class AttributePanel(QWidget):
         """
         self.text_edit.clear()
 
-    def set_selected(self, selected: 'Node'):
-        """
-        Emits signal to update selected node for the attribute panel.
-
-        :param selected: The selected visualization node (not the model node)
-        """
-        self.description_update_selected.emit(selected)
-
     def _update_selected(self, selected: 'Node'):
         """
         Update selected node for the attribute panel.
@@ -278,20 +227,6 @@ class AttributePanel(QWidget):
         if self._selected is not None:
             des = self._selected._model_node.get_description()
             self._update_description_ui(des)
-
-    def refresh(self):
-        """
-        Emits a signal to refresh the attribute panel.
-        """
-        self.update_signal.emit()
-
-    def set_description(self, 
-            description: List[Tuple[str, 'Describable.Style']]):
-        """Triggers an update of the description.
-
-        :param description: List of sections to add as html
-        """
-        self.description_update_signal.emit(description)
 
     def _update_description_ui(self, 
             description: List[Tuple[str, 'Describable.Style']]):
@@ -333,11 +268,6 @@ class AttributePanel(QWidget):
 
         panel_text += "</main></body>"
         self.text_edit.setHtml(panel_text)
-
-    def clear_attributes(self):
-        """Clear all attributes (thread-safe)"""
-        # Emit signal instead of directly updating UI
-        self.clear_signal.emit()
     
     def handle_event(self, event: pygame.event.Event) -> bool:
         """
@@ -347,19 +277,14 @@ class AttributePanel(QWidget):
         :return: True to propagate event to other handlers
         """
         if check_event(event, EventType.NODE_CLICKED):
-            self.set_selected(event.node)
+            self._update_selected(event.node)
         elif check_event(event, EventType.BINDING_FIRED):
-            self.refresh()
+            self._refresh()
         elif check_event(event, EventType.SELECTION_CLEAR):
-            self.set_selected(None)
-            self.clear_attributes()
+            self._update_selected(None)
+            self._clear_attributes_ui()
         return True
 
-    def firing(self, *args, **kwargs):
-        """
-        Called after a binding is fired in the simulation.
-        """
-        self.refresh()
 
 class MainWindow(QMainWindow):
     def __init__(self, as_application=False):
@@ -444,10 +369,16 @@ class MainWindow(QMainWindow):
         stop_action.triggered.connect(self.stop_simulation)
         stop_action.setEnabled(False)  # Disabled until playing
         self.stop_action = stop_action
-        
-        # Add separator
-        main_toolbar.addSeparator()
-        
+
+        # Add reset to start to toolbar
+        reset_action = main_toolbar.addAction("Reset to Start")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'time_back.png')
+        reset_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        reset_action.setToolTip("Reset simulation to start")
+        reset_action.triggered.connect(self.reset_simulation)
+        reset_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.reset_action = reset_action
+
         # Add Faster button to toolbar
         faster_action = main_toolbar.addAction("Faster")
         icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_faster.png')
@@ -501,7 +432,28 @@ class MainWindow(QMainWindow):
         zoom_reset_action.triggered.connect(self.zoom_reset)
         zoom_reset_action.setEnabled(False)  # Disabled until a simulation is loaded
         self.zoom_reset_action = zoom_reset_action
-        
+
+        # Add separator
+        main_toolbar.addSeparator()
+
+        # Add clock precision increase button to toolbar
+        clock_increase_action = main_toolbar.addAction("Clock precision +")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'plus.png')
+        clock_increase_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        clock_increase_action.setToolTip("Increase clock precision")
+        clock_increase_action.triggered.connect(self.increase_clock_precision)
+        clock_increase_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.clock_increase_action = clock_increase_action
+
+        # Add clock precision decrease button to toolbar
+        clock_decrease_action = main_toolbar.addAction("Clock precision -")
+        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'minus.png')
+        clock_decrease_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
+        clock_decrease_action.setToolTip("Decrease clock precision")
+        clock_decrease_action.triggered.connect(self.decrease_clock_precision)
+        clock_decrease_action.setEnabled(False)  # Disabled until a simulation is loaded
+        self.clock_decrease_action = clock_decrease_action
+
         # Add toolbar to main window
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, main_toolbar)
         
@@ -753,6 +705,9 @@ class MainWindow(QMainWindow):
                 self._event_dispatcher.unregister_handler(self.clock_module)
                 self._event_dispatcher.unregister_handler(self.attribute_panel)
 
+            # Store the initial state of the simulator
+            model_panel._problem.store_checkpoint("INITIAL_STATE")
+
             # Create the clock
             self.clock_module = ClockModule()
 
@@ -771,11 +726,14 @@ class MainWindow(QMainWindow):
             # Enable simulation controls
             self.step_action.setEnabled(True)
             self.play_action.setEnabled(True)
+            self.reset_action.setEnabled(True)
             self.faster_action.setEnabled(True)
             self.slower_action.setEnabled(True)
             self.zoom_in_action.setEnabled(True)
             self.zoom_out_action.setEnabled(True)
             self.zoom_reset_action.setEnabled(True)
+            self.clock_increase_action.setEnabled(True)
+            self.clock_decrease_action.setEnabled(True)
             
             # Update the display
             self.pygame_widget.update_display()
@@ -803,6 +761,7 @@ class MainWindow(QMainWindow):
             self.play_action.setEnabled(False)
             self.step_action.setEnabled(False)
             self.stop_action.setEnabled(True)
+            self.reset_action.setEnabled(False)
             
     
     def _play_loop(self):
@@ -829,6 +788,18 @@ class MainWindow(QMainWindow):
         self.play_action.setEnabled(True)
         self.step_action.setEnabled(True)
         self.stop_action.setEnabled(False)
+        self.reset_action.setEnabled(True)
+    
+    def reset_simulation(self):
+        """Reset the simulation to the initial state."""
+        viz = self.pygame_widget.get_panel()
+        if viz is not None:
+            viz._problem.restore_checkpoint("INITIAL_STATE")
+            self.pygame_widget.update_display()
+        # also send a post event loop event to update the clock module
+        evt = create_event(EventType.POST_EVENT_LOOP, sim=viz._problem)
+        self._event_dispatcher.dispatch(self, evt)
+
     
     def faster_simulation(self):
         """Increase simulation speed by decreasing delay."""
@@ -866,6 +837,16 @@ class MainWindow(QMainWindow):
             self.debug_panel.write_text(f"Zoom: 100%")
             self.pygame_widget.update_display()
     
+    def increase_clock_precision(self):
+        """Increase clock precision."""
+        if hasattr(self, 'clock_module'):
+            self.clock_module.increase_precision()
+
+    def decrease_clock_precision(self):
+        """Decrease clock precision."""
+        if hasattr(self, 'clock_module'):
+            self.clock_module.decrease_precision()
+
     def closeEvent(self, event):
         """Handle window close event - stop the background thread cleanly."""
         # Stop the background thread

@@ -7,6 +7,7 @@ import math
 from enum import Enum, auto
 from typing import Optional, Tuple, List
 import simpn
+from PyQt6.QtCore import Qt
 from simpn.visualisation.events import EventType, IEventHandler, create_event
 from simpn.visualisation.constants import (
     MAX_SIZE, TUE_RED, TUE_LIGHTRED, TUE_BLUE, TUE_LIGHTBLUE, TUE_GREY, WHITE,
@@ -472,13 +473,7 @@ class ModelPanel:
     def play(self):
         self.__playing = True
         while self.__playing:
-            fired_binding = self._problem.step()
-            
-            if fired_binding != None:
-                # Dispatch BINDING_FIRED event
-                evt = create_event(EventType.BINDING_FIRED, fired=fired_binding, sim=self._problem)
-                self._event_dispatcher.dispatch(self, evt)
-
+            self.step()            
             pygame.time.delay(self._play_step_delay)
 
     def action_faster(self):
@@ -621,21 +616,21 @@ class ModelPanel:
         # Dispatch RENDER_UI event to all modules
         evt = create_event(EventType.RENDER_UI, window=surface)
         self._event_dispatcher.dispatch(self, evt)
-    
-    def handle_mouse_press(self, pos: Tuple[int, int], button: int) -> Optional[object]:
+
+    def handle_mouse_press(self, pos: Tuple[int, int], button: Qt.MouseButton) -> Optional[object]:
         """
         Handle mouse press events (for IDE integration).
         
         :param pos: (x, y) position of the mouse click
-        :param button: Mouse button pressed (1=left, 2=middle, 3=right)
+        :param button: Mouse button pressed
         :return: The node that was clicked, or None
         """
-        if button == 1:
+        if button == Qt.MouseButton.LeftButton:
             node = self._get_node_at(pos)
             if node is not None:
                 self._selected_nodes = [node], pos
                 # Dispatch event through centralized dispatcher
-                evt = create_event(EventType.NODE_CLICKED, node=node)
+                evt = create_event(EventType.NODE_CLICKED, node=node, button=button)
                 self._event_dispatcher.dispatch(self, evt)
                 return node
             else:
@@ -645,14 +640,14 @@ class ModelPanel:
                 self._event_dispatcher.dispatch(self, evt)
         return None
     
-    def handle_mouse_release(self, pos: Tuple[int, int], button: int) -> None:
+    def handle_mouse_release(self, pos: Tuple[int, int], button: Qt.MouseButton) -> None:
         """
         Handle mouse release events (for IDE integration).
         
         :param pos: (x, y) position of the mouse release
         :param button: Mouse button released
         """
-        if button == 1 and self._selected_nodes is not None:
+        if button == Qt.MouseButton.LeftButton and self._selected_nodes is not None:
             self._drag_nodes(snap=True, pos=pos)
             self._selected_nodes = None
     

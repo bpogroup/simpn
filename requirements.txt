@@ -9,3 +9,5 @@ matplotlib==3.9.3
 pygame==2.6.1
 igraph==0.11.8
 pyqt6>=6.9.1
+pytest>=8.0.0
+pytest-qt>=4.4.0

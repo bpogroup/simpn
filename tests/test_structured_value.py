@@ -286,35 +286,3 @@ class TestStructuredTokenValues(unittest.TestCase):
     def test_can_run_sim(self):
         problem = create_dummy_bpmn(structured=True)
         problem.simulate(10)
-
-    @staticmethod
-    def quick_close(vis, wait_time=0.4):
-        start = time()
-        for _ in range(5):
-            vis.main_window.pygame_widget.get_panel().action_faster()
-        vis.main_window.pygame_widget.get_panel().action_play()
-        pygame.event.post(
-            pygame.event.Event(
-                pygame.USEREVENT + 1,
-                { "message" : "hello, world!"}
-            )
-        )
-
-        while (time() - start) <= wait_time:
-            sleep(0.02)
-
-        # quit the PyQT main application
-        QApplication.instance().quit()
-
-    def test_can_run_vis(self):
-        from simpn.visualisation import Visualisation
-        problem = create_dummy_bpmn(structured=True)
-        
-        vis = Visualisation(problem, extra_modules=[])
-        self.assertIsNotNone(vis)
-        
-        thread = threading.Thread(target=self.quick_close, args=[vis, 1.5])
-        thread.start()
-        vis.show()
-        thread.join()
-

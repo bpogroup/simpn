@@ -52,9 +52,21 @@ class ClockModule(IEventHandler):
         
         elif check_event(event, EventType.RENDER_UI):
             self._render_clock(event.window)
-        
+                
         return True
     
+    def increase_precision(self):
+        """Increase the precision of the clock by 1."""
+        self._precision += 1
+        self._pusher = 1.0 / (self._precision + 1)
+        self._format = f"{round(self._time, self._precision)}"
+    
+    def decrease_precision(self):
+        """Decrease the precision of the clock by 1."""
+        self._precision = max(1, self._precision - 1)
+        self._pusher = 1.0 / (self._precision + 1)
+        self._format = f"{round(self._time, self._precision)}"
+
     def _render_clock(self, window: Surface):
         """Render the clock UI element."""
         if not self._clock_rect or not self._font:

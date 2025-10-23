@@ -4,7 +4,7 @@ from simpn.visualisation import Node
 from simpn.visualisation.events import EventType
 
 
-class TestEventHandler:
+class DummyEventHandler:
     """
     A test event handler that tracks which event types have been fired.
     Can be registered with the main window's event dispatcher for testing purposes.
