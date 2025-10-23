@@ -476,6 +476,9 @@ class ModelPanel:
             self.step()            
             pygame.time.delay(self._play_step_delay)
 
+    def is_playing(self):
+        return self.__playing
+
     def action_faster(self):
         self._play_step_delay = max(100, self._play_step_delay - 100)
 
@@ -522,6 +525,13 @@ class ModelPanel:
             xy  = (round(xy[0]/self._grid_spacing)*self._grid_spacing, round(xy[1]/self._grid_spacing)*self._grid_spacing)
             self._nodes[v["name"]].set_pos(xy)
             i += 1
+
+    def reset_layout(self):
+        """
+        Recomputes the layout of the nodes using the selected layout algorithm.
+        This method can be called to reset the layout to an automatic layout.
+        """
+        self.__layout()
 
     def save_layout(self, filename):
             """

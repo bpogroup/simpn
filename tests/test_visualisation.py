@@ -6,6 +6,10 @@ from PyQt6.QtWidgets import QApplication
 from simpn.visualisation.events import EventType
 from simpn.visualisation.base import MainWindow, ModelPanel, EventDispatcher
 import sys
+import os
+import tempfile
+from PyQt6.QtCore import Qt, QPoint, QSettings
+from PyQt6.QtGui import QMouseEvent
 
 
 class TestEventDispatching(unittest.TestCase):
@@ -231,3 +235,90 @@ class TestBasicVisualisation(unittest.TestCase):
         
         # They should be equal (or very close due to timing)
         self.assertAlmostEqual(clock_time, sim_time, delta=0.2)
+
+    def test_pause_simulation(self):
+        """Test that clicking the pause button works."""
+        panel = self.main_window.pygame_widget.get_panel()
+        
+        # Speed up and start simulation
+        for _ in range(5):
+            panel.action_faster()
+        panel.action_play()
+        
+        self.main_window.show()
+        
+        # Run for a bit
+        start_time = time()
+        while (time() - start_time) * 1000 < 500:
+            self.app.processEvents()
+            sleep(0.01)
+        
+        # Simulate pause button click
+        panel.action_stop()
+        
+        # Process events
+        self.app.processEvents()
+        
+        # Verify simulation is paused
+        self.assertFalse(panel.is_playing())
+
+    def test_mouse_click_on_node(self):
+        """Test clicking on a node in the visualization."""
+        handler = DummyEventHandler()
+        self.event_dispatcher.register_handler(handler, [EventType.NODE_CLICKED])
+        
+        panel = self.main_window.pygame_widget.get_panel()
+        self.main_window.show()
+        
+        # Process events to ensure window is rendered and nodes are laid out
+        for _ in range(20):
+            self.app.processEvents()
+            sleep(0.02)
+        
+        # Verify nodes exist
+        self.assertGreater(len(panel._nodes), 0, "No nodes found in the panel")
+        
+        # Get the first node position
+        node = list(panel._nodes.values())[0]
+        node_pos = node._pos
+        
+        # Simulate mouse click at node position using the pygame widget's mouse handler
+        pos_tuple = (int(node_pos[0]), int(node_pos[1]))
+        clicked_node = panel.handle_mouse_press(pos_tuple, Qt.MouseButton.LeftButton)
+        
+        # Process events to allow the event to propagate
+        self.app.processEvents()
+        
+        # Verify the node was clicked
+        self.assertIsNotNone(clicked_node, "No node was returned from mouse click")
+        self.assertTrue(handler.node_clicked_called, "NODE_CLICKED event was not triggered")
+
+    def test_preferences_remember_directory(self):
+        """Test that the last opened directory is remembered in preferences."""
+        # Create a temporary directory for testing
+        test_dir = tempfile.mkdtemp()
+        
+        try:
+            # Create QSettings instance (same as in open_bpmn_file)
+            settings = QSettings("TUe", "SimPN")
+            
+            # Clear any existing preference
+            settings.remove("last_bpmn_directory")
+            
+            # Set a test directory
+            settings.setValue("last_bpmn_directory", test_dir)
+            
+            # Verify it was saved
+            saved_dir = settings.value("last_bpmn_directory")
+            self.assertEqual(saved_dir, test_dir, "Directory preference was not saved correctly")
+            
+            # Verify default behavior when no preference exists
+            settings.remove("last_bpmn_directory")
+            default_dir = settings.value("last_bpmn_directory", os.path.expanduser("~"))
+            self.assertEqual(default_dir, os.path.expanduser("~"), "Default directory should be home directory")
+            
+        finally:
+            # Clean up
+            os.rmdir(test_dir)
+            settings.remove("last_bpmn_directory")
+

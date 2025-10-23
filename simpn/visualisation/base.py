@@ -2,10 +2,10 @@ import pygame
 import threading
 import os
 import sys
-import traceback
-from PyQt6.QtCore import Qt, QSize
+from pathlib import Path
+from PyQt6.QtCore import Qt, QSize, QSettings, QStandardPaths
 from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
-from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QApplication
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QApplication, QFileDialog
 from simpn.visualisation.model_panel_mods import ClockModule
 from simpn.visualisation.model_panel import ModelPanel
 from simpn.visualisation.events import EventDispatcher, check_event, create_event, EventType
@@ -14,6 +14,36 @@ from typing import List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from simpn.simulator import Describable
     from simpn.visualisation.model_panel import Node
+
+
+def get_preferences_directory() -> Path:
+    """
+    Get the cross-platform preferences directory for SimPN.
+    Creates the directory if it doesn't exist.
+    
+    Returns:
+        Path: The preferences directory path
+        
+    The directory location depends on the platform:
+    - macOS: ~/Library/Application Support/TUe/SimPN
+    - Windows: C:/Users/<username>/AppData/Local/TUe/SimPN
+    - Linux: ~/.local/share/TUe/SimPN
+    """
+    # Use QStandardPaths to get the appropriate location for the platform
+    app_data_location = QStandardPaths.writableLocation(
+        QStandardPaths.StandardLocation.AppDataLocation
+    )
+    
+    if not app_data_location:
+        # Fallback to home directory if QStandardPaths fails
+        app_data_location = os.path.join(os.path.expanduser("~"), ".simpn")
+    
+    prefs_dir = Path(app_data_location)
+    
+    # Create the directory if it doesn't exist
+    prefs_dir.mkdir(parents=True, exist_ok=True)
+    
+    return prefs_dir
 
 
 class PygameWidget(QLabel):
@@ -139,16 +169,16 @@ class DebugPanel(QWidget):
     
     def write_error(self, text):
         """Write error text (in red) to the debug panel"""
-        self.text_edit.append(f'<span style="color: red;">{text}</span>')
+        self.text_edit.append(f'<span style="color: red;">{text.replace("\n", "<br>")}</span>')
     
     def write_warning(self, text):
         """Write warning text (in orange) to the debug panel"""
-        self.text_edit.append(f'<span style="color: orange;">{text}</span>')
-    
+        self.text_edit.append(f'<span style="color: orange;">{text.replace("\n", "<br>")}</span>')
+
     def write_success(self, text):
         """Write success text (in green) to the debug panel"""
-        self.text_edit.append(f'<span style="color: green;">{text}</span>')
-    
+        self.text_edit.append(f'<span style="color: green;">{text.replace("\n", "<br>")}</span>')
+
     def clear_text(self):
         """Clear all text from the debug panel"""
         self.text_edit.clear()
@@ -297,6 +327,8 @@ class MainWindow(QMainWindow):
         """
         super().__init__()
 
+        self._as_application = as_application
+
         # Set up the main window
         self.setWindowTitle("SimPN")
         self.setGeometry(100, 100, 800, 600)
@@ -332,17 +364,6 @@ class MainWindow(QMainWindow):
             }
         """)
         
-        # Add open button to the toolbar
-        if as_application:
-            open_action = main_toolbar.addAction("Open")
-            open_action.setToolTip("Open a BPMN file")
-            icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'open.png')
-            open_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-            open_action.triggered.connect(self.open_bpmn_file)
-
-            # Add separator
-            main_toolbar.addSeparator()
-
         # Add Step button to toolbar
         step_action = main_toolbar.addAction("Step")        
         step_action.setToolTip("Execute one simulation step")
@@ -604,9 +625,16 @@ class MainWindow(QMainWindow):
     def create_menus(self):
         """Create the menu bar"""
         menubar = self.menuBar()
-        
+
+        # File menu
+        if self._as_application:
+            file_menu = menubar.addMenu("File")
+            open_action = file_menu.addAction("Open BPMN File...")
+            open_action.setToolTip("Open a BPMN file")
+            open_action.triggered.connect(self.open_bpmn_file)
+
         # Window menu
-        window_menu = menubar.addMenu("Window")
+        window_menu = menubar.addMenu("View")
         
         # Debug View action
         self.debug_view_action = window_menu.addAction("Debug View")
@@ -623,7 +651,14 @@ class MainWindow(QMainWindow):
         # Connect the dock widgets' visibility changed signals to update the menu checkmarks
         self.debug_dock.visibilityChanged.connect(self.on_debug_panel_visibility_changed)
         self.attribute_dock.visibilityChanged.connect(self.on_attribute_panel_visibility_changed)
-    
+
+        # Add a separator
+        window_menu.addSeparator()
+
+        # Layout action
+        layout_action = window_menu.addAction("Reset Layout")
+        layout_action.triggered.connect(self.reset_layout)
+
     def toggle_debug_panel(self):
         """Toggle the visibility of the debug panel"""
         if self.debug_dock.isVisible():
@@ -670,21 +705,43 @@ class MainWindow(QMainWindow):
         self.attribute_panel.set_attributes(attrs)
     
     def open_bpmn_file(self):
-        # open a file dialog to select a BPMN file
-        from PyQt6.QtWidgets import QFileDialog
-        file_dialog = QFileDialog(self)
-        file_dialog.setNameFilter("BPMN Files (*.bpmn);;All Files (*)")
-        if file_dialog.exec():
-            selected_files = file_dialog.selectedFiles()
-            if selected_files:
-                bpmn_file = selected_files[0]
-                self.debug_panel.write_text(f"Selected BPMN file: {bpmn_file}")
-                from simpn.bpmn_parser import BPMNParser
-                parser = BPMNParser()
-                parser.parse_file(bpmn_file)
-                simproblem = parser.transform()
-                model_panel = ModelPanel(simproblem)
-                self.set_simulation(model_panel)
+        """Open a file dialog to select a BPMN file and remember the last directory."""
+        try:
+            # Create QSettings instance for storing preferences
+            # On macOS: ~/Library/Preferences/com.tue.SimPN.plist
+            # On Windows: HKEY_CURRENT_USER\Software\TUe\SimPN
+            # On Linux: ~/.config/TUe/SimPN.conf
+            settings = QSettings("TUe", "SimPN")
+            
+            # Get the last used directory, default to user's home directory
+            last_dir = settings.value("last_bpmn_directory", os.path.expanduser("~"))
+            
+            # Open file dialog starting from the last directory
+            file_dialog = QFileDialog(self)
+            file_dialog.setNameFilter("BPMN Files (*.bpmn);;All Files (*)")
+            file_dialog.setDirectory(last_dir)
+            
+            if file_dialog.exec():
+                selected_files = file_dialog.selectedFiles()
+                if selected_files:
+                    bpmn_file = selected_files[0]
+                    
+                    # Save the directory of the selected file for next time
+                    file_dir = os.path.dirname(bpmn_file)
+                    settings.setValue("last_bpmn_directory", file_dir)
+                    
+                    # Parse and load the BPMN file
+                    from simpn.bpmn_parser import BPMNParser
+                    parser = BPMNParser()
+                    parser.parse_file(bpmn_file)
+                    simproblem = parser.transform()
+                    layout_file = self.get_layout(os.path.basename(bpmn_file))
+                    model_panel = ModelPanel(simproblem, layout_file=layout_file)
+                    self.set_simulation(model_panel)
+                    self._filename_open = os.path.basename(bpmn_file)
+        except Exception as e:
+            self.debug_panel.write_error(f"Error opening BPMN file: {str(e)}")
+            return
 
     def set_simulation(self, model_panel: ModelPanel):
         """
@@ -693,59 +750,54 @@ class MainWindow(QMainWindow):
         :param sim_problem: The simulation problem to visualize
         :param layout_file: Optional layout file path
         """
-        try:
-            # If there is an existing simulation, stop its thread, deregister event handlers
-            if self.pygame_widget.get_panel() is not None:
-                if self._thread_running:
-                    self._thread_running = False
-                    if self._pthread is not None and self._pthread.is_alive():
-                        self._pthread.join(timeout=1.0)
-                # Deregister event handlers
-                self._event_dispatcher.unregister_handler(self.pygame_widget.get_panel())
-                self._event_dispatcher.unregister_handler(self.clock_module)
-                self._event_dispatcher.unregister_handler(self.attribute_panel)
+        # If there is an existing simulation, stop its thread, deregister event handlers
+        if self.pygame_widget.get_panel() is not None:
+            if self._thread_running:
+                self._thread_running = False
+                if self._pthread is not None and self._pthread.is_alive():
+                    self._pthread.join(timeout=1.0)
+            # Deregister event handlers
+            self._event_dispatcher.unregister_handler(self.pygame_widget.get_panel())
+            self._event_dispatcher.unregister_handler(self.clock_module)
+            self._event_dispatcher.unregister_handler(self.attribute_panel)
 
-            # Store the initial state of the simulator
-            model_panel._problem.store_checkpoint("INITIAL_STATE")
+        # Store the initial state of the simulator
+        model_panel._problem.store_checkpoint("INITIAL_STATE")
 
-            # Create the clock
-            self.clock_module = ClockModule()
+        # Create the clock
+        self.clock_module = ClockModule()
 
-            # Attach event handlers
-            self._event_dispatcher.register_handler(model_panel)
-            self._event_dispatcher.register_handler(self.clock_module)
-            self._event_dispatcher.register_handler(self.attribute_panel)
+        # Attach event handlers
+        self._event_dispatcher.register_handler(model_panel)
+        self._event_dispatcher.register_handler(self.clock_module)
+        self._event_dispatcher.register_handler(self.attribute_panel)
 
-            # Set it in the pygame widget
-            self.pygame_widget.set_panel(model_panel)
+        # Set it in the pygame widget
+        self.pygame_widget.set_panel(model_panel)
 
-            # Dispatch the VISUALIZATION_CREATED event
-            evt = create_event(EventType.VISUALIZATION_CREATED, sim=model_panel.get_problem())
-            self._event_dispatcher.dispatch(self, evt)            
+        # Dispatch the VISUALIZATION_CREATED event
+        evt = create_event(EventType.VISUALIZATION_CREATED, sim=model_panel.get_problem())
+        self._event_dispatcher.dispatch(self, evt)            
 
-            # Enable simulation controls
-            self.step_action.setEnabled(True)
-            self.play_action.setEnabled(True)
-            self.reset_action.setEnabled(True)
-            self.faster_action.setEnabled(True)
-            self.slower_action.setEnabled(True)
-            self.zoom_in_action.setEnabled(True)
-            self.zoom_out_action.setEnabled(True)
-            self.zoom_reset_action.setEnabled(True)
-            self.clock_increase_action.setEnabled(True)
-            self.clock_decrease_action.setEnabled(True)
-            
-            # Update the display
-            self.pygame_widget.update_display()
+        # Enable simulation controls
+        self.step_action.setEnabled(True)
+        self.play_action.setEnabled(True)
+        self.reset_action.setEnabled(True)
+        self.faster_action.setEnabled(True)
+        self.slower_action.setEnabled(True)
+        self.zoom_in_action.setEnabled(True)
+        self.zoom_out_action.setEnabled(True)
+        self.zoom_reset_action.setEnabled(True)
+        self.clock_increase_action.setEnabled(True)
+        self.clock_decrease_action.setEnabled(True)
+        
+        # Update the display
+        self.pygame_widget.update_display()
 
-            # Start the background thread for continuous updates
-            self._thread_running = True
-            self._pthread = threading.Thread(target=self._play_loop, daemon=True)
-            self._pthread.start()
-                        
-        except Exception as e:
-            self.debug_panel.write_error(f"Failed to load simulation: {str(e)}")
-            self.debug_panel.write_error(traceback.format_exc())
+        # Start the background thread for continuous updates
+        self._thread_running = True
+        self._pthread = threading.Thread(target=self._play_loop, daemon=True)
+        self._pthread.start()                        
     
     def step_simulation(self):
         """Execute one step of the simulation."""
@@ -763,7 +815,6 @@ class MainWindow(QMainWindow):
             self.stop_action.setEnabled(True)
             self.reset_action.setEnabled(False)
             
-    
     def _play_loop(self):
         """The main play loop that runs in a separate thread."""
         import time
@@ -782,6 +833,26 @@ class MainWindow(QMainWindow):
                 self.pygame_widget.update_display()
             time.sleep(0.033)  # Sleep for ~30 FPS instead of using pygame clock
     
+    def save_layout(self):
+        """Save the current layout to a file if a file is currently open."""
+        viz = self.pygame_widget.get_panel()
+        if viz is not None and hasattr(self, '_filename_open'):
+            viz.save_layout(get_preferences_directory() / (self._filename_open + ".layout"))
+    
+    def get_layout(self, filename) -> str:
+        """Get the layout file path for a given BPMN filename."""
+        layout_file = get_preferences_directory() / (filename + ".layout")
+        if layout_file.exists():
+            return str(layout_file)
+        return None
+
+    def reset_layout(self):
+        """Reset the layout of the current visualization."""
+        viz = self.pygame_widget.get_panel()
+        if viz is not None:
+            viz.reset_layout()
+            self.pygame_widget.update_display()
+
     def stop_simulation(self):
         """Stop continuous simulation playback."""
         self._playing = False
@@ -800,24 +871,19 @@ class MainWindow(QMainWindow):
         evt = create_event(EventType.POST_EVENT_LOOP, sim=viz._problem)
         self._event_dispatcher.dispatch(self, evt)
 
-    
     def faster_simulation(self):
         """Increase simulation speed by decreasing delay."""
         self._play_step_delay = max(100, self._play_step_delay - 100)
-        self.debug_panel.write_text(f"Simulation speed: {1000/self._play_step_delay:.1f} steps/second")
     
     def slower_simulation(self):
         """Decrease simulation speed by increasing delay."""
         self._play_step_delay = min(1000, self._play_step_delay + 100)
-        self.debug_panel.write_text(f"Simulation speed: {1000/self._play_step_delay:.1f} steps/second")
     
     def zoom_in(self):
         """Zoom in on the visualization."""
         viz = self.pygame_widget.get_panel()
         if viz is not None:
             viz.zoom("increase")
-            zoom_level = viz.get_zoom_level()
-            self.debug_panel.write_text(f"Zoom: {zoom_level*100:.0f}%")
             self.pygame_widget.update_display()
     
     def zoom_out(self):
@@ -825,8 +891,6 @@ class MainWindow(QMainWindow):
         viz = self.pygame_widget.get_panel()
         if viz is not None:
             viz.zoom("decrease")
-            zoom_level = viz.get_zoom_level()
-            self.debug_panel.write_text(f"Zoom: {zoom_level*100:.0f}%")
             self.pygame_widget.update_display()
     
     def zoom_reset(self):
@@ -834,7 +898,6 @@ class MainWindow(QMainWindow):
         viz = self.pygame_widget.get_panel()
         if viz is not None:
             viz.zoom("reset")
-            self.debug_panel.write_text(f"Zoom: 100%")
             self.pygame_widget.update_display()
     
     def increase_clock_precision(self):
@@ -857,6 +920,8 @@ class MainWindow(QMainWindow):
         if self._pthread is not None and self._pthread.is_alive():
             self._pthread.join(timeout=1.0)
         
+        self.save_layout()
+
         # Accept the close event
         event.accept()
 
