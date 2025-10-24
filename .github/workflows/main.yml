@@ -28,7 +28,8 @@ jobs:
     - name: Install EGL dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libglu1-mesa:i386
+        apt-file search libGL.so.1
+        sudo apt-get install -y libglu1
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
