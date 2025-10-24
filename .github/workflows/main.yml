@@ -28,10 +28,7 @@ jobs:
     - name: Install EGL dependencies
       run: |
         sudo apt-get update
-        sudo apt install apt-file
-        sudo apt-file update
-        apt-file search libGL.so.1
-        sudo apt-get install -y libglu1
+        sudo apt-get install freeglut3-dev
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
