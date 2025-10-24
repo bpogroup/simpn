@@ -1,11 +1,14 @@
 import os
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import sys
 from pathlib import Path
 from PyQt6.QtCore import Qt, QSize, QSettings, QStandardPaths, QTimer
 from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
-from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QApplication, QFileDialog
+from PyQt6.QtWidgets import (
+    QMainWindow, QWidget, QVBoxLayout, QLabel, 
+    QTextEdit, QDockWidget, QToolBar, QSizePolicy, 
+    QApplication, QFileDialog
+)
 from simpn.visualisation.model_panel_mods import ClockModule
 from simpn.visualisation.model_panel import ModelPanel
 from simpn.visualisation.events import EventDispatcher, check_event, create_event, EventType
@@ -169,15 +172,18 @@ class DebugPanel(QWidget):
     
     def write_error(self, text):
         """Write error text (in red) to the debug panel"""
-        self.text_edit.append(f'<span style="color: red;">{text.replace("\n", "<br>")}</span>')
+        text = text.replace("\n", "<br>")
+        self.text_edit.append(f'<span style="color: red;">{text}</span>')
     
     def write_warning(self, text):
         """Write warning text (in orange) to the debug panel"""
-        self.text_edit.append(f'<span style="color: orange;">{text.replace("\n", "<br>")}</span>')
+        text = text.replace("\n", "<br>")
+        self.text_edit.append(f'<span style="color: orange;">{text}</span>')
 
     def write_success(self, text):
         """Write success text (in green) to the debug panel"""
-        self.text_edit.append(f'<span style="color: green;">{text.replace("\n", "<br>")}</span>')
+        text = text.replace("\n", "<br>")
+        self.text_edit.append(f'<span style="color: green;">{text}</span>')
 
     def clear_text(self):
         """Clear all text from the debug panel"""
@@ -262,7 +268,8 @@ class AttributePanel(QWidget):
             des = self._selected._model_node.get_description()
             self._update_description_ui(des)
 
-    def _update_description_ui(self, 
+    def _update_description_ui(
+            self, 
             description: List[Tuple[str, 'Describable.Style']]):
         """
         Set attributes from a description
@@ -620,8 +627,10 @@ class MainWindow(QMainWindow):
         
         # Resize to standard icon size if needed
         if pixmap.width() != 16 or pixmap.height() != 16:
-            pixmap = pixmap.scaled(QSize(16, 16), Qt.AspectRatioMode.KeepAspectRatio, 
-                                  Qt.TransformationMode.SmoothTransformation)
+            pixmap = pixmap.scaled(
+                QSize(16, 16), Qt.AspectRatioMode.KeepAspectRatio, 
+                Qt.TransformationMode.SmoothTransformation
+            )
         
         # Create a new pixmap with the same size
         mono_pixmap = QPixmap(pixmap.size())
@@ -937,12 +946,14 @@ class MainWindow(QMainWindow):
 
 
 class Visualisation:
-    def __init__(self, sim_problem=None, 
-                 layout_file=None, 
-                 grid_spacing=50, 
-                 node_spacing=100, 
-                 layout_algorithm="sugiyama",
-                 extra_modules:List=None):
+    def __init__(
+            self, 
+            sim_problem=None, 
+            layout_file=None, 
+            grid_spacing=50, 
+            node_spacing=100, 
+            layout_algorithm="sugiyama",
+            extra_modules: List[object] = None): 
         self.sim_problem = sim_problem
         self.layout_file = layout_file
         self.grid_spacing = grid_spacing
