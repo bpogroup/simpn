@@ -28,6 +28,7 @@ jobs:
     - name: Install EGL dependencies
       run: |
         sudo apt-get update
+        sudo apt install apt-file
         apt-file search libGL.so.1
         sudo apt-get install -y libglu1
     - name: Install dependencies
