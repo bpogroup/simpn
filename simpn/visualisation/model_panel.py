@@ -1,5 +1,3 @@
-import os
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import igraph
 import threading
@@ -8,11 +6,19 @@ from enum import Enum, auto
 from typing import Optional, Tuple, List
 import simpn
 from PyQt6.QtCore import Qt
-from simpn.visualisation.events import EventType, IEventHandler, create_event
+from simpn.visualisation.events import EventType, create_event
 from simpn.visualisation.constants import (
-    MAX_SIZE, TUE_RED, TUE_LIGHTRED, TUE_BLUE, TUE_LIGHTBLUE, TUE_GREY, WHITE,
-    STANDARD_NODE_WIDTH, STANDARD_NODE_HEIGHT, LINE_WIDTH, ARROW_WIDTH, ARROW_HEIGHT,
-    TEXT_SIZE, BUTTON_POSITION, BUTTON_SIZE
+    MAX_SIZE,
+    TUE_RED,
+    TUE_BLUE,
+    TUE_LIGHTBLUE,
+    TUE_GREY,
+    STANDARD_NODE_WIDTH,
+    STANDARD_NODE_HEIGHT,
+    LINE_WIDTH,
+    ARROW_WIDTH,
+    ARROW_HEIGHT,
+    TEXT_SIZE,
 )
 
 
@@ -42,36 +48,72 @@ class Edge:
 
     def draw(self, screen):
         start_node_xy = self.get_start_node().get_pos()
-        start_node_width, start_node_height = self.get_start_node()._width, self.get_start_node()._height
+        start_node_width, start_node_height = (
+            self.get_start_node()._width,
+            self.get_start_node()._height,
+        )
         end_node_xy = self.get_end_node().get_pos()
-        end_node_width, end_node_height = self.get_end_node()._width, self.get_end_node()._height
-        if start_node_xy[1] - start_node_height/2 > end_node_xy[1] + end_node_height/2:
+        end_node_width, end_node_height = (
+            self.get_end_node()._width,
+            self.get_end_node()._height,
+        )
+        if (
+            start_node_xy[1] - start_node_height / 2
+            > end_node_xy[1] + end_node_height / 2
+        ):
             self.set_start_hook(Hook.TOP)
-        elif start_node_xy[1] + start_node_height/2 < end_node_xy[1] - end_node_height/2:
+        elif (
+            start_node_xy[1] + start_node_height / 2
+            < end_node_xy[1] - end_node_height / 2
+        ):
             self.set_start_hook(Hook.BOTTOM)
-        elif start_node_xy[0] - start_node_width/2 > end_node_xy[0] + end_node_width/2:
+        elif (
+            start_node_xy[0] - start_node_width / 2
+            > end_node_xy[0] + end_node_width / 2
+        ):
             self.set_start_hook(Hook.LEFT)
         else:
             self.set_start_hook(Hook.RIGHT)
-        if end_node_xy[1] - end_node_height/2 > start_node_xy[1] + start_node_height/2:
+        if (
+            end_node_xy[1] - end_node_height / 2
+            > start_node_xy[1] + start_node_height / 2
+        ):
             self.set_end_hook(Hook.TOP)
-        elif end_node_xy[1] + end_node_height/2 < start_node_xy[1] - start_node_height/2:
+        elif (
+            end_node_xy[1] + end_node_height / 2
+            < start_node_xy[1] - start_node_height / 2
+        ):
             self.set_end_hook(Hook.BOTTOM)
-        elif end_node_xy[0] - end_node_width/2 > start_node_xy[0] + start_node_width/2:
+        elif (
+            end_node_xy[0] - end_node_width / 2
+            > start_node_xy[0] + start_node_width / 2
+        ):
             self.set_end_hook(Hook.LEFT)
         else:
             self.set_end_hook(Hook.RIGHT)
-        
+
         # Get hook positions
         start_hook_pos = self._start[0].hook(self._start[1])
         end_hook_pos = self._end[0].hook(self._end[1])
-        
+
         # If hook positions are not valid
-        if start_hook_pos is None or not isinstance(start_hook_pos, tuple) or len(start_hook_pos) != 2 or start_hook_pos[0] is None or start_hook_pos[1] is None:
+        if (
+            start_hook_pos is None
+            or not isinstance(start_hook_pos, tuple)
+            or len(start_hook_pos) != 2
+            or start_hook_pos[0] is None
+            or start_hook_pos[1] is None
+        ):
             start_hook_pos = self._start[0].get_pos()  # Fallback to center
-        if end_hook_pos is None or not isinstance(end_hook_pos, tuple) or len(end_hook_pos) != 2 or end_hook_pos[0] is None or end_hook_pos[1] is None:
+        if (
+            end_hook_pos is None
+            or not isinstance(end_hook_pos, tuple)
+            or len(end_hook_pos) != 2
+            or end_hook_pos[0] is None
+            or end_hook_pos[1] is None
+        ):
             end_hook_pos = self._end[0].get_pos()  # Fallback to center
-            
+
         start = pygame.Vector2(start_hook_pos)
         end = pygame.Vector2(end_hook_pos)
         arrow = start - end
@@ -80,7 +122,7 @@ class Edge:
 
         # if the end node does not want to show arrowheads, we simply draw a line from start to end
         if not self.get_end_node()._show_arrowheads:
-            pygame.draw.line(screen, TUE_BLUE, start, end, int(LINE_WIDTH*1.5))
+            pygame.draw.line(screen, TUE_BLUE, start, end, int(LINE_WIDTH * 1.5))
             return
 
         # Create the triangle head around the origin
@@ -90,7 +132,9 @@ class Edge:
             pygame.Vector2(-ARROW_WIDTH / 2, -ARROW_HEIGHT / 2),  # Bottomleft
         ]
         # Rotate and translate the head into place
-        translation = pygame.Vector2(0, arrow.length() - (ARROW_HEIGHT / 2)).rotate(-angle)
+        translation = pygame.Vector2(0, arrow.length() - (ARROW_HEIGHT / 2)).rotate(
+            -angle
+        )
         for i in range(len(head_verts)):
             head_verts[i].rotate_ip(-angle)
             head_verts[i] += translation
@@ -120,13 +164,13 @@ class Edge:
 
     def get_start_node(self):
         return self._start[0]
-    
+
     def get_end_node(self):
         return self._end[0]
 
     def set_start_hook(self, hook):
         self._start = (self._start[0], hook)
-    
+
     def set_end_hook(self, hook):
         self._end = (self._end[0], hook)
 
@@ -137,10 +181,10 @@ class Node:
         self._pos = (0, 0)  # the center of the node
         self._width = STANDARD_NODE_WIDTH
         self._height = STANDARD_NODE_HEIGHT
-        self._half_width =  self._width / 2
+        self._half_width = self._width / 2
         self._half_height = self._height / 2
         self._show_arrowheads = True
-            
+
     def draw(self, screen):
         """
         This adds the drawable aspects of the node unto the given screen.
@@ -156,43 +200,44 @@ class Node:
             result = (self._pos[0], self._pos[1] - self._half_height)
         elif hook_pos == Hook.BOTTOM:
             result = (self._pos[0], self._pos[1] + self._half_height)
-        
+
         return result
 
     def set_pos(self, pos):
         self._pos = pos
-    
+
     def get_pos(self):
         return self._pos
-    
+
     def get_id(self):
         return self._model_node.get_id()
-    
+
     def get_rect(self):
         return pygame.Rect(
             self._pos[0] - self._half_width,
             self._pos[1] - self._half_height,
             self._width,
-            self._height
+            self._height,
         )
-            
+
+
 class TokenShower(Node):
     """
     Visualises the given set of sorted markings at some (x,y)
     location.
 
-    Tokens are shown as grey circles if their time is lower than the 
+    Tokens are shown as grey circles if their time is lower than the
     current supplied clock time via `set_time`. Otherwise, they are shown
     as a red token.
 
-    A token count in the center of the ring can be shown via 
+    A token count in the center of the ring can be shown via
     `show_token_count`.
     """
 
-    def __init__(self, markings:List['simpn.simulator.SimToken']):
+    def __init__(self, markings: List["simpn.simulator.SimToken"]):
         super().__init__(None)
         self._count = len(markings)
-        if (self._count > 0):
+        if self._count > 0:
             self._first_token = markings[0]
             self._last_token = markings[-1]
         self._visualable_tokens = markings
@@ -204,43 +249,45 @@ class TokenShower(Node):
         self._show_timing = False
         self._show_token_values = False
 
-    def show_many_rings(self, show:bool=True) -> 'TokenShower':
+    def show_many_rings(self, show: bool = True) -> "TokenShower":
         """
         Allow the shower to make more than one ring of tokens.
         """
         self._rings = show
         return self
 
-    def show_token_count(self, show:bool=True) -> 'TokenShower':
+    def show_token_count(self, show: bool = True) -> "TokenShower":
         """
         Sets whether to show the token count.
         """
-        self._show_count = show 
+        self._show_count = show
         return self
-    
-    def show_timing_info(self, show:bool=True) -> 'TokenShower':
+
+    def show_timing_info(self, show: bool = True) -> "TokenShower":
         """
         Sets whether to show timing info about tokens.
         """
         self._show_timing = show
         return self
 
-    def show_token_values(self, show:bool=True) -> 'TokenShower':
+    def show_token_values(self, show: bool = True) -> "TokenShower":
         """
         Sets whether to show the token values.
         """
         self._show_token_values = show
         return self
 
-    def set_pos(self, pos:Tuple[float, float]) -> 'TokenShower':
+    def set_pos(self, pos: Tuple[float, float]) -> "TokenShower":
         self._pos = pos
         return self
-    
-    def set_time(self, clock:float) -> 'TokenShower':
-        self._curr_time = clock 
+
+    def set_time(self, clock: float) -> "TokenShower":
+        self._curr_time = clock
         return self
-    
-    def _compute_tokens_in_ring(self, offset:float, radius:float) -> Tuple[int, float]:
+
+    def _compute_tokens_in_ring(
+        self, offset: float, radius: float
+    ) -> Tuple[int, float]:
         """
         Computes the number of tokens in a ring given an offset and radius.
         """
@@ -249,11 +296,11 @@ class TokenShower(Node):
 
         return n, circum
 
-    def draw(self, screen:pygame.Surface) -> None:
+    def draw(self, screen: pygame.Surface) -> None:
         """
         Draws tokens in a ring around the current position of the shower.
         """
-        bold_font = pygame.font.SysFont('Calibri', TEXT_SIZE, bold=True)
+        bold_font = pygame.font.SysFont("Calibri", TEXT_SIZE, bold=True)
 
         offset = self._inner_ring_offset
         n, _ = self._compute_tokens_in_ring(offset, self._token_radius)
@@ -265,99 +312,132 @@ class TokenShower(Node):
             x_offset = offset * math.cos(angle)
             y_offset = offset * math.sin(angle)
             color = TUE_GREY if token.time <= self._curr_time else TUE_RED
-            # draw tokens 
+            # draw tokens
             pygame.draw.circle(
-                screen, color,
-                (int(self._pos[0] + x_offset), int(self._pos[1] + y_offset)),
-                int(self._token_radius)
-            )
-            pygame.draw.circle(
-                screen, pygame.colordict.THECOLORS.get('black'),
+                screen,
+                color,
                 (int(self._pos[0] + x_offset), int(self._pos[1] + y_offset)),
                 int(self._token_radius),
-                LINE_WIDTH
+            )
+            pygame.draw.circle(
+                screen,
+                pygame.colordict.THECOLORS.get("black"),
+                (int(self._pos[0] + x_offset), int(self._pos[1] + y_offset)),
+                int(self._token_radius),
+                LINE_WIDTH,
             )
 
             # should we break or make a larger ring
-            if (i > 0 and i % n == 0):
-                if (self._rings):
+            if i > 0 and i % n == 0:
+                if self._rings:
                     i = 0
-                    offset += self._token_radius 
+                    offset += self._token_radius
                     n, _ = self._compute_tokens_in_ring(offset, self._token_radius)
                     n -= 2
                 else:
                     break
 
-        # draw label for count 
-        if (self._count > 0 and self._show_count):
+        # draw label for count
+        if self._count > 0 and self._show_count:
             label = bold_font.render(f"{self._count}", True, TUE_RED)
-            screen.blit(label, 
-                (self._pos[0]-label.get_width() *  0.5, 
-                self._pos[1]-label.get_height() * 0.5)
+            screen.blit(
+                label,
+                (
+                    self._pos[0] - label.get_width() * 0.5,
+                    self._pos[1] - label.get_height() * 0.5,
+                ),
             )
 
         text_x_pos = self._pos[0]
         text_y_pos = self._pos[1] + self._half_height
         # draw labels for the timing info
-        if (self._show_timing):
-            last_time = None 
+        if self._show_timing:
+            last_time = None
             first_time = None
             if self._count > 0:
-                first_time = round(self._first_token.time,2) 
+                first_time = round(self._first_token.time, 2)
                 mstr = f"first @ {first_time}"
                 label = bold_font.render(mstr, True, TUE_RED)
                 text_y_pos += LINE_WIDTH + int(label.get_height())
-                screen.blit(label, (text_x_pos - label.get_width()/2, text_y_pos))     
+                screen.blit(label, (text_x_pos - label.get_width() / 2, text_y_pos))
             if self._count > 1:
-                last_time = round(self._last_token.time,2) 
+                last_time = round(self._last_token.time, 2)
                 mstr = f"last @ {last_time}"
                 label = bold_font.render(mstr, True, TUE_RED)
                 text_y_pos += LINE_WIDTH + int(label.get_height())
-                screen.blit(label, (text_x_pos - label.get_width()/2, text_y_pos)) 
+                screen.blit(label, (text_x_pos - label.get_width() / 2, text_y_pos))
 
         # draw labels for token values
-        if (self._show_token_values):
+        if self._show_token_values:
             for token in self._visualable_tokens:
-                label = bold_font.render(str(token.value) + "@" + str(token.time), True, TUE_RED)
+                label = bold_font.render(
+                    str(token.value) + "@" + str(token.time), True, TUE_RED
+                )
                 text_y_pos += LINE_WIDTH + int(label.get_height())
-                screen.blit(label, (text_x_pos - label.get_width()/2, text_y_pos))
+                screen.blit(label, (text_x_pos - label.get_width() / 2, text_y_pos))
+
 
 class PlaceViz(Node):
     def __init__(self, model_node):
         super().__init__(model_node)
         self._last_time = None
-    
+
     def draw(self, screen):
-        pygame.draw.circle(screen, TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._half_height)
-        pygame.draw.circle(screen, TUE_BLUE, (self._pos[0], self._pos[1]), self._half_height, LINE_WIDTH)    
-        font = pygame.font.SysFont('Calibri', TEXT_SIZE)
-        bold_font = pygame.font.SysFont('Calibri', TEXT_SIZE, bold=True)
+        pygame.draw.circle(
+            screen, TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._half_height
+        )
+        pygame.draw.circle(
+            screen,
+            TUE_BLUE,
+            (self._pos[0], self._pos[1]),
+            self._half_height,
+            LINE_WIDTH,
+        )
+        font = pygame.font.SysFont("Calibri", TEXT_SIZE)
 
         # draw label
         label = font.render(self._model_node.get_id(), True, TUE_BLUE)
-        text_x_pos = self._pos[0] - int(label.get_width()/2)
+        text_x_pos = self._pos[0] - int(label.get_width() / 2)
         text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
         screen.blit(label, (text_x_pos, text_y_pos))
 
         # draw marking as tokens
-        TokenShower(self._model_node.marking) \
-            .set_pos(self._pos) \
-            .set_time(self._curr_time) \
-            .show_token_count() \
-            .draw(screen)    
+        TokenShower(self._model_node.marking).set_pos(self._pos).set_time(
+            self._curr_time
+        ).show_token_count().draw(screen)
+
 
 class TransitionViz(Node):
     def __init__(self, model_node):
         super().__init__(model_node)
-    
+
     def draw(self, screen):
-        pygame.draw.rect(screen, TUE_LIGHTBLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, self._width, self._height))
-        pygame.draw.rect(screen, TUE_BLUE, pygame.Rect(self._pos[0]-self._half_width, self._pos[1]-self._half_height, self._width, self._height), LINE_WIDTH)
-        font = pygame.font.SysFont('Calibri', TEXT_SIZE)
+        pygame.draw.rect(
+            screen,
+            TUE_LIGHTBLUE,
+            pygame.Rect(
+                self._pos[0] - self._half_width,
+                self._pos[1] - self._half_height,
+                self._width,
+                self._height,
+            ),
+        )
+        pygame.draw.rect(
+            screen,
+            TUE_BLUE,
+            pygame.Rect(
+                self._pos[0] - self._half_width,
+                self._pos[1] - self._half_height,
+                self._width,
+                self._height,
+            ),
+            LINE_WIDTH,
+        )
+        font = pygame.font.SysFont("Calibri", TEXT_SIZE)
 
         # draw label
         label = font.render(self._model_node.get_id(), True, TUE_BLUE)
-        text_x_pos = self._pos[0] - int(label.get_width()/2)
+        text_x_pos = self._pos[0] - int(label.get_width() / 2)
         text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
         screen.blit(label, (text_x_pos, text_y_pos))
 
@@ -365,26 +445,31 @@ class TransitionViz(Node):
 class ModelPanel:
     """
     A class for visualizing the provided simulation problem as a Petri net.
-    
-    Attributes:
+
+    .. Attributes::
     - sim_problem (SimProblem): the simulation problem to visualize
     - layout_file (str): the file path to the layout file (optional)
     - grid_spacing (int): the spacing between grid lines (default: 50)
     - node_spacing (int): the spacing between nodes (default: 100)
-    - layout_algorithm (str): the layout algorithm to use (default: "sugiyama"), possible values: auto, sugiyama, davidson_harel, grid
+    - layout_algorithm (str): the layout algorithm to use (default: "sugiyama"),
+     possible values: auto, sugiyama, davidson_harel, grid
 
-    Methods:
+    .. Methods::
     - save_layout(self, filename): saves the layout to a file
     - render(self, surface): renders the visualization onto a pygame surface
     """
-    def __init__(self, sim_problem, 
-                 layout_file=None, 
-                 grid_spacing=50, 
-                 node_spacing=100, 
-                 layout_algorithm="sugiyama"):
+
+    def __init__(
+        self,
+        sim_problem,
+        layout_file=None,
+        grid_spacing=50,
+        node_spacing=100,
+        layout_algorithm="sugiyama",
+    ):
         """
         Initialize the visualization.
-        
+
         :param sim_problem: The simulation problem to visualize
         :param layout_file: Optional file path to load layout from
         :param grid_spacing: Spacing between grid lines
@@ -400,13 +485,15 @@ class ModelPanel:
         self._problem = sim_problem
         self._nodes = dict()
         self._edges = []
-        self._selected_nodes = None        
+        self._selected_nodes = None
         self._zoom_level = 1.0
         self._size = MAX_SIZE
-                
+
         # Add visualizations for prototypes, places, and transitions,
         # but not for places and transitions that are part of prototypes.
-        element_to_prototype = dict()  # mapping of prototype element ids to prototype ids
+        element_to_prototype = (
+            dict()
+        )  # mapping of prototype element ids to prototype ids
         viznodes_with_edges = []
         for prototype in self._problem.prototypes:
             if prototype.visualize:
@@ -435,7 +522,7 @@ class ModelPanel:
             if viznode._model_node.visualization_of_edges is not None:
                 from_nodes = []
                 to_nodes = []
-                for (a, b) in viznode._model_node.visualization_of_edges:
+                for a, b in viznode._model_node.visualization_of_edges:
                     if a == viznode._model_node:
                         to_nodes.append(b)
                     else:
@@ -444,36 +531,49 @@ class ModelPanel:
                 if incoming.visualize_edges:
                     node_id = incoming.get_id()
                     if node_id.endswith(".queue"):
-                        node_id = node_id[:-len(".queue")]
+                        node_id = node_id[: -len(".queue")]
                     if node_id in element_to_prototype:
                         node_id = element_to_prototype[node_id]
                     if node_id in self._nodes:
                         other_viznode = self._nodes[node_id]
-                        self._edges.append(Edge(start=(other_viznode, Hook.RIGHT), end=(viznode, Hook.LEFT)))
+                        self._edges.append(
+                            Edge(
+                                start=(other_viznode, Hook.RIGHT),
+                                end=(viznode, Hook.LEFT),
+                            )
+                        )
             for outgoing in to_nodes:
                 if outgoing.visualize_edges:
                     node_id = outgoing.get_id()
                     if node_id.endswith(".queue"):
-                        node_id = node_id[:-len(".queue")]
+                        node_id = node_id[: -len(".queue")]
                     if node_id in element_to_prototype:
                         node_id = element_to_prototype[node_id]
                     if node_id in self._nodes:
                         other_viznode = self._nodes[node_id]
-                        self._edges.append(Edge(start=(viznode, Hook.RIGHT), end=(other_viznode, Hook.LEFT)))
+                        self._edges.append(
+                            Edge(
+                                start=(viznode, Hook.RIGHT),
+                                end=(other_viznode, Hook.LEFT),
+                            )
+                        )
         layout_loaded = False
         if layout_file is not None:
             try:
                 self.__load_layout(layout_file)
                 layout_loaded = True
             except FileNotFoundError as e:
-                print("WARNING: could not load the layout because of the exception below.\nauto-layout will be used.\n", e)
+                print(
+                    "WARNING: could not load the layout because of the exception below.\nauto-layout will be used.\n",
+                    e,
+                )
         if not layout_loaded:
-            self.__layout()        
-    
+            self.__layout()
+
     def play(self):
         self.__playing = True
         while self.__playing:
-            self.step()            
+            self.step()
             pygame.time.delay(self._play_step_delay)
 
     def is_playing(self):
@@ -495,16 +595,18 @@ class ModelPanel:
     def action_step(self):
         if not self.__playing:
             self._problem.step()
-    
+
     def __layout(self):
         graph = igraph.Graph()
         graph.to_directed()
         for node in self._nodes.values():
             graph.add_vertex(node.get_id())
-        for edge in self._edges:            
-            graph.add_edge(edge.get_start_node().get_id(), edge.get_end_node().get_id())        
+        for edge in self._edges:
+            graph.add_edge(edge.get_start_node().get_id(), edge.get_end_node().get_id())
         if self._layout_algorithm == "auto":
-            layout = graph.layout(layout="auto", )
+            layout = graph.layout(
+                layout="auto",
+            )
         elif self._layout_algorithm == "sugiyama":
             layout = graph.layout_sugiyama()
         elif self._layout_algorithm == "davidson_harel":
@@ -515,14 +617,20 @@ class ModelPanel:
             raise Exception(f"Unknown layout algorithm: {self._layout_algorithm}")
         layout.rotate(-90)
         layout.scale(self._node_spacing)
-        boundaries = layout.boundaries(border=STANDARD_NODE_WIDTH*2)
+        boundaries = layout.boundaries(border=STANDARD_NODE_WIDTH * 2)
         layout.translate(-boundaries[0][0], -boundaries[0][1])
-        canvas_size = layout.boundaries(border=STANDARD_NODE_WIDTH*2)[1]
-        self._size = (min(MAX_SIZE[0], canvas_size[0]), min(MAX_SIZE[1], canvas_size[1]))
+        canvas_size = layout.boundaries(border=STANDARD_NODE_WIDTH * 2)[1]
+        self._size = (
+            min(MAX_SIZE[0], canvas_size[0]),
+            min(MAX_SIZE[1], canvas_size[1]),
+        )
         i = 0
         for v in graph.vs:
             xy = layout[i]
-            xy  = (round(xy[0]/self._grid_spacing)*self._grid_spacing, round(xy[1]/self._grid_spacing)*self._grid_spacing)
+            xy = (
+                round(xy[0] / self._grid_spacing) * self._grid_spacing,
+                round(xy[1] / self._grid_spacing) * self._grid_spacing,
+            )
             self._nodes[v["name"]].set_pos(xy)
             i += 1
 
@@ -534,26 +642,30 @@ class ModelPanel:
         self.__layout()
 
     def save_layout(self, filename):
-            """
-            Saves the current layout of the nodes to a file.
-            This method can be called after the show method.
+        """
+        Saves the current layout of the nodes to a file.
+        This method can be called after the show method.
 
-            :param filename (str): The name of the file to save the layout to.
-            """
-            with open(filename, "w") as f:
-                f.write("version 2.0\n")
-                f.write(f"{self._zoom_level}\n")
-                f.write(f"{int(self._size[0])},{int(self._size[1])}\n")
-                for node in self._nodes.values():
-                    if "," in node.get_id() or "\n" in node.get_id():
-                        raise Exception("Node " + node.get_id() + ": Saving the layout cannot work if the node id contains a comma or hard return.")
-                    f.write(f"{node.get_id()},{node.get_pos()[0]},{node.get_pos()[1]}\n")
-    
+        :param filename (str): The name of the file to save the layout to.
+        """
+        with open(filename, "w") as f:
+            f.write("version 2.0\n")
+            f.write(f"{self._zoom_level}\n")
+            f.write(f"{int(self._size[0])},{int(self._size[1])}\n")
+            for node in self._nodes.values():
+                if "," in node.get_id() or "\n" in node.get_id():
+                    raise Exception(
+                        "Node "
+                        + node.get_id()
+                        + ": Saving the layout cannot work if the node id contains a comma or hard return."
+                    )
+                f.write(f"{node.get_id()},{node.get_pos()[0]},{node.get_pos()[1]}\n")
+
     def __load_layout(self, filename):
         with open(filename, "r") as f:
             firstline = f.readline().strip()
             if firstline == "version 2.0":
-                self._zoom_level = float(f.readline().strip())            
+                self._zoom_level = float(f.readline().strip())
                 self._size = tuple(map(int, f.readline().strip().split(",")))
             else:
                 self._size = tuple(map(int, firstline.split(",")))
@@ -581,56 +693,60 @@ class ModelPanel:
         Triggers the game loop showing the visualisation to close.
         """
         self.__playing = False
-        
+
     def get_nodes(self):
         """Get the dictionary of visualization nodes."""
         return self._nodes
-    
+
     def get_edges(self):
         """Get the list of edges."""
         return self._edges
-    
+
     def get_problem(self):
         """Get the simulation problem."""
         return self._problem
-        
+
     def render(self, surface: pygame.Surface) -> None:
         """
         Render the Petri net visualization onto the provided pygame surface (for IDE integration).
-        
+
         :param surface: The pygame surface to render onto
         """
         # Get zoom level
         zoom_level = self._zoom_level
-        
+
         # Create a scaled surface for zooming
         scaled_width = int(surface.get_width() / zoom_level)
         scaled_height = int(surface.get_height() / zoom_level)
         scaled_surface = pygame.Surface((scaled_width, scaled_height))
         scaled_surface.fill(TUE_GREY)
-        
+
         # Draw edges on scaled surface
         for edge in self._edges:
             edge.draw(scaled_surface)
-        
+
         # Draw nodes on scaled surface
         for node in self._nodes.values():
             node._curr_time = self._problem.clock
             node.draw(scaled_surface)
-        
+
         # Scale the surface back to original size and blit
         surface.fill(TUE_GREY)
-        scaled_back = pygame.transform.smoothscale(scaled_surface, (surface.get_width(), surface.get_height()))
+        scaled_back = pygame.transform.smoothscale(
+            scaled_surface, (surface.get_width(), surface.get_height())
+        )
         surface.blit(scaled_back, (0, 0))
-        
+
         # Dispatch RENDER_UI event to all modules
         evt = create_event(EventType.RENDER_UI, window=surface)
         self._event_dispatcher.dispatch(self, evt)
 
-    def handle_mouse_press(self, pos: Tuple[int, int], button: Qt.MouseButton) -> Optional[object]:
+    def handle_mouse_press(
+        self, pos: Tuple[int, int], button: Qt.MouseButton
+    ) -> Optional[object]:
         """
         Handle mouse press events (for IDE integration).
-        
+
         :param pos: (x, y) position of the mouse click
         :param button: Mouse button pressed
         :return: The node that was clicked, or None
@@ -649,71 +765,86 @@ class ModelPanel:
                 evt = create_event(EventType.SELECTION_CLEAR)
                 self._event_dispatcher.dispatch(self, evt)
         return None
-    
-    def handle_mouse_release(self, pos: Tuple[int, int], button: Qt.MouseButton) -> None:
+
+    def handle_mouse_release(
+        self, pos: Tuple[int, int], button: Qt.MouseButton
+    ) -> None:
         """
         Handle mouse release events (for IDE integration).
-        
+
         :param pos: (x, y) position of the mouse release
         :param button: Mouse button released
         """
         if button == Qt.MouseButton.LeftButton and self._selected_nodes is not None:
             self._drag_nodes(snap=True, pos=pos)
             self._selected_nodes = None
-    
+
     def handle_mouse_motion(self, pos: Tuple[int, int]) -> None:
         """
         Handle mouse motion events (for IDE integration).
-        
+
         :param pos: (x, y) position of the mouse
         """
         if self._selected_nodes is not None:
             self._drag_nodes(pos=pos)
-    
+
     def _get_node_at(self, pos: Tuple[int, int]) -> Optional[object]:
         """
         Get the node at the given position.
-        
+
         :param pos: (x, y) position to check
         :return: The node at the position, or None
         """
         scaled_pos = (pos[0] / self._zoom_level, pos[1] / self._zoom_level)
         for node in self._nodes.values():
-            if node.get_pos()[0] - max(node._width/2, 10) <= scaled_pos[0] <= node.get_pos()[0] + max(node._width/2, 10) and \
-            node.get_pos()[1] - max(node._height/2, 10) <= scaled_pos[1] <= node.get_pos()[1] + max(node._height/2, 10):
+            if node.get_pos()[0] - max(node._width / 2, 10) <= scaled_pos[
+                0
+            ] <= node.get_pos()[0] + max(node._width / 2, 10) and node.get_pos()[
+                1
+            ] - max(
+                node._height / 2, 10
+            ) <= scaled_pos[
+                1
+            ] <= node.get_pos()[
+                1
+            ] + max(
+                node._height / 2, 10
+            ):
                 return node
         return None
-    
-    def _drag_nodes(self, snap: bool = False, pos: Optional[Tuple[int, int]] = None) -> None:
+
+    def _drag_nodes(
+        self, snap: bool = False, pos: Optional[Tuple[int, int]] = None
+    ) -> None:
         """
         Drag the selected nodes.
-        
+
         :param snap: Whether to snap to grid
         :param pos: Position to drag to (if None, uses current mouse position)
         """
         if self._selected_nodes is None:
             return
-            
+
         nodes = self._selected_nodes[0]
         org_pos = self._selected_nodes[1]
         new_pos = pos if pos is not None else (0, 0)
         x_delta = (new_pos[0] - org_pos[0]) / self._zoom_level
         y_delta = (new_pos[1] - org_pos[1]) / self._zoom_level
-        
+
         for node in nodes:
             new_x = node.get_pos()[0] + x_delta
             new_y = node.get_pos()[1] + y_delta
             if snap:
-                new_x = round(new_x/self._grid_spacing)*self._grid_spacing
-                new_y = round(new_y/self._grid_spacing)*self._grid_spacing
+                new_x = round(new_x / self._grid_spacing) * self._grid_spacing
+                new_y = round(new_y / self._grid_spacing) * self._grid_spacing
             node.set_pos((new_x, new_y))
-        
+
         self._selected_nodes = nodes, new_pos
-    
+
     def step(self) -> object:
         """
         Execute one step of the simulation (for IDE integration).
-        
+
         :return: The fired binding, or None
         """
         # Dispatch PRE_EVENT_LOOP event
@@ -721,10 +852,12 @@ class ModelPanel:
         self._event_dispatcher.dispatch(self, evt)
 
         fired_binding = self._problem.step()
-        
+
         if fired_binding is not None:
             # Dispatch BINDING_FIRED event
-            evt = create_event(EventType.BINDING_FIRED, fired=fired_binding, sim=self._problem)
+            evt = create_event(
+                EventType.BINDING_FIRED, fired=fired_binding, sim=self._problem
+            )
             self._event_dispatcher.dispatch(self, evt)
 
         # Dispatch POST_EVENT_LOOP event
@@ -732,11 +865,11 @@ class ModelPanel:
         self._event_dispatcher.dispatch(self, evt)
 
         return fired_binding
-    
+
     def get_zoom_level(self) -> float:
         """Get the current zoom level."""
         return self._zoom_level
-    
+
     def set_zoom_level(self, zoom: float) -> None:
         """Set the zoom level."""
         self._zoom_level = max(0.3, min(zoom, 3.0))

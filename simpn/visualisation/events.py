@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import List, Protocol
+from typing import List, Protocol, Union
 from pygame.event import Event
 from pygame import USEREVENT 
 
@@ -38,6 +38,7 @@ class IEventHandler(Protocol):
         :return: A list of EventType enums
         """
         raise NotImplementedError("Must implement listen_to method")
+
 
 class EventDispatcher:
     """
@@ -93,7 +94,7 @@ class EventDispatcher:
         return True
     
 
-def create_event(event_type: EventType | str, **kwargs) -> Event:
+def create_event(event_type: Union[EventType, str], **kwargs) -> Event:
     """
     Creates a custom pygame event.
     
@@ -109,7 +110,8 @@ def create_event(event_type: EventType | str, **kwargs) -> Event:
         **kwargs
     )
 
-def check_event(event: Event, event_type: EventType | str) -> bool:
+
+def check_event(event: Event, event_type: Union[EventType, str]) -> bool:
     """
     Check if a pygame event matches a specific event type.
     """
