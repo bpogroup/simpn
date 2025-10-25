@@ -1,6 +1,32 @@
 """
-This file contains modules that can appear on the (PyGame) model panel.
+Additional visualization modules for the model panel.
+
+This module provides supplementary components that can be rendered on the model panel
+to enhance the visualization with additional information and controls.
+
+Classes:
+    ClockModule: Displays the current simulation time with configurable precision.
 """
+
+import pygame
+from pygame.surface import Surface
+from simpn.visualisation.constants import TUE_GREY, TUE_BLUE, TUE_LIGHTBLUE, LINE_WIDTH
+from simpn.assets import get_img_asset
+from simpn.visualisation.events import EventType, IEventHandler, check_event
+
+
+class ClockModule(IEventHandler):
+    """
+    Clock module for displaying simulation time on the visualization.
+
+    Renders a clock icon with the current simulation time below it. The time display
+    precision can be adjusted dynamically to show more or fewer decimal places.
+    
+    This module listens to visualization events to update the displayed time when
+    the simulation progresses.
+
+    :param precision: Number of decimal places to show in the time display (default: 2, minimum: 1)
+    """
 
 import pygame
 from pygame.surface import Surface
@@ -22,6 +48,11 @@ class ClockModule(IEventHandler):
     OFFSET = 16
 
     def __init__(self, precision: int = 2):
+        """
+        Initialize the clock module.
+        
+        :param precision: Number of decimal places for time display (minimum: 1)
+        """
         self._precision = max(1, precision)
         self._time = 0
         self._target = 0
@@ -33,7 +64,11 @@ class ClockModule(IEventHandler):
         self._format = "0.0"
 
     def listen_to(self):
-        """Specify which event types this handler listens to."""
+        """
+        Specify which event types this handler listens to.
+        
+        :return: List of EventType enums (VISUALIZATION_CREATED, POST_EVENT_LOOP, RENDER_UI)
+        """
         return [
             EventType.VISUALIZATION_CREATED,
             EventType.POST_EVENT_LOOP,
@@ -41,7 +76,17 @@ class ClockModule(IEventHandler):
         ]
 
     def handle_event(self, event, *args, **kwargs):
-        """Handle all events through the unified event system."""
+        """
+        Handle visualization events to update and render the clock.
+        
+        Responds to:
+        - VISUALIZATION_CREATED: Initialize clock graphics and font
+        - POST_EVENT_LOOP: Update displayed time after simulation step
+        - RENDER_UI: Draw the clock on the screen
+        
+        :param event: The pygame event to handle
+        :return: True to allow event propagation
+        """
         # Handle lifecycle events
         if check_event(event, EventType.VISUALIZATION_CREATED):
             self._time = event.sim.clock
@@ -65,19 +110,32 @@ class ClockModule(IEventHandler):
         return True
 
     def increase_precision(self):
-        """Increase the precision of the clock by 1."""
+        """
+        Increase the number of decimal places shown in the time display by 1.
+        """
         self._precision += 1
         self._pusher = 1.0 / (self._precision + 1)
         self._format = f"{round(self._time, self._precision)}"
 
     def decrease_precision(self):
-        """Decrease the precision of the clock by 1."""
+        """
+        Decrease the number of decimal places shown in the time display by 1.
+        
+        The precision will not go below 1 decimal place.
+        """
         self._precision = max(1, self._precision - 1)
         self._pusher = 1.0 / (self._precision + 1)
         self._format = f"{round(self._time, self._precision)}"
 
     def _render_clock(self, window: Surface):
-        """Render the clock UI element."""
+        """
+        Render the clock icon and time display on the pygame surface.
+        
+        Draws a clock icon with a text box below showing the current simulation time.
+        Positioned at the bottom-left corner of the window.
+        
+        :param window: The pygame surface to draw on
+        """
         if not self._clock_rect or not self._font:
             return
 

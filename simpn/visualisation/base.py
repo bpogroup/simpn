@@ -1,4 +1,19 @@
+"""
+Base visualisation components for SimPN.
+
+This module provides the core Qt-based GUI components for visualizing simulations,
+including the main window, pygame integration, and various UI panels.
+
+Classes:
+    PygameWidget: Qt widget that embeds a pygame surface for rendering the simulation.
+    DebugPanel: Panel for displaying debug messages and logs.
+    AttributePanel: Panel for displaying properties of selected simulation elements.
+    MainWindow: Main application window containing all visualization components.
+    Visualisation: Main class for starting visualisations.
+"""
+
 import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import sys
 from pathlib import Path
@@ -50,7 +65,17 @@ def get_preferences_directory() -> Path:
 
 
 class PygameWidget(QLabel):
-    """Widget that renders pygame surface as a QLabel"""
+    """
+    Qt widget that embeds a pygame surface for rendering simulation visualizations.
+    
+    This widget bridges pygame rendering with Qt's widget system by converting pygame
+    surfaces to QPixmap images. It handles mouse events and forwards them to the
+    underlying pygame ModelPanel for interaction.
+    
+    :param width: Initial width of the pygame surface (default: 640)
+    :param height: Initial height of the pygame surface (default: 480)
+    :param parent: Parent Qt widget (default: None)
+    """
         
     def __init__(self, width=640, height=480, parent=None):
         super().__init__(parent)
@@ -63,15 +88,28 @@ class PygameWidget(QLabel):
         self._panel = None  # Will hold the ModelPanel instance
 
     def set_panel(self, panel: ModelPanel):
-        """Set the model panel to render."""
+        """
+        Set the model panel to render in this widget.
+        
+        :param panel: The ModelPanel instance to visualize
+        """
         self._panel = panel
 
     def get_panel(self):
-        """Get the current model panel."""
+        """
+        Get the current model panel being rendered.
+        
+        :return: The current ModelPanel instance or None
+        """
         return self._panel
         
     def update_display(self):
-        """Convert pygame surface to QPixmap and display it"""
+        """
+        Convert the pygame surface to QPixmap and update the display.
+        
+        If a model panel is set, it will be rendered to the pygame surface first,
+        then the surface is converted to a Qt-compatible image format.
+        """
         # If we have a visualisation, render it first
         if self._panel is not None:
             self._panel.render(self.surface)
@@ -84,7 +122,11 @@ class PygameWidget(QLabel):
         self.setPixmap(QPixmap.fromImage(image))
     
     def resizeEvent(self, event):
-        """Handle resize events"""
+        """
+        Handle widget resize events and update the pygame surface accordingly.
+        
+        :param event: Qt resize event
+        """
         super().resizeEvent(event)
         # Update the surface size to match the widget size
         new_width = self.width
@@ -103,7 +145,11 @@ class PygameWidget(QLabel):
             self.update_display()
     
     def mousePressEvent(self, event: QMouseEvent):
-        """Handle mouse press events by deferring to the model panel"""
+        """
+        Handle mouse press events and forward to the model panel.
+        
+        :param event: Qt mouse press event
+        """
         if self._panel is not None:
             x = int(event.position().x())
             y = int(event.position().y())
@@ -111,7 +157,11 @@ class PygameWidget(QLabel):
         super().mousePressEvent(event)
     
     def mouseReleaseEvent(self, event: QMouseEvent):
-        """Handle mouse release events by deferring to the model panel"""
+        """
+        Handle mouse release events and forward to the model panel.
+        
+        :param event: Qt mouse release event
+        """
         if self._panel is not None:
             x = int(event.position().x())
             y = int(event.position().y())
@@ -119,7 +169,11 @@ class PygameWidget(QLabel):
         super().mouseReleaseEvent(event)
     
     def mouseMoveEvent(self, event: QMouseEvent):
-        """Handle mouse move events by deferring to the model panel"""
+        """
+        Handle mouse move events and forward to the model panel.
+        
+        :param event: Qt mouse move event
+        """
         if self._panel is not None:
             x = int(event.position().x())
             y = int(event.position().y())
@@ -127,7 +181,11 @@ class PygameWidget(QLabel):
         super().mouseMoveEvent(event)
     
     def wheelEvent(self, event: QWheelEvent):
-        """Handle mouse wheel events for zooming"""
+        """
+        Handle mouse wheel events by forwarding zoom events to the model panel.
+        
+        :param event: Qt wheel event
+        """
         if self._panel is not None:
             # Get the angle delta (positive = scroll up = zoom in)
             delta = event.angleDelta().y()
@@ -145,7 +203,12 @@ class PygameWidget(QLabel):
 
 class DebugPanel(QWidget):
     """
-    Debug panel for textual debugging information.
+    Debug panel for displaying textual debugging information and logs.
+    
+    This panel provides methods to write text messages with different severity levels
+    (normal, error, warning, success) and supports HTML formatting for colored output.
+    
+    :param parent: Parent Qt widget (default: None)
     """    
 
     def __init__(self, parent=None):
@@ -167,30 +230,47 @@ class DebugPanel(QWidget):
         self.setMinimumHeight(100)
     
     def write_text(self, text):
-        """Write text to the debug panel"""
+        """
+        Write normal text to the debug panel.
+        
+        :param text: Text to display
+        """
         self.text_edit.append(text)
     
     def write_error(self, text):
-        """Write error text (in red) to the debug panel"""
-        text = text.replace("\n", "<br>")
-        self.text_edit.append(f'<span style="color: red;">{text}</span>')
+        """
+        Write error text in red to the debug panel.
+        
+        :param text: Error message to display
+        """
+        self.text_edit.append(f'<span style="color: red;">{text.replace("\n", "<br>")}</span>')
     
     def write_warning(self, text):
-        """Write warning text (in orange) to the debug panel"""
-        text = text.replace("\n", "<br>")
-        self.text_edit.append(f'<span style="color: orange;">{text}</span>')
+        """
+        Write warning text in orange to the debug panel.
+        
+        :param text: Warning message to display
+        """
+        self.text_edit.append(f'<span style="color: orange;">{text.replace("\n", "<br>")}</span>')
 
     def write_success(self, text):
-        """Write success text (in green) to the debug panel"""
-        text = text.replace("\n", "<br>")
-        self.text_edit.append(f'<span style="color: green;">{text}</span>')
+        """
+        Write success text in green to the debug panel.
+        
+        :param text: Success message to display
+        """
+        self.text_edit.append(f'<span style="color: green;">{text.replace("\n", "<br>")}</span>')
 
     def clear_text(self):
-        """Clear all text from the debug panel"""
+        """Clear all text from the debug panel."""
         self.text_edit.clear()
 
     def listen_to(self):
-        """Specify which event types this handler listens to."""
+        """
+        Specify which event types this handler listens to.
+        
+        :return: Empty list (DebugPanel doesn't listen to events by default)
+        """
         return []  # DebugPanel doesn't listen to any events currently
 
     def handle_event(self, event: pygame.event.Event) -> bool:
@@ -199,9 +279,15 @@ class DebugPanel(QWidget):
 
 class AttributePanel(QWidget):
     """
-    Attribute panel for displaying node/object attributes.
+    Attribute panel for displaying properties and descriptions of simulation elements.
     
-    Implements IEventHandler interface to receive visualization events.
+    This panel listens to visualization events (node clicks, bindings fired) and updates
+    to show the relevant information about the selected element. It displays descriptions
+    using HTML formatting with support for headings, normal text, boxed content, and bold text.
+    
+    Implements the IEventHandler interface to receive visualization events.
+    
+    :param parent: Parent Qt widget (default: None)
     """
         
     def __init__(self, parent=None):
@@ -225,9 +311,9 @@ class AttributePanel(QWidget):
     
     def set_attributes(self, attributes_dict):
         """
-        Set attributes from a dictionary
+        Set and display attributes from a dictionary.
         
-        :param attributes_dict: Dictionary of attribute names and values
+        :param attributes_dict: Dictionary mapping attribute names to values
         """
         text = ""
         for key, value in attributes_dict.items():
@@ -235,20 +321,16 @@ class AttributePanel(QWidget):
         self.text_edit.setHtml(text)
 
     def _clear_attributes_ui(self):
-        """
-        Clears the text in the attribute panel.
-        """
+        """Clear the text in the attribute panel."""
         self.text_edit.clear()
     
     def _clear_description_ui(self):
-        """
-        Clears the description in the attribute panel.
-        """
+        """Clear the description in the attribute panel."""
         self.text_edit.clear()
 
     def _update_selected(self, selected: 'Node'):
         """
-        Update selected node for the attribute panel.
+        Update the selected node for the attribute panel.
 
         :param selected: The selected visualization node (not the model node)
         """
@@ -262,7 +344,7 @@ class AttributePanel(QWidget):
 
     def _refresh(self):
         """
-        Updates the attribute panel based on the selected object.
+        Refresh the attribute panel by updating it with the current selected object's description.
         """
         if self._selected is not None:
             des = self._selected._model_node.get_description()
@@ -272,9 +354,15 @@ class AttributePanel(QWidget):
             self, 
             description: List[Tuple[str, 'Describable.Style']]):
         """
-        Set attributes from a description
+        Update the UI with a formatted description using HTML.
         
-        :param description: List of sections to add as html
+        Formats the description according to the style specified for each section:
+        - HEADING: Rendered as h2
+        - NORMAL: Rendered as paragraph
+        - BOXED: Rendered in a table cell with border
+        - BOLD: Rendered as bold paragraph
+        
+        :param description: List of tuples containing (text, style) where style determines formatting
         """
         from simpn.simulator import Describable
         
@@ -311,12 +399,21 @@ class AttributePanel(QWidget):
         self.text_edit.setHtml(panel_text)
     
     def listen_to(self):
-        """Specify which event types this handler listens to."""
+        """
+        Specify which event types this handler listens to.
+        
+        :return: List of event types (NODE_CLICKED, BINDING_FIRED, SELECTION_CLEAR)
+        """
         return [EventType.NODE_CLICKED, EventType.BINDING_FIRED, EventType.SELECTION_CLEAR]
     
     def handle_event(self, event: pygame.event.Event) -> bool:
         """
-        Handle a pygame event (part of IEventHandler interface).
+        Handle a pygame event to update the attribute panel display.
+        
+        Responds to:
+        - NODE_CLICKED: Updates panel to show clicked node's attributes
+        - BINDING_FIRED: Refreshes panel to reflect simulation state changes
+        - SELECTION_CLEAR: Clears the attribute display
         
         :param event: The pygame event to handle
         :return: True to propagate event to other handlers
@@ -332,14 +429,27 @@ class AttributePanel(QWidget):
 
 
 class MainWindow(QMainWindow):
+    """
+    Main application window for the SimPN visualization system.
+    
+    Provides a complete IDE-like interface for simulations with:
+    - Toolbar with simulation controls (play, step, stop, reset, speed adjustment)
+    - Zoom controls for the visualization
+    - Clock precision controls
+    - Dockable debug console and attribute panel
+    - File menu for loading BPMN files (in application mode)
+    - Qt timer-based simulation execution to avoid threading issues
+    
+    The window can operate in two modes:
+    - Application mode: Includes file menu to load BPMN files
+    - Embedded mode: Expects a simulation to be set programmatically
+    """
+    
     def __init__(self, as_application=False):
         """
-        Main window for the simulation. The main window can be created from code or by calling the main function below.
-        If it is created from code, it is expected to set a simulation using set_simulation().
-        If it is created as an application, the load button is visible to load a BPMN file, instead.
-
-        :param event_dispatcher: The event dispatcher for handling visualization events
-        :param as_application: If True, the window will be treated as a main application.
+        Initialize the main window.
+        
+        :param as_application: If True, enables application mode with file menu (default: False)
         """
         super().__init__()
 
@@ -597,7 +707,12 @@ class MainWindow(QMainWindow):
         self.create_menus()
     
     def create_monochrome_icon(self, standard_pixmap):
-        """Create a monochrome version of a standard icon"""
+        """
+        Create a monochrome (dark gray) version of a standard Qt icon.
+        
+        :param standard_pixmap: Qt standard pixmap enum value
+        :return: QIcon with monochrome rendering
+        """
         # Get the original icon
         original_icon = self.style().standardIcon(standard_pixmap)
         pixmap = original_icon.pixmap(QSize(16, 16))
@@ -617,7 +732,12 @@ class MainWindow(QMainWindow):
         return QIcon(mono_pixmap)
     
     def create_monochrome_icon_from_file(self, file_path):
-        """Create a monochrome version of an icon from a PNG file"""
+        """
+        Create a monochrome (dark gray) version of an icon from a PNG file.
+        
+        :param file_path: Path to the PNG icon file
+        :return: QIcon with monochrome rendering, or empty icon if file doesn't exist
+        """
         if not os.path.exists(file_path):
             # Return empty icon if file doesn't exist
             return QIcon()
@@ -647,7 +767,12 @@ class MainWindow(QMainWindow):
         return QIcon(mono_pixmap)
     
     def create_menus(self):
-        """Create the menu bar"""
+        """
+        Create the menu bar with File and View menus.
+        
+        File menu (application mode only): Contains "Open BPMN File" action
+        View menu: Contains toggles for debug and attribute panels, plus layout reset
+        """
         menubar = self.menuBar()
 
         # File menu
@@ -769,10 +894,18 @@ class MainWindow(QMainWindow):
 
     def set_simulation(self, model_panel: ModelPanel):
         """
-        Load a simulation problem into the IDE.
+        Sets a simulation into the visualization window and handles the necessary administration.
         
-        :param sim_problem: The simulation problem to visualize
-        :param layout_file: Optional layout file path
+        This method:
+        - Deregisters existing event handlers if another simulation model panel is already set
+        - Stores an initial checkpoint of the simulation for reset functionality
+        - Creates a new clock module for the module panel
+        - Sets the new simulation model panel
+        - Registers the model panel, attribute panel, and clock module as event handlers
+        - Enables all simulation control buttons
+        - Updates the display
+        
+        :param model_panel: The ModelPanel instance containing the simulation to visualize
         """
         # If there is an existing simulation, deregister event handlers
         if self.pygame_widget.get_panel() is not None:
@@ -815,14 +948,21 @@ class MainWindow(QMainWindow):
         self.pygame_widget.update_display()                        
     
     def step_simulation(self):
-        """Execute one step of the simulation."""
+        """
+        Execute one step of the simulation and update the display.
+        """
         viz = self.pygame_widget.get_panel()
         if viz is not None:
             viz.step()
             self.pygame_widget.update_display()
     
     def play_simulation(self):
-        """Start continuous simulation playback."""
+        """
+        Start continuous simulation playback.
+        
+        Enables the play timer which executes simulation steps at regular intervals
+        determined by _play_step_delay. Updates UI button states appropriately.
+        """
         if not self._playing:
             self._playing = True
             self.play_action.setEnabled(False)
@@ -832,39 +972,65 @@ class MainWindow(QMainWindow):
             self._play_timer.start(self._play_step_delay)
     
     def _on_play_timer(self):
-        """Called by timer to execute simulation steps during play mode."""
+        """
+        Timer callback for executing simulation steps during play mode.
+        
+        Called automatically by Qt timer at intervals set by _play_step_delay.
+        """
         viz = self.pygame_widget.get_panel()
         if viz is not None and self._playing:
             viz.step()
     
     def _on_display_timer(self):
-        """Called by timer to update the display (~30 FPS)."""
+        """
+        Timer callback for updating the display at approximately 30 FPS.
+        
+        Called automatically by Qt timer every ~33ms to provide smooth visualization updates.
+        """
         viz = self.pygame_widget.get_panel()
         if viz is not None:
             self.pygame_widget.update_display()
     
     def save_layout(self):
-        """Save the current layout to a file if a file is currently open."""
+        """
+        Save the current node layout to a file.
+        
+        Only saves if a BPMN file is currently open. The layout file is saved in the
+        platform-specific preferences directory with a .layout extension.
+        """
         viz = self.pygame_widget.get_panel()
         if viz is not None and hasattr(self, '_filename_open'):
             viz.save_layout(get_preferences_directory() / (self._filename_open + ".layout"))
     
     def get_layout(self, filename) -> str:
-        """Get the layout file path for a given BPMN filename."""
+        """
+        Get the layout file path for a given BPMN filename.
+        
+        :param filename: Base name of the BPMN file
+        :return: Full path to layout file if it exists, None otherwise
+        """
         layout_file = get_preferences_directory() / (filename + ".layout")
         if layout_file.exists():
             return str(layout_file)
         return None
 
     def reset_layout(self):
-        """Reset the layout of the current visualization."""
+        """
+        Reset the visualization layout to default positioning.
+        
+        Uses the layout algorithm to reposition all nodes.
+        """
         viz = self.pygame_widget.get_panel()
         if viz is not None:
             viz.reset_layout()
             self.pygame_widget.update_display()
 
     def stop_simulation(self):
-        """Stop continuous simulation playback."""
+        """
+        Stop continuous simulation playback.
+        
+        Stops the play timer and re-enables step and reset buttons.
+        """
         self._playing = False
         self._play_timer.stop()
         self.play_action.setEnabled(True)
@@ -895,38 +1061,50 @@ class MainWindow(QMainWindow):
             self._play_timer.setInterval(self._play_step_delay)
     
     def zoom_in(self):
-        """Zoom in on the visualization."""
+        """Zoom in on the visualization by increasing the zoom level."""
         viz = self.pygame_widget.get_panel()
         if viz is not None:
             viz.zoom("increase")
             self.pygame_widget.update_display()
     
     def zoom_out(self):
-        """Zoom out on the visualization."""
+        """Zoom out on the visualization by decreasing the zoom level."""
         viz = self.pygame_widget.get_panel()
         if viz is not None:
             viz.zoom("decrease")
             self.pygame_widget.update_display()
     
     def zoom_reset(self):
-        """Reset zoom to 100%."""
+        """Reset zoom level to 100% (1.0x scale)."""
         viz = self.pygame_widget.get_panel()
         if viz is not None:
             viz.zoom("reset")
             self.pygame_widget.update_display()
     
     def increase_clock_precision(self):
-        """Increase clock precision."""
+        """
+        Increase the number of decimal places shown in the simulation clock.
+        """
         if hasattr(self, 'clock_module'):
             self.clock_module.increase_precision()
 
     def decrease_clock_precision(self):
-        """Decrease clock precision."""
+        """
+        Decrease the number of decimal places shown in the simulation clock.
+        
+        Minimum precision is 1 decimal place.
+        """
         if hasattr(self, 'clock_module'):
             self.clock_module.decrease_precision()
 
     def closeEvent(self, event):
-        """Handle window close event - stop timers cleanly."""
+        """
+        Handle window close event gracefully.
+        
+        Stops all timers, saves the current layout if applicable, and accepts the close event.
+        
+        :param event: Qt close event
+        """
         # Stop the timers
         self._playing = False
         self._play_timer.stop()
@@ -946,6 +1124,31 @@ class MainWindow(QMainWindow):
 
 
 class Visualisation:
+    """
+    High-level interface for creating and displaying Petri net simulation visualizations.
+    
+    This class provides the main entry point for visualizing SimPN simulations. It creates
+    a Qt application, main window, and model panel with the specified layout configuration.
+    
+    The class can be used in two modes:
+    1. With a simulation: Immediately loads and displays the provided simulation
+    2. Without a simulation: Opens as an application allowing users to load BPMN files
+    
+    Example usage:
+        ```python
+        from simpn.simulator import SimProblem
+        from simpn.visualisation import Visualisation
+        
+        # Create simulation
+        problem = SimProblem()
+        # ... define simulation ...
+        
+        # Create and show visualization
+        viz = Visualisation(problem)
+        viz.show()
+        ```
+    """
+    
     def __init__(
             self, 
             sim_problem=None, 
@@ -953,7 +1156,17 @@ class Visualisation:
             grid_spacing=50, 
             node_spacing=100, 
             layout_algorithm="sugiyama",
-            extra_modules: List[object] = None): 
+            extra_modules: List[object] = None):
+        """
+        Initialize the visualization.
+        
+        :param sim_problem: SimProblem instance to visualize (None for application mode)
+        :param layout_file: Path to saved layout file for node positioning (optional)
+        :param grid_spacing: Grid spacing for snapping nodes (default: 50)
+        :param node_spacing: Spacing between nodes in auto-layout (default: 100)
+        :param layout_algorithm: Algorithm for auto-layout: "sugiyama" or other (default: "sugiyama")
+        :param extra_modules: List of additional modules to integrate (default: None)
+        """
         self.sim_problem = sim_problem
         self.layout_file = layout_file
         self.grid_spacing = grid_spacing
@@ -986,11 +1199,20 @@ class Visualisation:
             self.main_window.set_simulation(model_panel)            
 
     def show(self):
+        """
+        Display the visualization window and start the Qt event loop.
+        
+        This method blocks until the window is closed by the user.
+        """
         self.main_window.show()
         self.app.exec()
     
     def save_layout(self, layout_file: str):
-        """Save the current layout to a file."""
+        """
+        Save the current node positions to a layout file.
+        
+        :param layout_file: Path where the layout should be saved
+        """
         viz = self.main_window.pygame_widget.get_panel()
         if viz is not None:
             viz.save_layout(layout_file)

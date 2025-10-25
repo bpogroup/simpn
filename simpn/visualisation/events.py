@@ -1,3 +1,20 @@
+"""
+Event system for visualization components.
+
+This module provides an event dispatching system for communication between
+visualization components. It defines event types, handler interfaces, and utilities
+for creating and checking events.
+
+Classes:
+    EventType: Enum defining all possible event types in the visualization system.
+    IEventHandler: Protocol (interface) for classes that handle events.
+    EventDispatcher: Central dispatcher that routes events to registered handlers.
+
+Functions:
+    create_event: Factory function for creating pygame events with custom attributes.
+    check_event: Utility to check if an event matches a specific type.
+"""
+
 from enum import Enum, auto
 from typing import List, Protocol, Union
 from pygame.event import Event
@@ -5,6 +22,13 @@ from pygame import USEREVENT
 
 
 class EventType(Enum):
+    """
+    Enumeration of all event types used in the visualization system.
+    
+    Each event type represents a specific occurrence in the visualization lifecycle
+    or user interaction that components may want to respond to.
+    """
+    
     VISUALIZATION_CREATED = auto()      # Fired when visualization is created; includes 'sim' attribute
     PRE_EVENT_LOOP = auto()             # Fired at start of each game loop; includes 'sim' attribute
     POST_EVENT_LOOP = auto()            # Fired at end of each game loop; includes 'sim' attribute
@@ -17,48 +41,77 @@ class EventType(Enum):
 
 class IEventHandler(Protocol):
     """
-    Interface for event handlers.
+    Protocol (interface) for event handlers in the visualization system.
     
-    Any class that wants to handle events should implement this interface.
+    Any class that wants to receive and handle events must implement this protocol.
+    The protocol requires two methods: handle_event and listen_to.
+    
+    Example:
+        ```python
+        class MyHandler:
+            def handle_event(self, event: Event) -> bool:
+                if check_event(event, EventType.NODE_CLICKED):
+                    print(f"Node clicked: {event.node}")
+                return True
+            
+            def listen_to(self) -> List[EventType]:
+                return [EventType.NODE_CLICKED, EventType.BINDING_FIRED]
+        ```
     """
     
     def handle_event(self, event: Event) -> bool:
         """
         Handle a pygame event.
         
-        :param event: The pygame event to handle
-        :return: True if the event should propagate to other handlers, False to stop propagation
+        This method is called by the EventDispatcher when an event of a type this
+        handler listens to is dispatched.
+        
+        :param event: The pygame event to handle (includes event_type attribute)
+        :return: True to allow event to propagate to other handlers, False to stop propagation
         """
         raise NotImplementedError("Must implement handle_event method")
 
     def listen_to(self) -> List[EventType]:
         """
-        Specify which event types this handler listens to.
+        Specify which event types this handler wants to receive.
         
-        :return: A list of EventType enums
+        Only events of the returned types will be passed to this handler's
+        handle_event method.
+        
+        :return: List of EventType enums this handler is interested in
         """
         raise NotImplementedError("Must implement listen_to method")
 
 
 class EventDispatcher:
     """
-    Central event dispatcher that receives events and forwards them to registered handlers.
+    Central event dispatcher that routes events to registered handlers.
     
-    Handlers are called in the order they were registered. If a handler returns False,
-    event propagation stops.
-
-    Handlers can be registered to listen to specific event types. If none are specified, they listen to all events.
+    This class manages event handlers and dispatches events to them in registration order.
+    Handlers are organized by the event types they listen to for efficient dispatch.
+    
+    If a handler returns False from handle_event, event propagation stops immediately.
+    This allows handlers to prevent other handlers from seeing an event if appropriate.
+    
+    Automatically sets the _event_dispatcher attribute on registered handlers to allow
+    handlers to dispatch their own events if needed.
     """
 
     def __init__(self):
+        """Initialize an empty event dispatcher."""
         self._handlers: dict[EventType, List[IEventHandler]] = {}
 
     def register_handler(self, handler: IEventHandler) -> None:
         """
-        Register an event handler to listen to specific event types.
-        Also sets the event dispatcher reference on the handler.
+        Register an event handler to receive specific event types.
         
-        :param handler: The handler to register (must implement IEventHandler)
+        The handler's listen_to() method is called to determine which event types
+        it wants to receive. The handler is added to the dispatch list for each
+        of those event types.
+        
+        Also sets handler._event_dispatcher = self to allow the handler to dispatch events.
+        
+        :param handler: The handler to register (must implement IEventHandler protocol)
         """
         listens_to = handler.listen_to()
         
@@ -70,8 +123,10 @@ class EventDispatcher:
 
     def unregister_handler(self, handler: IEventHandler) -> None:
         """
-        Unregister an event handler.
-        Also clears the event dispatcher reference on the handler.
+        Unregister an event handler from all event types.
+        
+        Removes the handler from all event type dispatch lists and clears its
+        _event_dispatcher reference.
         
         :param handler: The handler to unregister
         """
@@ -82,10 +137,17 @@ class EventDispatcher:
 
     def dispatch(self, source, event: Event) -> bool:
         """
-        Dispatch an event to all registered handlers except the source to prevent infinite loops.
+        Dispatch an event to all registered handlers (except the source).
         
-        :param event: The event to dispatch
-        :return: True if the event propagated to all handlers, False if stopped early
+        Handlers are called in registration order for the event's type. If any handler
+        returns False, propagation stops and remaining handlers are not called.
+        
+        The source parameter prevents infinite event loops - the source handler
+        will not receive the event it dispatched.
+        
+        :param source: The object dispatching the event (will not receive it)
+        :param event: The pygame Event to dispatch (must have event_type attribute)
+        :return: True if event propagated to all handlers, False if stopped early
         """
         for handler in self._handlers.get(event.event_type, []):
             if handler is not source:
@@ -96,13 +158,21 @@ class EventDispatcher:
 
 def create_event(event_type: Union[EventType, str], **kwargs) -> Event:
     """
-    Creates a custom pygame event.
+    Create a custom pygame event with the specified type and attributes.
     
-    This is the uniform way to produce events in the system.
+    This is the standard way to create events in the visualization system. The event
+    will have an event_type attribute set to the provided type, plus any additional
+    keyword arguments as attributes.
     
-    :param event_type: The type of event (EventType enum or legacy string)
-    :param kwargs: Event attributes (e.g., node=my_node, position=(x,y))
-    :return: A pygame Event
+    Example:
+        ```python
+        evt = create_event(EventType.NODE_CLICKED, node=my_node, position=(100, 200))
+        dispatcher.dispatch(self, evt)
+        ```
+    
+    :param event_type: The type of event (EventType enum or legacy string for compatibility)
+    :param kwargs: Additional event attributes (e.g., node=..., sim=..., position=...)
+    :return: A pygame Event with USEREVENT+1 as the pygame event type
     """    
     return Event(
         USEREVENT + 1,
@@ -114,5 +184,19 @@ def create_event(event_type: Union[EventType, str], **kwargs) -> Event:
 def check_event(event: Event, event_type: Union[EventType, str]) -> bool:
     """
     Check if a pygame event matches a specific event type.
+    
+    This is a convenience function for checking events in handle_event methods.
+    
+    Example:
+        ```python
+        def handle_event(self, event):
+            if check_event(event, EventType.NODE_CLICKED):
+                # Handle node click
+                pass
+        ```
+    
+    :param event: The pygame Event to check
+    :param event_type: The event type to check for (EventType enum or string)
+    :return: True if the event's event_type attribute matches, False otherwise
     """
     return getattr(event, 'event_type', None) == event_type
