@@ -229,13 +229,17 @@ class DebugPanel(QWidget):
 
         self.setMinimumHeight(100)
     
-    def write_text(self, text):
+    def write_text(self, text, color=None):
         """
         Write normal text to the debug panel.
         
         :param text: Text to display
         """
-        self.text_edit.append(text)
+        html_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+        if color:
+            self.text_edit.append(f'<span style="color: {color};">{html_text}</span>')
+        else:
+            self.text_edit.append(html_text)
     
     def write_error(self, text):
         """
@@ -243,15 +247,15 @@ class DebugPanel(QWidget):
         
         :param text: Error message to display
         """
-        self.text_edit.append(f'<span style="color: red;">{text.replace("\n", "<br>")}</span>')
-    
+        self.write_text(text, color="red")
+
     def write_warning(self, text):
         """
         Write warning text in orange to the debug panel.
         
         :param text: Warning message to display
         """
-        self.text_edit.append(f'<span style="color: orange;">{text.replace("\n", "<br>")}</span>')
+        self.write_text(text, color="orange")
 
     def write_success(self, text):
         """
@@ -259,7 +263,7 @@ class DebugPanel(QWidget):
         
         :param text: Success message to display
         """
-        self.text_edit.append(f'<span style="color: green;">{text.replace("\n", "<br>")}</span>')
+        self.write_text(text, color="green")
 
     def clear_text(self):
         """Clear all text from the debug panel."""
