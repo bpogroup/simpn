@@ -139,7 +139,8 @@ Version 1.6.0 (2025-10-16)
 - [Major feature] implemented efficient calculation of bindings. This does lead to a different approach: we now get the first possible binding per event (based on priority), after which the binding selection function can select one. Previously, all possible bindings per event were calculated, after which the binding selection function could select one.
 - [Chore] updated readme.
 
-Version 1.6.1 ()
-----------------
+Version 1.7.0 (2025-10-27)
+--------------------------
 
 - [Major feature] added support for BPMN XML import.
+- [Major feature] updated visualization components for improved look-and-feel and maintainability.
