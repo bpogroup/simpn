@@ -2,7 +2,6 @@ from simpn.simulator import SimProblem, SimToken
 from random import expovariate as exp
 from simpn.helpers import BPMN
 from simpn.visualisation import Visualisation
-from simpn.visualisation.modules.ui import UISidePanelModule
 
 # Instantiate a simulation problem.
 agency = SimProblem()
@@ -52,8 +51,6 @@ class End(BPMN):
     incoming=["done"]
 
 # Simulate with an EventLogReporter.
-v = Visualisation(agency, "./temp/presentation_2.layout", extra_modules=[
-    UISidePanelModule()
-])
+v = Visualisation(agency, "./temp/presentation_2.layout")
 v.show()
 v.save_layout("./temp/presentation_2.layout")

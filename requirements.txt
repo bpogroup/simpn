@@ -8,3 +8,4 @@ twine==6.0.1
 matplotlib==3.9.3
 pygame==2.6.1
 igraph==0.11.8
+pyqt6>=6.9.1

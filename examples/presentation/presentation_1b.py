@@ -3,7 +3,6 @@ from simpn.simulator import SimToken
 from simpn.helpers import Place, Transition
 from random import expovariate as exp
 from simpn.visualisation import Visualisation
-from simpn.visualisation.modules.ui import UISidePanelModule
 
 # Instantiate a simulation problem.
 shop = SimProblem()
@@ -60,10 +59,6 @@ class Complete(Transition):
     return [SimToken(b[1])]
   
 # Run the simulation.
-visualisation = Visualisation(
-  shop, "./temp/presentation_1.layout",
-  extra_modules=[
-    UISidePanelModule()
-  ])
+visualisation = Visualisation(shop, "./temp/presentation_1.layout")
 visualisation.show()
 visualisation.save_layout("./temp/presentation_1.layout")

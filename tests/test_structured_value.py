@@ -1,12 +1,12 @@
 import unittest
-from unittest.mock import Mock, patch
-
 from time import time, sleep
 import threading
 import pygame
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QTextEdit, QDockWidget, QToolBar, QSizePolicy, QApplication
 
 from simpn.simulator import SimProblem, SimToken, SimTokenValue
 
+from simpn.visualisation.events import create_event
 from tests.dummy_problems import create_dummy_bpmn
 
 class TestStructuredTokenValues(unittest.TestCase):
@@ -286,34 +286,3 @@ class TestStructuredTokenValues(unittest.TestCase):
     def test_can_run_sim(self):
         problem = create_dummy_bpmn(structured=True)
         problem.simulate(10)
-
-    @staticmethod
-    def quick_close(vis, wait_time=0.4):
-        start = time()
-        for _ in range(5):
-            vis.action_faster()
-        vis.action_play()
-        pygame.event.post(
-            pygame.event.Event(
-                pygame.USEREVENT + 1,
-                { "message" : "hello, world!"}
-            )
-        )
-
-        while (time() - start) <= wait_time:
-            sleep(0.02)
-
-        vis.close()
-
-    def test_can_run_vis(self):
-        from simpn.visualisation import Visualisation
-        problem = create_dummy_bpmn(structured=True)
-        
-        vis = Visualisation(problem, extra_modules=[])
-        self.assertIsNotNone(vis)
-        
-        thread = threading.Thread(target=self.quick_close, args=[vis, 1.5])
-        thread.start()
-        vis.show()
-        thread.join()
-

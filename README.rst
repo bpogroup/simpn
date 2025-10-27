@@ -222,3 +222,10 @@ For more information, including the `API specification`_, and a far more extensi
 .. _`documentation`: https://bpogroup.github.io/simpn/
 .. _`tutorial`: https://bpogroup.github.io/simpn/teaching.html
 .. _`API specification`: https://bpogroup.github.io/simpn/api.html
+
+Acknowledgements
+================
+
+UI icons by `Flaticon`_.
+
+.. _`Flaticon`: https://www.flaticon.com/free-icons/zoom-in

@@ -2,7 +2,6 @@ import random
 from simpn.simulator import SimProblem, SimToken
 import simpn.prototypes as prototype
 from simpn.visualisation import Visualisation
-from simpn.visualisation.modules.ui import UISidePanelModule
 
 my_problem = SimProblem()
 
