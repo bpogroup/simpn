@@ -26,7 +26,10 @@ from PyQt6.QtWidgets import (
 )
 from simpn.visualisation.model_panel_mods import ClockModule
 from simpn.visualisation.model_panel import ModelPanel
-from simpn.visualisation.events import EventDispatcher, check_event, create_event, EventType
+from simpn.visualisation.events import (
+    get_dispatcher, check_event, create_event, dispatch, listen_to,
+    EventType, Event
+)
 
 from typing import List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -87,6 +90,11 @@ class PygameWidget(QLabel):
         self.setMinimumSize(width, height)
         self._panel = None  # Will hold the ModelPanel instance
 
+        listen_to(
+            EventType.SIM_RENDERED,
+            self.update_display
+        )
+
     def set_panel(self, panel: ModelPanel):
         """
         Set the model panel to render in this widget.
@@ -103,7 +111,7 @@ class PygameWidget(QLabel):
         """
         return self._panel
         
-    def update_display(self):
+    def update_display(self, event: Event):
         """
         Convert the pygame surface to QPixmap and update the display.
         
@@ -111,15 +119,18 @@ class PygameWidget(QLabel):
         then the surface is converted to a Qt-compatible image format.
         """
         # If we have a visualisation, render it first
-        if self._panel is not None:
-            self._panel.render(self.surface)
-        
-        # Get the pygame surface as a string buffer
-        data = pygame.image.tostring(self.surface, 'RGB')
-        # Create QImage from the data
-        image = QImage(data, self.width, self.height, self.width * 3, QImage.Format.Format_RGB888)
-        # Convert to QPixmap and display
-        self.setPixmap(QPixmap.fromImage(image))
+        # if self._panel is not None:
+        #     return self._panel.render()
+
+        if event:
+            surface = getattr(event, 'window')
+            # Get the pygame surface as a string buffer
+            data = pygame.image.tostring(surface, 'RGB')
+            # Create QImage from the data
+            image = QImage(data, self.width, self.height, self.width * 3, QImage.Format.Format_RGB888)
+            # Convert to QPixmap and display
+            self.setPixmap(QPixmap.fromImage(image))
+        return True
     
     def resizeEvent(self, event):
         """
@@ -189,14 +200,21 @@ class PygameWidget(QLabel):
         if self._panel is not None:
             # Get the angle delta (positive = scroll up = zoom in)
             delta = event.angleDelta().y()
+            action = None
             
             if delta > 0:
-                self._panel.zoom("increase")
+                action = "increase"
             else:
-                self._panel.zoom("decrease")
-            
-            # Update display to show zoom change
-            self.update_display()
+                action = "decrease"
+
+            dispatch(
+                create_event(EventType.SIM_ZOOM, action=action),
+                self
+            )
+            dispatch(
+                create_event(EventType.SIM_UPDATE),
+                self
+            )
         
         super().wheelEvent(event)
 
@@ -240,6 +258,7 @@ class DebugPanel(QWidget):
             self.text_edit.append(f'<span style="color: {color};">{html_text}</span>')
         else:
             self.text_edit.append(html_text)
+
     
     def write_error(self, text):
         """
@@ -275,9 +294,15 @@ class DebugPanel(QWidget):
         
         :return: Empty list (DebugPanel doesn't listen to events by default)
         """
-        return []  # DebugPanel doesn't listen to any events currently
+        return [
+            EventType.ALL
+        ]  # DebugPanel doesn't listen to any events currently
 
     def handle_event(self, event: pygame.event.Event) -> bool:
+        if not check_event(event, EventType.RENDER_UI):
+            self.write_text(
+                f"[EventQue] {str(event)}"
+            )
         return True
 
 
@@ -928,6 +953,7 @@ class MainWindow(QMainWindow):
         self._event_dispatcher.register_handler(model_panel)
         self._event_dispatcher.register_handler(self.clock_module)
         self._event_dispatcher.register_handler(self.attribute_panel)
+        self._event_dispatcher.register_handler(self.debug_panel)
 
         # Set it in the pygame widget
         self.pygame_widget.set_panel(model_panel)
@@ -949,7 +975,7 @@ class MainWindow(QMainWindow):
         self.clock_decrease_action.setEnabled(True)
         
         # Update the display
-        self.pygame_widget.update_display()                        
+        self.pygame_widget.update_display(None)                        
     
     def step_simulation(self):
         """
@@ -991,9 +1017,10 @@ class MainWindow(QMainWindow):
         
         Called automatically by Qt timer every ~33ms to provide smooth visualization updates.
         """
-        viz = self.pygame_widget.get_panel()
-        if viz is not None:
-            self.pygame_widget.update_display()
+        dispatch(
+            create_event(EventType.SIM_UPDATE),
+            self
+        )
     
     def save_layout(self):
         """
@@ -1179,7 +1206,7 @@ class Visualisation:
         self.extra_modules = extra_modules if extra_modules is not None else []
 
         self.app = QApplication(sys.argv)
-        self.event_dispatcher = EventDispatcher()
+        self.event_dispatcher = get_dispatcher()
         
         # Set application icon for taskbar/dock
         logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'logo.png')

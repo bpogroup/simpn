@@ -6,7 +6,10 @@ from enum import Enum, auto
 from typing import Optional, Tuple, List
 import simpn
 from PyQt6.QtCore import Qt
-from simpn.visualisation.events import EventType, create_event
+from simpn.visualisation.events import (
+    EventType, Event,
+    create_event, listen_to, dispatch
+)
 from simpn.visualisation.constants import (
     MAX_SIZE,
     TUE_RED,
@@ -488,6 +491,7 @@ class ModelPanel:
         self._selected_nodes = None
         self._zoom_level = 1.0
         self._size = MAX_SIZE
+        self._surface = pygame.Surface((640,480))
 
         # Add visualizations for prototypes, places, and transitions,
         # but not for places and transitions that are part of prototypes.
@@ -569,6 +573,19 @@ class ModelPanel:
                 )
         if not layout_loaded:
             self.__layout()
+
+        # listen to the event que
+        self._setup_listeners()
+
+    def _setup_listeners(self):
+        listen_to(
+            EventType.SIM_ZOOM,
+            self._ev_zoom
+        )
+        listen_to(
+            EventType.SIM_UPDATE,
+            self._ev_render
+        )
 
     def play(self):
         self.__playing = True
@@ -674,6 +691,14 @@ class ModelPanel:
                 if id in self._nodes:
                     self._nodes[id].set_pos((int(x), int(y)))
 
+    def _ev_zoom(self, event: Event) -> bool:
+        """
+        Event que wrapper for calling zoom.
+        """
+        action = getattr(event, 'action')
+        self.zoom(action)
+        return True
+
     def zoom(self, action):
         """
         Zooms the model. Action can be one of: increase, decrease, reset.
@@ -687,6 +712,7 @@ class ModelPanel:
         elif action == "increase":
             self._zoom_level *= 1.1
         self._zoom_level = max(0.3, min(self._zoom_level, 3.0))  # clamp zoom level
+        print(action, self._zoom_level)
 
     def close(self):
         """
@@ -705,14 +731,22 @@ class ModelPanel:
     def get_problem(self):
         """Get the simulation problem."""
         return self._problem
+    
+    def _ev_render(self, event) -> bool:
+        """
+        Event que wrapper for rendering the visualization.
+        """
+        self.render()
+        return True
 
-    def render(self, surface: pygame.Surface) -> None:
+    def render(self) -> None:
         """
         Render the Petri net visualization onto the provided pygame surface (for IDE integration).
 
         :param surface: The pygame surface to render onto
         """
         # Get zoom level
+        surface = self._surface
         zoom_level = self._zoom_level
 
         # Create a scaled surface for zooming
@@ -739,7 +773,14 @@ class ModelPanel:
 
         # Dispatch RENDER_UI event to all modules
         evt = create_event(EventType.RENDER_UI, window=surface)
-        self._event_dispatcher.dispatch(self, evt)
+        dispatch(
+            evt,
+            self
+        )
+        dispatch(
+            create_event(EventType.SIM_RENDERED, window=surface),
+            self
+        )
 
     def handle_mouse_press(
         self, pos: Tuple[int, int], button: Qt.MouseButton
