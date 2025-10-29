@@ -30,7 +30,7 @@ class DummyEventHandler:
         :return: True to allow event propagation to continue
         """
         event_type = getattr(event, 'event_type', None)
-        
+
         if event_type == EventType.VISUALIZATION_CREATED:
             self.visualization_created = True
         elif event_type == EventType.PRE_EVENT_LOOP:

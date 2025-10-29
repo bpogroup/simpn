@@ -4,7 +4,8 @@ from tests.utils import DummyEventHandler
 from tests.dummy_problems import create_dummy_bpmn
 from PyQt6.QtWidgets import QApplication
 from simpn.visualisation.events import EventType
-from simpn.visualisation.base import MainWindow, ModelPanel, EventDispatcher
+from simpn.visualisation.base import MainWindow, ModelPanel
+from simpn.visualisation.events import get_dispatcher   
 import sys
 import os
 import tempfile
@@ -24,7 +25,7 @@ class TestEventDispatching(unittest.TestCase):
             self.app = QApplication(sys.argv)
         
         self.problem = create_dummy_bpmn()
-        self.event_dispatcher = EventDispatcher()
+        self.event_dispatcher = get_dispatcher()
         
         # Create main window without creating a new QApplication
         self.main_window = MainWindow(as_application=False)
@@ -175,7 +176,7 @@ class TestBasicVisualisation(unittest.TestCase):
             self.app = QApplication(sys.argv)
         
         self.problem = create_dummy_bpmn()
-        self.event_dispatcher = EventDispatcher()
+        self.event_dispatcher = get_dispatcher()
         
         # Create main window without creating a new QApplication
         self.main_window = MainWindow(as_application=False)
