@@ -65,16 +65,19 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimToken" title="simpn.simulator.SimToken"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimToken</span></code></a>(value[, time, delay])</p></td>
 <td><p>A token SimToken, which is a possible value of a SimVar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenValue" title="simpn.simulator.SimTokenValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTokenValue</span></code></a>(id, *values, **dict_values)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenTime" title="simpn.simulator.SimTokenTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTokenTime</span></code></a>(value[, time, delay, problem])</p></td>
+<td><p>A token that represents the simulation time.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenValue" title="simpn.simulator.SimTokenValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTokenValue</span></code></a>(id, *values, **dict_values)</p></td>
 <td><p>A data structure to enable the handling of values and named attributes associated with tokens.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVar" title="simpn.simulator.SimVar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVar</span></code></a>(_id[, priority])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVar" title="simpn.simulator.SimVar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVar</span></code></a>(_id[, priority])</p></td>
 <td><p>A simulation variable SimVar has an identifier and a marking.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVarQueue" title="simpn.simulator.SimVarQueue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarQueue</span></code></a>(simvar)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVarQueue" title="simpn.simulator.SimVarQueue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarQueue</span></code></a>(simvar)</p></td>
 <td><p>A simulation variable that contains the queue of tokens from another SimVar.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVarTime" title="simpn.simulator.SimVarTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarTime</span></code></a>(problem)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVarTime" title="simpn.simulator.SimVarTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarTime</span></code></a>(problem)</p></td>
 <td><p>A simulation variable that contains the simulation time.</p></td>
 </tr>
 </tbody>
@@ -585,6 +588,15 @@ The value will then be available at &lt;time of event&gt; + &lt;delay&gt;.</p>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.simulator.SimTokenTime">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimTokenTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimTokenTime" title="Link to this definition">¶</a></dt>
+<dd><p>A token that represents the simulation time.
+This token only always has a single value, which is the simulation time.
+The value will be taken from the clock of the simulator through an attribute function,
+so it always has the correct value at the time of firing.</p>
 </dd></dl>
 
 <dl class="py class">

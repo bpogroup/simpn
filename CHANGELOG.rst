@@ -144,3 +144,8 @@ Version 1.7.0 (2025-10-27)
 
 - [Major feature] added support for BPMN XML import.
 - [Major feature] updated visualization components for improved look-and-feel and maintainability.
+
+Version 1.7.1 (2025-10-30)
+---------------------------
+
+- [Bugfix] fixed issue with time SimVar not correctly updating to the current time.
