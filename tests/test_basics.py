@@ -563,6 +563,24 @@ class TestTimeVariable(unittest.TestCase):
         time_var = test_problem.var("time")
 
         self.assertEqual(time_var.marking, [SimToken(2)], "There is one token with value 2")
+    
+    def test_time_at_firing(self):
+        # tests if the time variable reflects the time at which a transition fires        
+        test_problem = SimProblem()
+        time_var = test_problem.var("time")
+        a = test_problem.add_var("a")
+        a.put(1, 2)
+        e = test_problem.add_var("e")
+        def f(x, t):
+            print()
+            print(test_problem.clock)
+            print()
+            return [SimToken(t)]
+        test_problem.add_event([a, time_var], [e], f, name="ta")
+        binding = test_problem.bindings()[0]
+        test_problem.fire(binding)
+
+        self.assertEqual(e.marking[0].value, 2, "The transition fired at time 2, so the time variable had value 2 at the moment of firing.")
 
 
 class TestPriorities(unittest.TestCase):

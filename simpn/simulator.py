@@ -192,7 +192,7 @@ class SimVarTime(SimVar):
 
     @property
     def marking(self):
-        token = SimToken(self.problem.clock)
+        token = SimTokenTime(None, problem=self.problem)
         return SortedList([token])
 
     def put(self, value, time=0):
@@ -531,6 +531,29 @@ class SimToken:
     
     def copy(self):
         return SimToken(self.value, self.time)
+
+
+class SimTokenTime(SimToken):
+    """
+    A token that represents the simulation time.
+    This token only always has a single value, which is the simulation time.
+    The value will be taken from the clock of the simulator through an attribute function,
+    so it always has the correct value at the time of firing.
+    """
+    def __init__(self, value, time=0, delay=0, problem=None):
+        self._problem = problem
+        
+    @property
+    def value(self):
+        return self._problem.clock
+    
+    @property
+    def time(self):
+        return 0
+    
+    @property
+    def delay(self):
+        return 0
 
 
 class SimProblem:
