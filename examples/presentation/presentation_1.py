@@ -19,18 +19,24 @@ employee.put("r1")
 
 # Define events.
 
+
 def start(c, r):
-  return [SimToken((c, r), delay=exp(1/10))]
+    return [SimToken((c, r), delay=exp(1 / 10))]
+
 
 shop.add_event([waiting, employee], [busy], start)
 
+
 def complete(b):
-  return [SimToken(b[1])]
+    return [SimToken(b[1])]
+
 
 shop.add_event([busy], [employee], complete)
 
+
 def arrive(a):
-  return [SimToken(a+1, delay=exp(1/9)), SimToken('c' + str(a))]
+    return [SimToken(a + 1, delay=exp(1 / 9)), SimToken("c" + str(a))]
+
 
 shop.add_event([arrival], [arrival, waiting], arrive)
 
