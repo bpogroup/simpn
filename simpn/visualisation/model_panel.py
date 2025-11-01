@@ -673,6 +673,7 @@ class ModelPanel:
         self._problem.restore_checkpoint("INITIAL_STATE")
         dispatch(create_event(EventType.SIM_UPDATE), self)
         dispatch(create_event(EventType.POST_EVENT_LOOP, sim=self._problem), self)
+        return True
 
     def save_layout(self, filename):
         """

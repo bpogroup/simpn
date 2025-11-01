@@ -69,6 +69,8 @@ class EventType(Enum):
     CLOCK_PREC_INC = auto()
     CLOCK_PREC_DEC = auto()
 
+    DES_POST = auto()
+
     ALL = auto()
 
     def __eq__(self, value):

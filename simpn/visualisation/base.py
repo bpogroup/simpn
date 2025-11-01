@@ -40,10 +40,9 @@ from PyQt6.QtWidgets import (
     QApplication,
     QFileDialog,
 )
-from simpn.visualisation.model_panel_mods import ClockModule
+from simpn.visualisation.model_panel_mods import ClockModule, FiredTrackerModule
 from simpn.visualisation.model_panel import ModelPanel
 from simpn.visualisation.events import (
-    get_dispatcher,
     register_handler,
     unregister_handler,
     check_event,
@@ -549,6 +548,7 @@ class AttributePanel(QWidget):
             EventType.NODE_CLICKED,
             EventType.BINDING_FIRED,
             EventType.SELECTION_CLEAR,
+            EventType.DES_POST
         ]
 
     def handle_event(self, event: pygame.event.Event) -> bool:
@@ -565,6 +565,8 @@ class AttributePanel(QWidget):
         """
         if check_event(event, EventType.NODE_CLICKED):
             self._update_selected(event.node)
+        if check_event(event, EventType.DES_POST):
+            self._update_description_ui(event.description)
         elif check_event(event, EventType.BINDING_FIRED):
             self._refresh()
         elif check_event(event, EventType.SELECTION_CLEAR):
@@ -1239,7 +1241,7 @@ class MainWindow(QMainWindow):
         return True
 
 
-DEFAULT_MODS = [ClockModule]
+DEFAULT_MODS = [ClockModule, FiredTrackerModule]
 
 
 class Visualisation:

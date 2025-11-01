@@ -15,7 +15,6 @@ from simpn.visualisation.constants import (
     TUE_BLUE,
     TUE_LIGHTBLUE,
     LINE_WIDTH,
-    TUE_GREY,
     TUE_RED,
     GREEN,
 )
@@ -29,7 +28,7 @@ from simpn.visualisation.events import (
     listen_to,
     Event,
 )
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from collections import deque
 from typing import List, Tuple
 from .text import prevent_overflow_while_rendering
@@ -214,3 +213,215 @@ class ClockModule(IEventHandler):
 
         # blit image for clock
         window.blit(self._clock_img, self._clock_rect)
+
+
+@dataclass
+class FiredTracker:
+    event: object = None
+    name: str = "foo"
+    inputs: int = 1
+    outputs: int = 1
+    time: float = 0.0
+    bindings: List = None
+    clickable: pygame.Rect = None
+    cache: pygame.Surface = None
+
+    def describe(self) -> List:
+        """
+        Returns a formated description for the attribute panel.
+        """
+        from simpn.simulator import Describable
+        from html import escape
+        name = escape(self.name)
+        ret = [
+            (f"Fired Event: {name}", Describable.Style.HEADING),
+            (
+                f"This event was fired at a time of: {self.time}",
+                Describable.Style.NORMAL,
+            ),
+            (
+                f"This event consumed {self.inputs} tokens as it fired.",
+                Describable.Style.NORMAL,
+            ),
+            (
+                f"This event produced {self.outputs} tokens as output.",
+                Describable.Style.NORMAL,
+            ),
+            (
+                "Binding Used:",
+                Describable.Style.HEADING,
+            ),
+        ] + [(f"{escape(str(tok))}", Describable.Style.BOXED) for tok in self.bindings]
+
+        return ret
+
+
+class FiredTrackerModule(IEventHandler):
+    """
+    This visualisation module tracks the last ten fired modules. For each one
+    it keeps track the binding and creates a small graphical element at the
+    bottom of the screen.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.que: List[FiredTracker] = deque([], 10)
+        self._tracker_width = 50
+        self._tracker_height = 50
+        self._tracker_cir_radius = 3
+        self._tracker_cir_dia = self._tracker_cir_radius * 2
+        self._fonter = pygame.font.SysFont(
+            "Calibri",
+            10,
+        )
+        self._big_fonter = pygame.font.SysFont("Calibri", 24, True)
+
+    def listen_to(self):
+        return [
+            EventType.BINDING_FIRED,
+            EventType.RENDER_UI,
+            EventType.SIM_CLICK,
+            EventType.SIM_RESET_SIM_STATE,
+        ]
+
+    def handle_event(self, event):
+        if check_event(event, EventType.BINDING_FIRED):
+            self.update_tracking(event)
+        elif check_event(event, EventType.RENDER_UI):
+            self.render(event.window)
+        elif check_event(event, EventType.SIM_CLICK):
+            if event.button == Qt.MouseButton.LeftButton:
+                return self.check_and_post_description(event.pos)
+        elif check_event(event, EventType.SIM_RESET_SIM_STATE):
+            self.que.clear()
+        return True
+
+    def render(self, window: pygame.Surface):
+        width = window.get_width()
+        height = window.get_height()
+
+        y_top = height - self._tracker_height - 5
+        x_top = width - self._tracker_width - 5
+
+        if len(self.que) > 0:
+            # add display hints for what the boxes are
+            tmp_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+            out_text = self._fonter.render("Previously Fired Bindings:", True, TUE_RED)
+            tmp_surface.blit(
+                out_text, (width - out_text.get_width(), y_top - out_text.get_height())
+            )
+            tmp_surface.set_alpha(125)
+            window.blit(tmp_surface, (0, 0))
+
+        for num, tracker in enumerate(reversed(self.que)):
+            # print(x_top, y_top, tracker)
+            if tracker.cache is None:
+                tracker.cache = pygame.Surface(
+                    (self._tracker_height, self._tracker_height), pygame.SRCALPHA
+                )
+
+                rect = pygame.Rect(0, 0, self._tracker_width, self._tracker_height)
+
+                pygame.draw.rect(tracker.cache, TUE_LIGHTBLUE, rect, border_radius=5)
+                pygame.draw.rect(tracker.cache, TUE_BLUE, rect, 2, 5)
+
+                # draw red circles for input
+                y_cir_top = self._tracker_cir_dia
+                x_cir_top = self._tracker_cir_dia
+                for _ in range(tracker.inputs):
+                    pygame.draw.circle(
+                        tracker.cache,
+                        TUE_RED,
+                        (x_cir_top, y_cir_top),
+                        self._tracker_cir_radius,
+                    )
+                    y_cir_top += self._tracker_cir_dia * 1.2
+                    if y_cir_top > self._tracker_height:
+                        x_cir_top -= self._tracker_cir_dia * 1.2
+                        y_cir_top = self._tracker_cir_dia
+
+                # draw red circles for input
+                y_cir_top = self._tracker_cir_dia
+                x_cir_top = self._tracker_width - self._tracker_cir_dia
+                for _ in range(tracker.outputs):
+                    pygame.draw.circle(
+                        tracker.cache,
+                        GREEN,
+                        (x_cir_top, y_cir_top),
+                        self._tracker_cir_radius,
+                    )
+                    y_cir_top += self._tracker_cir_dia * 1.2
+                    if y_cir_top > self._tracker_height:
+                        x_cir_top -= self._tracker_cir_dia * 1.2
+                        y_cir_top = self._tracker_cir_dia
+
+                # draw text name of event
+                prevent_overflow_while_rendering(
+                    tracker.cache,
+                    lambda t: self._fonter.render(t, True, TUE_BLUE),
+                    self._tracker_width - 20,
+                    tracker.name,
+                    (10, 10),
+                    2.5,
+                )
+
+                window.blit(tracker.cache, (x_top, y_top))
+            else:
+                window.blit(tracker.cache, (x_top, y_top))
+
+            # draw the sequence number
+            tmp_surface = pygame.Surface(
+                (self._tracker_height, self._tracker_height), pygame.SRCALPHA
+            )
+            prevent_overflow_while_rendering(
+                tmp_surface,
+                lambda t: self._big_fonter.render(t, True, TUE_BLUE),
+                self._tracker_width - 20,
+                f"{num}" if num < 1 else f"-{num}",
+                (12.5 if num > 1 else 15, self._tracker_height / 2.5),
+                2.5,
+            )
+            tmp_surface.set_alpha(85)
+            window.blit(tmp_surface, (x_top, y_top))
+
+            # update their clickable
+            rect = pygame.Rect(x_top, y_top, self._tracker_width, self._tracker_height)
+            tracker.clickable = rect
+
+            # move pos to the next firing spot
+            x_top = x_top - self._tracker_width - 2.5
+
+    def update_tracking(self, event: Event):
+        """
+        Adds and pushes the que along based on the fired binding.
+        """
+        bindings, time, eventer = event.fired
+        self.que.append(
+            FiredTracker(
+                event=eventer,
+                name=eventer._id,
+                bindings=bindings,
+                inputs=len(eventer.incoming),
+                outputs=len(eventer.outgoing),
+                time=time,
+            )
+        )
+
+    def check_and_post_description(self, pos: Tuple[int, int]):
+        """
+        Finds if there was a collision with any of the trackers, and
+        if so, will send up a description to be shown in the attribute
+        panel.
+        """
+        x, y = pos["x"], pos["y"]
+        for tracker in self.que:
+            if tracker.clickable is not None:
+                if tracker.clickable.collidepoint(x, y):
+                    dispatch(
+                        create_event(
+                            EventType.DES_POST, description=tracker.describe()
+                        ),
+                        self,
+                    )
+                    return False
+        return True
