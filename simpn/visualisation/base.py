@@ -44,6 +44,8 @@ from simpn.visualisation.model_panel_mods import ClockModule
 from simpn.visualisation.model_panel import ModelPanel
 from simpn.visualisation.events import (
     get_dispatcher,
+    register_handler,
+    unregister_handler,
     check_event,
     create_event,
     dispatch,
@@ -113,10 +115,23 @@ class PygameWidget(QLabel):
         self._panel = None  # Will hold the ModelPanel instance
 
         self._display_timer = QTimer(self)
-        self._display_timer.timeout.connect(self.send_update)
+        self._display_timer.timeout.connect(self.trigger_update)
         self._display_timer.start(33)  # ~30 FPS
 
+        # Initialize simulation control variables
+        self._playing = False
+        self._play_step_delay = 500  # milliseconds between steps
+
+        # Create timers for play mode and display updates
+        self._play_timer = QTimer(self)
+        self._play_timer.timeout.connect(self.trigger_step)
+        self._play_timer.setInterval(self._play_step_delay)
+
         listen_to(EventType.SIM_RENDERED, self.update_display)
+        listen_to(EventType.SIM_RUN, self.start_simulation, False)
+        listen_to(EventType.SIM_STOP, self.stop_simulation, False)
+        listen_to(EventType.SIM_SLOWER, self.slower, False)
+        listen_to(EventType.SIM_FASTER, self.faster, False)
 
     def set_panel(self, panel: ModelPanel):
         """
@@ -133,12 +148,60 @@ class PygameWidget(QLabel):
         :return: The current ModelPanel instance or None
         """
         return self._panel
-    
-    def send_update(self) -> bool:
-        dispatch(
-            create_event(EventType.SIM_UPDATE),
-            self
-        )
+
+    def slower(self) -> bool:
+        """
+        If running the simulation continously, this will increase the time
+        between steps.
+        """
+        self._play_step_delay = min(1000, self._play_step_delay + 100)
+        self._play_timer.setInterval(self._play_step_delay)
+        return True
+
+    def faster(self) -> bool:
+        """
+        If running the simulation continously, this will decrease the time
+        between steps.
+        """
+        self._play_step_delay = max(100, self._play_step_delay - 100)
+        self._play_timer.setInterval(self._play_step_delay)
+        return True
+
+    def stop_simulation(self) -> bool:
+        """
+        Trigger the continous stepping of the simulation.
+        """
+        if self._playing:
+            self._playing = False
+            self._play_timer.stop()
+
+        return True
+
+    def start_simulation(self) -> bool:
+        """
+        Trigger the continous stepping of the simulation.
+        """
+        if not self._playing:
+            self._playing = True
+            self._play_timer.start()
+
+        return True
+
+    def trigger_step(self) -> bool:
+        """
+        Trigger to get the underlying simulation to move to the next
+        step.
+        """
+        dispatch(create_event(EventType.SIM_PLAY), self)
+        return True
+
+    def trigger_update(self) -> bool:
+        """
+        Trigger to repaint the underlying pygame surface for the
+        simulation.
+        """
+        dispatch(create_event(EventType.SIM_UPDATE), self)
+        return True
 
     def update_display(self, event: Event):
         """
@@ -147,10 +210,6 @@ class PygameWidget(QLabel):
         If a model panel is set, it will be rendered to the pygame surface first,
         then the surface is converted to a Qt-compatible image format.
         """
-        # If we have a visualisation, render it first
-        # if self._panel is not None:
-        #     return self._panel.render()
-
         if event:
             surface = getattr(event, "window")
             # Get the pygame surface as a string buffer
@@ -205,9 +264,7 @@ class PygameWidget(QLabel):
         y = int(event.position().y())
 
         dispatch(
-            create_event(
-                EventType.SIM_PRESS, pos=(x,y), button=event.button()
-            ),
+            create_event(EventType.SIM_PRESS, pos=(x, y), button=event.button()),
             self,
         )
         dispatch(
@@ -228,9 +285,7 @@ class PygameWidget(QLabel):
         x = int(event.position().x())
         y = int(event.position().y())
         dispatch(
-            create_event(
-                EventType.SIM_RELEASE, pos=(x,y), button=event.button()
-            ),
+            create_event(EventType.SIM_RELEASE, pos=(x, y), button=event.button()),
             self,
         )
         super().mouseReleaseEvent(event)
@@ -244,9 +299,7 @@ class PygameWidget(QLabel):
         x = int(event.position().x())
         y = int(event.position().y())
         dispatch(
-            create_event(
-                EventType.SIM_MOVE, pos=(x,y)
-            ),
+            create_event(EventType.SIM_MOVE, pos=(x, y)),
             self,
         )
         super().mouseMoveEvent(event)
@@ -274,6 +327,7 @@ class PygameWidget(QLabel):
 
     def closeEvent(self, event):
         self._display_timer.stop()
+        self._play_timer.stop()
         event.accept()
 
 
@@ -545,7 +599,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         reset_dispatcher()
         self._as_application = as_application
-        
+        self._playing = False
 
         # Set up the main window
         self.setWindowTitle("SimPN")
@@ -721,16 +775,6 @@ class MainWindow(QMainWindow):
 
         # Add toolbar to main window
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, main_toolbar)
-
-        # Initialize simulation control variables
-        self._playing = False
-        self._play_step_delay = 500  # milliseconds between steps
-
-        # Create timers for play mode and display updates
-        self._play_timer = QTimer(self)
-        self._play_timer.timeout.connect(self._on_play_timer)
-
-        
 
         # Create debug panel as a dock widget
         self.debug_dock = QDockWidget("Debug Console", self)
@@ -1021,21 +1065,20 @@ class MainWindow(QMainWindow):
         # If there is an existing simulation, deregister event handlers
         if self.pygame_widget.get_panel() is not None:
             # Deregister event handlers
-            self._event_dispatcher.unregister_handler(self.pygame_widget.get_panel())
-            self._event_dispatcher.unregister_handler(self.clock_module)
-            self._event_dispatcher.unregister_handler(self.attribute_panel)
+            unregister_handler(self.pygame_widget.get_panel())
+            for mod in self.pygame_widget.get_panel().mods():
+                unregister_handler(mod)
+            unregister_handler(self.attribute_panel)
 
         # Store the initial state of the simulator
         model_panel._problem.store_checkpoint("INITIAL_STATE")
 
-        # Create the clock
-        self.clock_module = ClockModule()
-
         # Attach event handlers
-        self._event_dispatcher.register_handler(model_panel)
-        self._event_dispatcher.register_handler(self.clock_module)
-        self._event_dispatcher.register_handler(self.attribute_panel)
-        self._event_dispatcher.register_handler(self.debug_panel)
+        register_handler(model_panel)
+        for mod in model_panel.mods():
+            register_handler(mod)
+        register_handler(self.attribute_panel)
+        register_handler(self.debug_panel)
 
         # Set it in the pygame widget
         self.pygame_widget.set_panel(model_panel)
@@ -1044,7 +1087,7 @@ class MainWindow(QMainWindow):
         evt = create_event(
             EventType.VISUALIZATION_CREATED, sim=model_panel.get_problem()
         )
-        self._event_dispatcher.dispatch(self, evt)
+        dispatch(evt, self)
 
         # Enable simulation controls
         self.step_action.setEnabled(True)
@@ -1059,16 +1102,16 @@ class MainWindow(QMainWindow):
         self.clock_decrease_action.setEnabled(True)
 
         # Update the display
-        self.pygame_widget.update_display(None)
+        dispatch(
+            create_event(EventType.SIM_UPDATE),
+            self
+        )
 
     def step_simulation(self):
         """
         Execute one step of the simulation and update the display.
         """
-        dispatch(
-            create_event(EventType.SIM_PLAY),
-            self
-        )
+        dispatch(create_event(EventType.SIM_PLAY), self)
 
     def play_simulation(self):
         """
@@ -1083,18 +1126,7 @@ class MainWindow(QMainWindow):
             self.step_action.setEnabled(False)
             self.stop_action.setEnabled(True)
             self.reset_action.setEnabled(False)
-            self._play_timer.start(self._play_step_delay)
-
-    def _on_play_timer(self):
-        """
-        Timer callback for executing simulation steps during play mode.
-
-        Called automatically by Qt timer at intervals set by _play_step_delay.
-        """
-        dispatch(
-            create_event(EventType.SIM_PLAY),
-            self
-        )
+            dispatch(create_event(EventType.SIM_RUN), self)
 
     def save_layout(self):
         """
@@ -1127,10 +1159,7 @@ class MainWindow(QMainWindow):
 
         Uses the layout algorithm to reposition all nodes.
         """
-        dispatch(
-            create_event(EventType.SIM_RESET_LAYOUT),
-            self
-        )
+        dispatch(create_event(EventType.SIM_RESET_LAYOUT), self)
 
     def stop_simulation(self):
         """
@@ -1139,59 +1168,44 @@ class MainWindow(QMainWindow):
         Stops the play timer and re-enables step and reset buttons.
         """
         self._playing = False
-        self._play_timer.stop()
         self.play_action.setEnabled(True)
         self.step_action.setEnabled(True)
         self.stop_action.setEnabled(False)
         self.reset_action.setEnabled(True)
+        dispatch(create_event(EventType.SIM_STOP))
 
     def reset_simulation(self):
         """Reset the simulation to the initial state."""
-        viz = self.pygame_widget.get_panel()
-        if viz is not None:
-            viz._problem.restore_checkpoint("INITIAL_STATE")
-            self.pygame_widget.update_display()
-        # also send a post event loop event to update the clock module
-        evt = create_event(EventType.POST_EVENT_LOOP, sim=viz._problem)
-        self._event_dispatcher.dispatch(self, evt)
+        dispatch(
+            create_event(EventType.SIM_RESET_SIM_STATE),
+            self
+        )
 
     def faster_simulation(self):
         """Increase simulation speed by decreasing delay."""
-        self._play_step_delay = max(100, self._play_step_delay - 100)
-        if self._playing:
-            self._play_timer.setInterval(self._play_step_delay)
+        dispatch(create_event(EventType.SIM_FASTER), self)
 
     def slower_simulation(self):
         """Decrease simulation speed by increasing delay."""
-        self._play_step_delay = min(1000, self._play_step_delay + 100)
-        if self._playing:
-            self._play_timer.setInterval(self._play_step_delay)
+        dispatch(create_event(EventType.SIM_SLOWER), self)
 
     def zoom_in(self):
         """Zoom in on the visualization by increasing the zoom level."""
-        dispatch(
-            create_event(EventType.SIM_ZOOM, action="increase")
-        )
+        dispatch(create_event(EventType.SIM_ZOOM, action="increase"))
 
     def zoom_out(self):
         """Zoom out on the visualization by decreasing the zoom level."""
-        dispatch(
-            create_event(EventType.SIM_ZOOM, action="decrease")
-        )
+        dispatch(create_event(EventType.SIM_ZOOM, action="decrease"))
 
     def zoom_reset(self):
         """Reset zoom level to 100% (1.0x scale)."""
-        dispatch(
-            create_event(EventType.SIM_ZOOM, action="reset")
-        )
+        dispatch(create_event(EventType.SIM_ZOOM, action="reset"))
 
     def increase_clock_precision(self):
         """
         Increase the number of decimal places shown in the simulation clock.
         """
-        dispatch(
-            create_event(EventType.CLOCK_PREC_INC)
-        )
+        dispatch(create_event(EventType.CLOCK_PREC_INC))
 
     def decrease_clock_precision(self):
         """
@@ -1199,9 +1213,7 @@ class MainWindow(QMainWindow):
 
         Minimum precision is 1 decimal place.
         """
-        dispatch(
-            create_event(EventType.CLOCK_PREC_DEC)
-        )
+        dispatch(create_event(EventType.CLOCK_PREC_DEC))
 
     def closeEvent(self, event):
         """
@@ -1213,7 +1225,6 @@ class MainWindow(QMainWindow):
         """
         # Stop the timers
         self._playing = False
-        self._play_timer.stop()
 
         self.save_layout()
 
@@ -1226,6 +1237,9 @@ class MainWindow(QMainWindow):
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         return True
+
+
+DEFAULT_MODS = [ClockModule]
 
 
 class Visualisation:
@@ -1262,6 +1276,7 @@ class Visualisation:
         node_spacing=100,
         layout_algorithm="sugiyama",
         extra_modules: List[object] = None,
+        include_default_modules: bool = True
     ):
         """
         Initialize the visualization.
@@ -1281,7 +1296,6 @@ class Visualisation:
         self.extra_modules = extra_modules if extra_modules is not None else []
 
         self.app = QApplication(sys.argv)
-        self.event_dispatcher = get_dispatcher()
 
         # Set application icon for taskbar/dock
         logo_path = os.path.join(
@@ -1293,10 +1307,10 @@ class Visualisation:
         # Create the main window
         if sim_problem is None:
             self.main_window = MainWindow(as_application=True)
-            self.event_dispatcher.register_handler(self.main_window)
+            register_handler(self.main_window)
         else:
             self.main_window = MainWindow(as_application=False)
-            self.event_dispatcher.register_handler(self.main_window)
+            register_handler(self.main_window)
             model_panel = ModelPanel(
                 sim_problem,
                 layout_file=layout_file,
@@ -1304,6 +1318,14 @@ class Visualisation:
                 node_spacing=node_spacing,
                 layout_algorithm=layout_algorithm,
             )
+
+            if include_default_modules:
+                for mod in DEFAULT_MODS:
+                    model_panel.add_mod(mod())
+
+            for mod in self.extra_modules:
+                model_panel.add_mod(mod)
+
             self.main_window.set_simulation(model_panel)
 
     def show(self):

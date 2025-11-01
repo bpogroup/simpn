@@ -495,6 +495,7 @@ class ModelPanel:
         self._zoom_level = 1.0
         self._size = MAX_SIZE
         self._surface = pygame.Surface((640, 480))
+        self._mods = []
 
         # Add visualizations for prototypes, places, and transitions,
         # but not for places and transitions that are part of prototypes.
@@ -589,6 +590,7 @@ class ModelPanel:
         listen_to(EventType.SIM_MOVE, self.handle_mouse_motion)
         listen_to(EventType.SIM_PLAY, self.step, False)
         listen_to(EventType.SIM_RESET_LAYOUT, self.reset_layout, False)
+        listen_to(EventType.SIM_RESET_SIM_STATE, self.reset_to_inital, False)
 
     def play(self):
         self.__playing = True
@@ -661,6 +663,17 @@ class ModelPanel:
         """
         self.__layout()
 
+    def reset_to_inital(self):
+        """
+        Resets the simulation problem to an initial state and refreshes the
+        rendering process.
+
+        Uses the named state "INITIAL_STATE" as a restore point.
+        """
+        self._problem.restore_checkpoint("INITIAL_STATE")
+        dispatch(create_event(EventType.SIM_UPDATE), self)
+        dispatch(create_event(EventType.POST_EVENT_LOOP, sim=self._problem), self)
+
     def save_layout(self, filename):
         """
         Saves the current layout of the nodes to a file.
@@ -715,7 +728,6 @@ class ModelPanel:
         elif action == "increase":
             self._zoom_level *= 1.1
         self._zoom_level = max(0.3, min(self._zoom_level, 3.0))  # clamp zoom level
-        print(action, self._zoom_level)
 
     def close(self):
         """
@@ -920,6 +932,18 @@ class ModelPanel:
     def set_zoom_level(self, zoom: float) -> None:
         """Set the zoom level."""
         self._zoom_level = max(0.3, min(zoom, 3.0))
+
+    def mods(self) -> List[object]:
+        """
+        Returns the registered modules for the panel.
+        """
+        return self._mods
+
+    def add_mod(self, module: object):
+        """
+        Adds a new module to be included in a visualisation.
+        """
+        self._mods.append(module)
 
     def listen_to(self):
         """Specify which event types this handler listens to."""

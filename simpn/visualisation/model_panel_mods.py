@@ -11,31 +11,28 @@ Classes:
 import pygame
 from PyQt6.QtCore import Qt
 from pygame.surface import Surface
-from simpn.visualisation.constants import TUE_BLUE, TUE_LIGHTBLUE, LINE_WIDTH
+from simpn.visualisation.constants import (
+    TUE_BLUE,
+    TUE_LIGHTBLUE,
+    LINE_WIDTH,
+    TUE_GREY,
+    TUE_RED,
+    GREEN,
+)
 from simpn.assets import get_img_asset
 from simpn.visualisation.events import (
-    EventType, IEventHandler, check_event, dispatch, create_event, listen_to
+    EventType,
+    IEventHandler,
+    check_event,
+    dispatch,
+    create_event,
+    listen_to,
+    Event,
 )
-
-
-class ClockModule(IEventHandler):
-    """
-    Clock module for displaying simulation time on the visualization.
-
-    Renders a clock icon with the current simulation time below it. The time display
-    precision can be adjusted dynamically to show more or fewer decimal places.
-    
-    This module listens to visualization events to update the displayed time when
-    the simulation progresses.
-
-    :param precision: Number of decimal places to show in the time display (default: 2, minimum: 1)
-    """
-
-import pygame
-from pygame.surface import Surface
-from simpn.visualisation.constants import TUE_BLUE, TUE_LIGHTBLUE, LINE_WIDTH
-from simpn.assets import get_img_asset
-from simpn.visualisation.events import EventType, IEventHandler, check_event
+from dataclasses import dataclass, field
+from collections import deque
+from typing import List, Tuple
+from .text import prevent_overflow_while_rendering
 
 
 class ClockModule(IEventHandler):
@@ -53,7 +50,7 @@ class ClockModule(IEventHandler):
     def __init__(self, precision: int = 2):
         """
         Initialize the clock module.
-        
+
         :param precision: Number of decimal places for time display (minimum: 1)
         """
         self._precision = max(1, precision)
@@ -66,39 +63,31 @@ class ClockModule(IEventHandler):
         self._font = None
         self._format = "0.0"
 
-        listen_to(
-            EventType.CLOCK_PREC_INC,
-            self.increase_precision,
-            False
-        )
-        listen_to(
-            EventType.CLOCK_PREC_DEC,
-            self.decrease_precision,
-            False
-        )
+        listen_to(EventType.CLOCK_PREC_INC, self.increase_precision, False)
+        listen_to(EventType.CLOCK_PREC_DEC, self.decrease_precision, False)
 
     def listen_to(self):
         """
         Specify which event types this handler listens to.
-        
+
         :return: List of EventType enums (VISUALIZATION_CREATED, POST_EVENT_LOOP, RENDER_UI)
         """
         return [
             EventType.VISUALIZATION_CREATED,
             EventType.POST_EVENT_LOOP,
             EventType.RENDER_UI,
-            EventType.SIM_CLICK
+            EventType.SIM_CLICK,
         ]
 
     def handle_event(self, event, *args, **kwargs):
         """
         Handle visualization events to update and render the clock.
-        
+
         Responds to:
         - VISUALIZATION_CREATED: Initialize clock graphics and font
         - POST_EVENT_LOOP: Update displayed time after simulation step
         - RENDER_UI: Draw the clock on the screen
-        
+
         :param event: The pygame event to handle
         :return: True to allow event propagation
         """
@@ -124,23 +113,12 @@ class ClockModule(IEventHandler):
 
         elif check_event(event, EventType.SIM_CLICK):
             if self._clock_rect:
-                x, y = event.pos['x'], event.pos['y']
-                if self._clock_rect.collidepoint(
-                    x,
-                    y
-                ):
+                x, y = event.pos["x"], event.pos["y"]
+                if self._clock_rect.collidepoint(x, y):
                     if event.button == Qt.MouseButton.LeftButton:
-                        dispatch(
-                            create_event(
-                                EventType.CLOCK_PREC_INC
-                            )
-                        )
+                        dispatch(create_event(EventType.CLOCK_PREC_INC))
                     elif event.button == Qt.MouseButton.RightButton:
-                        dispatch(
-                            create_event(
-                                EventType.CLOCK_PREC_DEC
-                            )
-                        )
+                        dispatch(create_event(EventType.CLOCK_PREC_DEC))
 
         return True
 
@@ -151,24 +129,26 @@ class ClockModule(IEventHandler):
         self._precision += 1
         self._pusher = 1.0 / (self._precision + 1)
         self._format = f"{round(self._time, self._precision)}"
+        return True
 
     def decrease_precision(self):
         """
         Decrease the number of decimal places shown in the time display by 1.
-        
+
         The precision will not go below 1 decimal place.
         """
         self._precision = max(1, self._precision - 1)
         self._pusher = 1.0 / (self._precision + 1)
         self._format = f"{round(self._time, self._precision)}"
+        return True
 
     def _render_clock(self, window: Surface):
         """
         Render the clock icon and time display on the pygame surface.
-        
+
         Draws a clock icon with a text box below showing the current simulation time.
         Positioned at the bottom-left corner of the window.
-        
+
         :param window: The pygame surface to draw on
         """
         if not self._clock_rect or not self._font:
