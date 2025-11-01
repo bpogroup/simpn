@@ -22,6 +22,7 @@ TUE_GREY = (242, 242, 242)        # Light grey for backgrounds
 
 # Standard Colors
 WHITE = (255, 255, 255)
+GREEN = (0, 159, 107)
 
 # Node Sizes
 STANDARD_NODE_WIDTH, STANDARD_NODE_HEIGHT = 50, 50  # Default node dimensions in pixels
