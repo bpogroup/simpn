@@ -52,6 +52,8 @@ class EventType(Enum):
     SIM_UPDATE = auto()
     SIM_RENDERED = auto()
     SIM_PLAY = auto()
+    SIM_FASTER = auto()
+    SIM_SLOWER = auto()
     SIM_RUN = auto()
     SIM_STOP = auto()
     SIM_RESET = auto()
@@ -60,6 +62,7 @@ class EventType(Enum):
     SIM_PRESS = auto()
     SIM_MOVE = auto()
     SIM_RESET_LAYOUT = auto()
+    SIM_RESET_SIM_STATE = auto()
     SIM_RELEASE = auto()
     SIM_RESIZE = auto()
 
@@ -274,9 +277,10 @@ class OneShotHandler(IEventHandler):
         except Exception as e:
             print(f"Error on one-shot-callback: {str(self)}")
             raise e
-        
+
     def __str__(self):
         return str((str(self._event), str(self._callback), self._passthrough))
+
 
 def listen_to(event: Event, callback: Callable, passthrough: bool = True):
     """
@@ -289,6 +293,24 @@ def listen_to(event: Event, callback: Callable, passthrough: bool = True):
     """
     dispatcher = get_dispatcher()
     dispatcher.register_handler(OneShotHandler(event, callback, passthrough))
+
+
+def register_handler(handler: IEventHandler):
+    """
+    Registers a handler on the current dispatcher.
+
+    :param handler: the handler to be registered
+    """
+    get_dispatcher().register_handler(handler)
+
+
+def unregister_handler(handler: IEventHandler):
+    """
+    Removes a handler from the current dispatcher.
+
+    :param handler: the handler to be removed
+    """
+    get_dispatcher().unregister_handler(handler)
 
 
 def create_event(event_type: Union[EventType, str], **kwargs) -> Event:
