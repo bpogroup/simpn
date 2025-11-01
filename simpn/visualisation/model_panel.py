@@ -7,8 +7,11 @@ from typing import Optional, Tuple, List
 import simpn
 from PyQt6.QtCore import Qt
 from simpn.visualisation.events import (
-    EventType, Event,
-    create_event, listen_to, dispatch
+    EventType,
+    Event,
+    create_event,
+    listen_to,
+    dispatch,
 )
 from simpn.visualisation.constants import (
     MAX_SIZE,
@@ -491,7 +494,7 @@ class ModelPanel:
         self._selected_nodes = None
         self._zoom_level = 1.0
         self._size = MAX_SIZE
-        self._surface = pygame.Surface((640,480))
+        self._surface = pygame.Surface((640, 480))
 
         # Add visualizations for prototypes, places, and transitions,
         # but not for places and transitions that are part of prototypes.
@@ -578,14 +581,14 @@ class ModelPanel:
         self._setup_listeners()
 
     def _setup_listeners(self):
-        listen_to(
-            EventType.SIM_ZOOM,
-            self._ev_zoom
-        )
-        listen_to(
-            EventType.SIM_UPDATE,
-            self._ev_render
-        )
+        listen_to(EventType.SIM_ZOOM, self._ev_zoom)
+        listen_to(EventType.SIM_UPDATE, self._ev_render)
+        listen_to(EventType.SIM_RESIZE, self._ev_resize)
+        listen_to(EventType.SIM_PRESS, self.handle_mouse_press)
+        listen_to(EventType.SIM_RELEASE, self.handle_mouse_release)
+        listen_to(EventType.SIM_MOVE, self.handle_mouse_motion)
+        listen_to(EventType.SIM_PLAY, self.step, False)
+        listen_to(EventType.SIM_RESET_LAYOUT, self.reset_layout, False)
 
     def play(self):
         self.__playing = True
@@ -695,7 +698,7 @@ class ModelPanel:
         """
         Event que wrapper for calling zoom.
         """
-        action = getattr(event, 'action')
+        action = getattr(event, "action")
         self.zoom(action)
         return True
 
@@ -731,7 +734,14 @@ class ModelPanel:
     def get_problem(self):
         """Get the simulation problem."""
         return self._problem
-    
+
+    def _ev_resize(self, event) -> bool:
+
+        width, height = event.width, event.height
+        self._surface = pygame.Surface((width, height))
+
+        return True
+
     def _ev_render(self, event) -> bool:
         """
         Event que wrapper for rendering the visualization.
@@ -773,25 +783,19 @@ class ModelPanel:
 
         # Dispatch RENDER_UI event to all modules
         evt = create_event(EventType.RENDER_UI, window=surface)
-        dispatch(
-            evt,
-            self
-        )
-        dispatch(
-            create_event(EventType.SIM_RENDERED, window=surface),
-            self
-        )
+        dispatch(evt, self)
+        dispatch(create_event(EventType.SIM_RENDERED, window=surface), self)
 
-    def handle_mouse_press(
-        self, pos: Tuple[int, int], button: Qt.MouseButton
-    ) -> Optional[object]:
+    def handle_mouse_press(self, event: Event) -> Optional[object]:
         """
         Handle mouse press events (for IDE integration).
 
-        :param pos: (x, y) position of the mouse click
-        :param button: Mouse button pressed
+        :param event.pos: (x, y) position of the mouse click
+        :param event.button: Mouse button pressed
         :return: The node that was clicked, or None
         """
+        pos: Tuple[int, int] = event.pos
+        button: Qt.MouseButton = event.button
         if button == Qt.MouseButton.LeftButton:
             node = self._get_node_at(pos)
             if node is not None:
@@ -799,35 +803,37 @@ class ModelPanel:
                 # Dispatch event through centralized dispatcher
                 evt = create_event(EventType.NODE_CLICKED, node=node, button=button)
                 self._event_dispatcher.dispatch(self, evt)
-                return node
             else:
                 self._selected_nodes = list(self._nodes.values()), pos
                 # Dispatch event through centralized dispatcher
                 evt = create_event(EventType.SELECTION_CLEAR)
                 self._event_dispatcher.dispatch(self, evt)
-        return None
+        return True
 
-    def handle_mouse_release(
-        self, pos: Tuple[int, int], button: Qt.MouseButton
-    ) -> None:
+    def handle_mouse_release(self, event: Event) -> bool:
         """
         Handle mouse release events (for IDE integration).
 
-        :param pos: (x, y) position of the mouse release
-        :param button: Mouse button released
+        :param event.pos: (x, y) position of the mouse release
+        :param event.button: Mouse button released
         """
+        pos: Tuple[int, int] = event.pos
+        button: Qt.MouseButton = event.button
         if button == Qt.MouseButton.LeftButton and self._selected_nodes is not None:
             self._drag_nodes(snap=True, pos=pos)
             self._selected_nodes = None
+        return True
 
-    def handle_mouse_motion(self, pos: Tuple[int, int]) -> None:
+    def handle_mouse_motion(self, event: Event) -> bool:
         """
         Handle mouse motion events (for IDE integration).
 
-        :param pos: (x, y) position of the mouse
+        :param event.pos: (x, y) position of the mouse
         """
+        pos = event.pos
         if self._selected_nodes is not None:
             self._drag_nodes(pos=pos)
+        return True
 
     def _get_node_at(self, pos: Tuple[int, int]) -> Optional[object]:
         """
@@ -890,7 +896,7 @@ class ModelPanel:
         """
         # Dispatch PRE_EVENT_LOOP event
         evt = create_event(EventType.PRE_EVENT_LOOP, sim=self._problem)
-        self._event_dispatcher.dispatch(self, evt)
+        dispatch(evt, self)
 
         fired_binding = self._problem.step()
 
@@ -899,11 +905,11 @@ class ModelPanel:
             evt = create_event(
                 EventType.BINDING_FIRED, fired=fired_binding, sim=self._problem
             )
-            self._event_dispatcher.dispatch(self, evt)
+            dispatch(evt, self)
 
         # Dispatch POST_EVENT_LOOP event
         evt = create_event(EventType.POST_EVENT_LOOP, sim=self._problem)
-        self._event_dispatcher.dispatch(self, evt)
+        dispatch(evt, self)
 
         return fired_binding
 

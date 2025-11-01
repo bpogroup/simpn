@@ -28,23 +28,43 @@ class EventType(Enum):
     Each event type represents a specific occurrence in the visualization lifecycle
     or user interaction that components may want to respond to.
     """
-    
-    VISUALIZATION_CREATED = auto()      # Fired when visualization is created; includes 'sim' attribute
-    PRE_EVENT_LOOP = auto()             # Fired at start of each game loop; includes 'sim' attribute
-    POST_EVENT_LOOP = auto()            # Fired at end of each game loop; includes 'sim' attribute
-    BINDING_FIRED = auto()              # Fired when simulation binding fires; includes 'fired' and 'sim' attributes
-    RENDER_SIM = auto()                 # Fired during simulation rendering; includes 'screen' attribute
-    RENDER_UI = auto()                  # Fired during UI rendering; includes 'window' attribute
-    NODE_CLICKED = auto()               # Fired when a node is clicked; includes 'node' attribute
-    SELECTION_CLEAR = auto()            # Fired when selection is cleared; no additional attributes
+
+    VISUALIZATION_CREATED = (
+        auto()
+    )  # Fired when visualization is created; includes 'sim' attribute
+    PRE_EVENT_LOOP = (
+        auto()
+    )  # Fired at start of each game loop; includes 'sim' attribute
+    POST_EVENT_LOOP = auto()  # Fired at end of each game loop; includes 'sim' attribute
+    BINDING_FIRED = (
+        auto()
+    )  # Fired when simulation binding fires; includes 'fired' and 'sim' attributes
+    RENDER_SIM = (
+        auto()
+    )  # Fired during simulation rendering; includes 'screen' attribute
+    RENDER_UI = auto()  # Fired during UI rendering; includes 'window' attribute
+    NODE_CLICKED = auto()  # Fired when a node is clicked; includes 'node' attribute
+    SELECTION_CLEAR = (
+        auto()
+    )  # Fired when selection is cleared; no additional attributes
 
     SIM_ZOOM = auto()
     SIM_UPDATE = auto()
     SIM_RENDERED = auto()
     SIM_PLAY = auto()
+    SIM_RUN = auto()
     SIM_STOP = auto()
     SIM_RESET = auto()
     SIM_CLOSE = auto()
+    SIM_CLICK = auto()
+    SIM_PRESS = auto()
+    SIM_MOVE = auto()
+    SIM_RESET_LAYOUT = auto()
+    SIM_RELEASE = auto()
+    SIM_RESIZE = auto()
+
+    CLOCK_PREC_INC = auto()
+    CLOCK_PREC_DEC = auto()
 
     ALL = auto()
 
@@ -54,7 +74,7 @@ class EventType(Enum):
         if value is EventType.ALL and isinstance(self, EventType):
             return True
         return super().__eq__(value)
-    
+
     def __hash__(self):
         return super().__hash__()
 
@@ -87,7 +107,8 @@ class IEventHandler(Protocol):
         handler listens to is dispatched.
 
         :param event: The pygame event to handle (includes event_type attribute)
-        :return: True to allow event to propagate to other handlers, False to stop propagation
+        :return: True to allow event to propagate to other handlers, False to stop
+        propagation.
         """
         raise NotImplementedError("Must implement handle_event method")
 
@@ -107,7 +128,8 @@ class EventDispatcher:
     """
     Central event dispatcher that routes events to registered handlers.
 
-    This class manages event handlers and dispatches events to them in registration order.
+    This class manages event handlers and dispatches events to them in registration
+    order.
     Handlers are organized by the event types they listen to for efficient dispatch.
 
     If a handler returns False from handle_event, event propagation stops immediately.
@@ -130,7 +152,8 @@ class EventDispatcher:
         it wants to receive. The handler is added to the dispatch list for each
         of those event types.
 
-        Also sets handler._event_dispatcher = self to allow the handler to dispatch events.
+        Also sets handler._event_dispatcher = self to allow the handler to dispatch
+        events.
 
         :param handler: The handler to register (must implement IEventHandler protocol)
         """
@@ -208,7 +231,6 @@ def reset_dispatcher():
     You better know what your doing if you are calling this function.
     """
     global __dispatcher__
-    del __dispatcher__
     __dispatcher__ = None
 
 
@@ -234,7 +256,7 @@ class OneShotHandler(IEventHandler):
         dispatcher.register_handler(OneShotHandler('foobar', lambda x: foo(x)))
     """
 
-    def __init__(self, event: Event, callback: Callable, passthrough:bool=True):
+    def __init__(self, event: Event, callback: Callable, passthrough: bool = True):
         super().__init__()
         self._event = event
         self._callback = callback
@@ -244,19 +266,29 @@ class OneShotHandler(IEventHandler):
         return [self._event]
 
     def handle_event(self, event):
-        if self._passthrough:
-            return self._callback(event)
-        else:
-            return self._callback()
+        try:
+            if self._passthrough:
+                return self._callback(event)
+            else:
+                return self._callback()
+        except Exception as e:
+            print(f"Error on one-shot-callback: {str(self)}")
+            raise e
+        
+    def __str__(self):
+        return str((str(self._event), str(self._callback), self._passthrough))
 
-
-def listen_to(event: Event, callback: Callable, passthrough:bool=True):
+def listen_to(event: Event, callback: Callable, passthrough: bool = True):
     """
     Register a new callback for an event that appears on the event que.
     Creates a OneShotHandler for the dispatcher.
+
+    :param event: the event to listen for
+    :param callback: the function to call when event is seen
+    :param passthrough: whether to passthrough the event to the callback
     """
     dispatcher = get_dispatcher()
-    dispatcher.register_handler(OneShotHandler(event, callback))
+    dispatcher.register_handler(OneShotHandler(event, callback, passthrough))
 
 
 def create_event(event_type: Union[EventType, str], **kwargs) -> Event:
@@ -273,9 +305,9 @@ def create_event(event_type: Union[EventType, str], **kwargs) -> Event:
         dispatcher.dispatch(self, evt)
         ```
 
-    :param event_type: The type of event (EventType enum or legacy string 
+    :param event_type: The type of event (EventType enum or legacy string
         for compatibility)
-    :param kwargs: Additional event attributes (e.g., node=..., sim=..., 
+    :param kwargs: Additional event attributes (e.g., node=..., sim=...,
         position=...)
     :return: A pygame Event with USEREVENT+1 as the pygame event type
     """

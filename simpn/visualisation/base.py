@@ -13,25 +13,48 @@ Classes:
 """
 
 import os
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame
 import sys
 from pathlib import Path
 from PyQt6.QtCore import Qt, QSize, QSettings, QStandardPaths, QTimer
-from PyQt6.QtGui import QImage, QPixmap, QIcon, QPainter, QColor, QMouseEvent, QWheelEvent
+from PyQt6.QtGui import (
+    QImage,
+    QPixmap,
+    QIcon,
+    QPainter,
+    QColor,
+    QMouseEvent,
+    QWheelEvent,
+)
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QLabel, 
-    QTextEdit, QDockWidget, QToolBar, QSizePolicy, 
-    QApplication, QFileDialog
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QLabel,
+    QTextEdit,
+    QDockWidget,
+    QToolBar,
+    QSizePolicy,
+    QApplication,
+    QFileDialog,
 )
 from simpn.visualisation.model_panel_mods import ClockModule
 from simpn.visualisation.model_panel import ModelPanel
 from simpn.visualisation.events import (
-    get_dispatcher, check_event, create_event, dispatch, listen_to,
-    EventType, Event
+    get_dispatcher,
+    check_event,
+    create_event,
+    dispatch,
+    listen_to,
+    reset_dispatcher,
+    EventType,
+    Event,
 )
 
 from typing import List, Tuple, TYPE_CHECKING
+
 if TYPE_CHECKING:
     from simpn.simulator import Describable
     from simpn.visualisation.model_panel import Node
@@ -41,10 +64,10 @@ def get_preferences_directory() -> Path:
     """
     Get the cross-platform preferences directory for SimPN.
     Creates the directory if it doesn't exist.
-    
+
     Returns:
         Path: The preferences directory path
-        
+
     The directory location depends on the platform:
     - macOS: ~/Library/Application Support/TUe/SimPN
     - Windows: C:/Users/<username>/AppData/Local/TUe/SimPN
@@ -54,51 +77,51 @@ def get_preferences_directory() -> Path:
     app_data_location = QStandardPaths.writableLocation(
         QStandardPaths.StandardLocation.AppDataLocation
     )
-    
+
     if not app_data_location:
         # Fallback to home directory if QStandardPaths fails
         app_data_location = os.path.join(os.path.expanduser("~"), ".simpn")
-    
+
     prefs_dir = Path(app_data_location)
-    
+
     # Create the directory if it doesn't exist
     prefs_dir.mkdir(parents=True, exist_ok=True)
-    
+
     return prefs_dir
 
 
 class PygameWidget(QLabel):
     """
     Qt widget that embeds a pygame surface for rendering simulation visualizations.
-    
+
     This widget bridges pygame rendering with Qt's widget system by converting pygame
     surfaces to QPixmap images. It handles mouse events and forwards them to the
     underlying pygame ModelPanel for interaction.
-    
+
     :param width: Initial width of the pygame surface (default: 640)
     :param height: Initial height of the pygame surface (default: 480)
     :param parent: Parent Qt widget (default: None)
     """
-        
+
     def __init__(self, width=640, height=480, parent=None):
         super().__init__(parent)
         self.width = width
         self.height = height
         pygame.init()
         pygame.font.init()
-        self.surface = pygame.Surface((width, height))
         self.setMinimumSize(width, height)
         self._panel = None  # Will hold the ModelPanel instance
 
-        listen_to(
-            EventType.SIM_RENDERED,
-            self.update_display
-        )
+        self._display_timer = QTimer(self)
+        self._display_timer.timeout.connect(self.send_update)
+        self._display_timer.start(33)  # ~30 FPS
+
+        listen_to(EventType.SIM_RENDERED, self.update_display)
 
     def set_panel(self, panel: ModelPanel):
         """
         Set the model panel to render in this widget.
-        
+
         :param panel: The ModelPanel instance to visualize
         """
         self._panel = panel
@@ -106,15 +129,21 @@ class PygameWidget(QLabel):
     def get_panel(self):
         """
         Get the current model panel being rendered.
-        
+
         :return: The current ModelPanel instance or None
         """
         return self._panel
-        
+    
+    def send_update(self) -> bool:
+        dispatch(
+            create_event(EventType.SIM_UPDATE),
+            self
+        )
+
     def update_display(self, event: Event):
         """
         Convert the pygame surface to QPixmap and update the display.
-        
+
         If a model panel is set, it will be rendered to the pygame surface first,
         then the surface is converted to a Qt-compatible image format.
         """
@@ -123,19 +152,25 @@ class PygameWidget(QLabel):
         #     return self._panel.render()
 
         if event:
-            surface = getattr(event, 'window')
+            surface = getattr(event, "window")
             # Get the pygame surface as a string buffer
-            data = pygame.image.tostring(surface, 'RGB')
+            data = pygame.image.tostring(surface, "RGB")
             # Create QImage from the data
-            image = QImage(data, self.width, self.height, self.width * 3, QImage.Format.Format_RGB888)
+            image = QImage(
+                data,
+                self.width,
+                self.height,
+                self.width * 3,
+                QImage.Format.Format_RGB888,
+            )
             # Convert to QPixmap and display
             self.setPixmap(QPixmap.fromImage(image))
         return True
-    
+
     def resizeEvent(self, event):
         """
         Handle widget resize events and update the pygame surface accordingly.
-        
+
         :param event: Qt resize event
         """
         super().resizeEvent(event)
@@ -145,93 +180,116 @@ class PygameWidget(QLabel):
         if event.size().width() > 0 and event.size().height() > 0:
             new_width = event.size().width()
             new_height = event.size().height()
-            
+
         # Only resize if dimensions actually changed
         if new_width != self.width or new_height != self.height:
             self.width = new_width
             self.height = new_height
             # Create a new surface with the new size
-            self.surface = pygame.Surface((self.width, self.height))
+            dispatch(
+                create_event(
+                    EventType.SIM_RESIZE, width=self.width, height=self.height
+                ),
+                self,
+            )
             # Update the display immediately
-            self.update_display()
-    
+            dispatch(create_event(EventType.SIM_UPDATE), self)
+
     def mousePressEvent(self, event: QMouseEvent):
         """
         Handle mouse press events and forward to the model panel.
-        
+
         :param event: Qt mouse press event
         """
-        if self._panel is not None:
-            x = int(event.position().x())
-            y = int(event.position().y())
-            self._panel.handle_mouse_press((x, y), event.button())            
+        x = int(event.position().x())
+        y = int(event.position().y())
+
+        dispatch(
+            create_event(
+                EventType.SIM_PRESS, pos=(x,y), button=event.button()
+            ),
+            self,
+        )
+        dispatch(
+            create_event(
+                EventType.SIM_CLICK, pos={"x": x, "y": y}, button=event.button()
+            ),
+            self,
+        )
+
         super().mousePressEvent(event)
-    
+
     def mouseReleaseEvent(self, event: QMouseEvent):
         """
         Handle mouse release events and forward to the model panel.
-        
+
         :param event: Qt mouse release event
         """
-        if self._panel is not None:
-            x = int(event.position().x())
-            y = int(event.position().y())
-            self._panel.handle_mouse_release((x, y), event.button())
+        x = int(event.position().x())
+        y = int(event.position().y())
+        dispatch(
+            create_event(
+                EventType.SIM_RELEASE, pos=(x,y), button=event.button()
+            ),
+            self,
+        )
         super().mouseReleaseEvent(event)
-    
+
     def mouseMoveEvent(self, event: QMouseEvent):
         """
         Handle mouse move events and forward to the model panel.
-        
+
         :param event: Qt mouse move event
         """
-        if self._panel is not None:
-            x = int(event.position().x())
-            y = int(event.position().y())
-            self._panel.handle_mouse_motion((x, y))
+        x = int(event.position().x())
+        y = int(event.position().y())
+        dispatch(
+            create_event(
+                EventType.SIM_MOVE, pos=(x,y)
+            ),
+            self,
+        )
         super().mouseMoveEvent(event)
-    
+
     def wheelEvent(self, event: QWheelEvent):
         """
         Handle mouse wheel events by forwarding zoom events to the model panel.
-        
+
         :param event: Qt wheel event
         """
         if self._panel is not None:
             # Get the angle delta (positive = scroll up = zoom in)
             delta = event.angleDelta().y()
             action = None
-            
+
             if delta > 0:
                 action = "increase"
             else:
                 action = "decrease"
 
-            dispatch(
-                create_event(EventType.SIM_ZOOM, action=action),
-                self
-            )
-            dispatch(
-                create_event(EventType.SIM_UPDATE),
-                self
-            )
-        
+            dispatch(create_event(EventType.SIM_ZOOM, action=action), self)
+            dispatch(create_event(EventType.SIM_UPDATE), self)
+
         super().wheelEvent(event)
+
+    def closeEvent(self, event):
+        self._display_timer.stop()
+        event.accept()
 
 
 class DebugPanel(QWidget):
     """
     Debug panel for displaying textual debugging information and logs.
-    
+
     This panel provides methods to write text messages with different severity levels
     (normal, error, warning, success) and supports HTML formatting for colored output.
-    
+
     :param parent: Parent Qt widget (default: None)
-    """    
+    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        
+
         self._selected = None
         self._description = None
 
@@ -239,31 +297,35 @@ class DebugPanel(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
         self.setLayout(layout)
-        
+
         # Text area for debug messages
         self.text_edit = QTextEdit()
         self.text_edit.setReadOnly(True)
         layout.addWidget(self.text_edit)
 
         self.setMinimumHeight(100)
-    
+
     def write_text(self, text, color=None):
         """
         Write normal text to the debug panel.
-        
+
         :param text: Text to display
         """
-        html_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+        html_text = (
+            text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\n", "<br>")
+        )
         if color:
             self.text_edit.append(f'<span style="color: {color};">{html_text}</span>')
         else:
             self.text_edit.append(html_text)
 
-    
     def write_error(self, text):
         """
         Write error text in red to the debug panel.
-        
+
         :param text: Error message to display
         """
         self.write_text(text, color="red")
@@ -271,7 +333,7 @@ class DebugPanel(QWidget):
     def write_warning(self, text):
         """
         Write warning text in orange to the debug panel.
-        
+
         :param text: Warning message to display
         """
         self.write_text(text, color="orange")
@@ -279,7 +341,7 @@ class DebugPanel(QWidget):
     def write_success(self, text):
         """
         Write success text in green to the debug panel.
-        
+
         :param text: Success message to display
         """
         self.write_text(text, color="green")
@@ -291,57 +353,53 @@ class DebugPanel(QWidget):
     def listen_to(self):
         """
         Specify which event types this handler listens to.
-        
+
         :return: Empty list (DebugPanel doesn't listen to events by default)
         """
-        return [
-            EventType.ALL
-        ]  # DebugPanel doesn't listen to any events currently
+        return [EventType.ALL]  # DebugPanel doesn't listen to any events currently
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         if not check_event(event, EventType.RENDER_UI):
-            self.write_text(
-                f"[EventQue] {str(event)}"
-            )
+            self.write_warning(f"[EventQue] {str(event)}")
         return True
 
 
 class AttributePanel(QWidget):
     """
     Attribute panel for displaying properties and descriptions of simulation elements.
-    
+
     This panel listens to visualization events (node clicks, bindings fired) and updates
     to show the relevant information about the selected element. It displays descriptions
     using HTML formatting with support for headings, normal text, boxed content, and bold text.
-    
+
     Implements the IEventHandler interface to receive visualization events.
-    
+
     :param parent: Parent Qt widget (default: None)
     """
-        
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
         self._selected = None
         self._description = None
-        
+
         # Main layout
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
         self.setLayout(layout)
-        
+
         # Text area for attributes
         self.text_edit = QTextEdit()
         self.text_edit.setReadOnly(True)
         self.text_edit.setPlaceholderText("Select an object to view attributes...")
         layout.addWidget(self.text_edit)
-        
+
         self.setMinimumWidth(200)
-    
+
     def set_attributes(self, attributes_dict):
         """
         Set and display attributes from a dictionary.
-        
+
         :param attributes_dict: Dictionary mapping attribute names to values
         """
         text = ""
@@ -352,12 +410,12 @@ class AttributePanel(QWidget):
     def _clear_attributes_ui(self):
         """Clear the text in the attribute panel."""
         self.text_edit.clear()
-    
+
     def _clear_description_ui(self):
         """Clear the description in the attribute panel."""
         self.text_edit.clear()
 
-    def _update_selected(self, selected: 'Node'):
+    def _update_selected(self, selected: "Node"):
         """
         Update the selected node for the attribute panel.
 
@@ -365,7 +423,7 @@ class AttributePanel(QWidget):
         """
         self._selected = selected
         # Immediately fetch and display the description when a node is selected
-        if self._selected is not None and hasattr(self._selected, '_model_node'):
+        if self._selected is not None and hasattr(self._selected, "_model_node"):
             description = self._selected._model_node.get_description()
             self._update_description_ui(description)
         else:
@@ -380,21 +438,21 @@ class AttributePanel(QWidget):
             self._update_description_ui(des)
 
     def _update_description_ui(
-            self, 
-            description: List[Tuple[str, 'Describable.Style']]):
+        self, description: List[Tuple[str, "Describable.Style"]]
+    ):
         """
         Update the UI with a formatted description using HTML.
-        
+
         Formats the description according to the style specified for each section:
         - HEADING: Rendered as h2
         - NORMAL: Rendered as paragraph
         - BOXED: Rendered in a table cell with border
         - BOLD: Rendered as bold paragraph
-        
+
         :param description: List of tuples containing (text, style) where style determines formatting
         """
         from simpn.simulator import Describable
-        
+
         self._description = description
         panel_text = """<head>
         <style> 
@@ -426,24 +484,28 @@ class AttributePanel(QWidget):
 
         panel_text += "</main></body>"
         self.text_edit.setHtml(panel_text)
-    
+
     def listen_to(self):
         """
         Specify which event types this handler listens to.
-        
+
         :return: List of event types (NODE_CLICKED, BINDING_FIRED, SELECTION_CLEAR)
         """
-        return [EventType.NODE_CLICKED, EventType.BINDING_FIRED, EventType.SELECTION_CLEAR]
-    
+        return [
+            EventType.NODE_CLICKED,
+            EventType.BINDING_FIRED,
+            EventType.SELECTION_CLEAR,
+        ]
+
     def handle_event(self, event: pygame.event.Event) -> bool:
         """
         Handle a pygame event to update the attribute panel display.
-        
+
         Responds to:
         - NODE_CLICKED: Updates panel to show clicked node's attributes
         - BINDING_FIRED: Refreshes panel to reflect simulation state changes
         - SELECTION_CLEAR: Clears the attribute display
-        
+
         :param event: The pygame event to handle
         :return: True to propagate event to other handlers
         """
@@ -460,7 +522,7 @@ class AttributePanel(QWidget):
 class MainWindow(QMainWindow):
     """
     Main application window for the SimPN visualization system.
-    
+
     Provides a complete IDE-like interface for simulations with:
     - Toolbar with simulation controls (play, step, stop, reset, speed adjustment)
     - Zoom controls for the visualization
@@ -468,28 +530,31 @@ class MainWindow(QMainWindow):
     - Dockable debug console and attribute panel
     - File menu for loading BPMN files (in application mode)
     - Qt timer-based simulation execution to avoid threading issues
-    
+
     The window can operate in two modes:
     - Application mode: Includes file menu to load BPMN files
     - Embedded mode: Expects a simulation to be set programmatically
     """
-    
+
     def __init__(self, as_application=False):
         """
         Initialize the main window.
-        
+
         :param as_application: If True, enables application mode with file menu (default: False)
         """
         super().__init__()
-
+        reset_dispatcher()
         self._as_application = as_application
+        
 
         # Set up the main window
         self.setWindowTitle("SimPN")
         self.setGeometry(100, 100, 800, 600)
-        
+
         # Set window icon
-        logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'logo.png')
+        logo_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "logo.png"
+        )
         if os.path.exists(logo_path):
             self.setWindowIcon(QIcon(logo_path))
 
@@ -503,11 +568,12 @@ class MainWindow(QMainWindow):
         central_widget = QWidget(self)
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
-        
+
         # Create main toolbar
         main_toolbar = QToolBar("Main Toolbar")
         main_toolbar.setMovable(False)
-        main_toolbar.setStyleSheet("""
+        main_toolbar.setStyleSheet(
+            """
             QToolBar {
                 spacing: 5px;
                 padding: 3px;
@@ -517,29 +583,36 @@ class MainWindow(QMainWindow):
                 padding: 3px;
                 margin: 1px;
             }
-        """)
-        
+        """
+        )
+
         # Add Step button to toolbar
-        step_action = main_toolbar.addAction("Step")        
+        step_action = main_toolbar.addAction("Step")
         step_action.setToolTip("Execute one simulation step")
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_step.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "ide_step.png"
+        )
         step_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         step_action.triggered.connect(self.step_simulation)
         step_action.setEnabled(False)  # Disabled until a simulation is loaded
         self.step_action = step_action  # Store reference to enable/disable later
-        
+
         # Add Play button to toolbar
         play_action = main_toolbar.addAction("Play")
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_play.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "ide_play.png"
+        )
         play_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         play_action.setToolTip("Start continuous simulation")
         play_action.triggered.connect(self.play_simulation)
         play_action.setEnabled(False)  # Disabled until a simulation is loaded
         self.play_action = play_action
-        
+
         # Add Stop button to toolbar
         stop_action = main_toolbar.addAction("Stop")
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_stop.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "ide_stop.png"
+        )
         stop_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         stop_action.setToolTip("Stop continuous simulation")
         stop_action.triggered.connect(self.stop_simulation)
@@ -548,7 +621,9 @@ class MainWindow(QMainWindow):
 
         # Add reset to start to toolbar
         reset_action = main_toolbar.addAction("Reset to Start")
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'time_back.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "time_back.png"
+        )
         reset_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         reset_action.setToolTip("Reset simulation to start")
         reset_action.triggered.connect(self.reset_simulation)
@@ -557,51 +632,61 @@ class MainWindow(QMainWindow):
 
         # Add Faster button to toolbar
         faster_action = main_toolbar.addAction("Faster")
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_faster.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "ide_faster.png"
+        )
         faster_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         faster_action.setToolTip("Increase simulation speed")
         faster_action.triggered.connect(self.faster_simulation)
         faster_action.setEnabled(False)  # Disabled until a simulation is loaded
         self.faster_action = faster_action
-        
+
         # Add Slower button to toolbar
         slower_action = main_toolbar.addAction("Slower")
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'ide_slower.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "ide_slower.png"
+        )
         slower_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         slower_action.setToolTip("Decrease simulation speed")
         slower_action.triggered.connect(self.slower_simulation)
         slower_action.setEnabled(False)  # Disabled until a simulation is loaded
         self.slower_action = slower_action
-        
+
         # Add separator
         main_toolbar.addSeparator()
-        
+
         # Add Zoom In button to toolbar
         zoom_in_action = main_toolbar.addAction("Zoom In")
         # load the icon from assets/img/zoom-in.png
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'zoom-in.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "zoom-in.png"
+        )
         zoom_in_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         zoom_in_action.setToolTip("Zoom in (Ctrl++)")
         zoom_in_action.setShortcut("Ctrl++")
         zoom_in_action.triggered.connect(self.zoom_in)
         zoom_in_action.setEnabled(False)  # Disabled until a simulation is loaded
         self.zoom_in_action = zoom_in_action
-        
+
         # Add Zoom Out button to toolbar
         zoom_out_action = main_toolbar.addAction("Zoom Out")
         # load the icon from assets/img/zoom-out.png
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'zoom-out.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "zoom-out.png"
+        )
         zoom_out_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         zoom_out_action.setToolTip("Zoom out (Ctrl+-)")
         zoom_out_action.setShortcut("Ctrl+-")
         zoom_out_action.triggered.connect(self.zoom_out)
         zoom_out_action.setEnabled(False)  # Disabled until a simulation is loaded
         self.zoom_out_action = zoom_out_action
-        
+
         # Add Zoom Reset button to toolbar
         zoom_reset_action = main_toolbar.addAction("Zoom 100%")
         # load the icon from assets/img/zoom-reset.png
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'zoom-reset.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "zoom-reset.png"
+        )
         zoom_reset_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         zoom_reset_action.setToolTip("Reset zoom to 100% (Ctrl+0)")
         zoom_reset_action.setShortcut("Ctrl+0")
@@ -614,7 +699,9 @@ class MainWindow(QMainWindow):
 
         # Add clock precision increase button to toolbar
         clock_increase_action = main_toolbar.addAction("Clock precision +")
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'plus.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "plus.png"
+        )
         clock_increase_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         clock_increase_action.setToolTip("Increase clock precision")
         clock_increase_action.triggered.connect(self.increase_clock_precision)
@@ -623,7 +710,9 @@ class MainWindow(QMainWindow):
 
         # Add clock precision decrease button to toolbar
         clock_decrease_action = main_toolbar.addAction("Clock precision -")
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'minus.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "minus.png"
+        )
         clock_decrease_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         clock_decrease_action.setToolTip("Decrease clock precision")
         clock_decrease_action.triggered.connect(self.decrease_clock_precision)
@@ -632,29 +721,28 @@ class MainWindow(QMainWindow):
 
         # Add toolbar to main window
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, main_toolbar)
-        
+
         # Initialize simulation control variables
         self._playing = False
         self._play_step_delay = 500  # milliseconds between steps
-        
+
         # Create timers for play mode and display updates
         self._play_timer = QTimer(self)
         self._play_timer.timeout.connect(self._on_play_timer)
+
         
-        self._display_timer = QTimer(self)
-        self._display_timer.timeout.connect(self._on_display_timer)
-        self._display_timer.start(33)  # ~30 FPS
-        
+
         # Create debug panel as a dock widget
         self.debug_dock = QDockWidget("Debug Console", self)
         self.debug_panel = DebugPanel()
         self.debug_dock.setWidget(self.debug_panel)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.debug_dock)
-        
+
         # Create toolbar for the debug dock
         debug_toolbar = QToolBar("Debug Toolbar")
         debug_toolbar.setMovable(False)
-        debug_toolbar.setStyleSheet("""
+        debug_toolbar.setStyleSheet(
+            """
             QToolBar {
                 spacing: 3px;
                 padding: 2px;
@@ -664,44 +752,50 @@ class MainWindow(QMainWindow):
                 padding: 2px;
                 margin: 0px;
             }
-        """)
-        
+        """
+        )
+
         # Add title label to toolbar
         title_label = QLabel("  Debug Console")
         title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
         debug_toolbar.addWidget(title_label)
-        
+
         # Add spacer to push buttons to the right
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         debug_toolbar.addWidget(spacer)
-        
+
         # Clear button with icon
         clear_action = debug_toolbar.addAction("Clear")
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'clear.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "clear.png"
+        )
         clear_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         clear_action.setToolTip("Clear debug console")
         clear_action.triggered.connect(self.debug_panel.clear_text)
-        
+
         # Close button with icon
         close_action = debug_toolbar.addAction("Close")
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'close.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "close.png"
+        )
         close_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         close_action.setToolTip("Close debug console")
         close_action.triggered.connect(self.debug_dock.hide)
-        
+
         self.debug_dock.setTitleBarWidget(debug_toolbar)
-        
+
         # Create attribute panel as a dock widget
         self.attribute_dock = QDockWidget("Attributes", self)
         self.attribute_panel = AttributePanel()
         self.attribute_dock.setWidget(self.attribute_panel)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.attribute_dock)
-        
+
         # Create toolbar for the attribute dock
         attr_toolbar = QToolBar("Attribute Toolbar")
         attr_toolbar.setMovable(False)
-        attr_toolbar.setStyleSheet("""
+        attr_toolbar.setStyleSheet(
+            """
             QToolBar {
                 spacing: 3px;
                 padding: 2px;
@@ -711,45 +805,50 @@ class MainWindow(QMainWindow):
                 padding: 2px;
                 margin: 0px;
             }
-        """)
-        
+        """
+        )
+
         # Add title label to attribute toolbar
         attr_title_label = QLabel("  Attributes")
         attr_title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
         attr_toolbar.addWidget(attr_title_label)
-        
+
         # Add spacer to push close button to the right
         attr_spacer = QWidget()
-        attr_spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        attr_spacer.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
         attr_toolbar.addWidget(attr_spacer)
-        
+
         # Close button with icon
         attr_close_action = attr_toolbar.addAction("Close")
-        icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'close.png')
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "close.png"
+        )
         attr_close_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
         attr_close_action.setToolTip("Close attribute panel")
         attr_close_action.triggered.connect(self.attribute_dock.hide)
-        
+
         self.attribute_dock.setTitleBarWidget(attr_toolbar)
-                
+
         # Create menu bar
         self.create_menus()
-    
+
     def create_monochrome_icon(self, standard_pixmap):
         """
         Create a monochrome (dark gray) version of a standard Qt icon.
-        
+
         :param standard_pixmap: Qt standard pixmap enum value
         :return: QIcon with monochrome rendering
         """
         # Get the original icon
         original_icon = self.style().standardIcon(standard_pixmap)
         pixmap = original_icon.pixmap(QSize(16, 16))
-        
+
         # Create a new pixmap with the same size
         mono_pixmap = QPixmap(pixmap.size())
         mono_pixmap.fill(Qt.GlobalColor.transparent)
-        
+
         # Create a painter to draw the monochrome version
         painter = QPainter(mono_pixmap)
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
@@ -757,34 +856,35 @@ class MainWindow(QMainWindow):
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
         painter.fillRect(mono_pixmap.rect(), QColor(100, 100, 100))  # Dark gray
         painter.end()
-        
+
         return QIcon(mono_pixmap)
-    
+
     def create_monochrome_icon_from_file(self, file_path):
         """
         Create a monochrome (dark gray) version of an icon from a PNG file.
-        
+
         :param file_path: Path to the PNG icon file
         :return: QIcon with monochrome rendering, or empty icon if file doesn't exist
         """
         if not os.path.exists(file_path):
             # Return empty icon if file doesn't exist
             return QIcon()
-        
+
         # Load the pixmap from file
         pixmap = QPixmap(file_path)
-        
+
         # Resize to standard icon size if needed
         if pixmap.width() != 16 or pixmap.height() != 16:
             pixmap = pixmap.scaled(
-                QSize(16, 16), Qt.AspectRatioMode.KeepAspectRatio, 
-                Qt.TransformationMode.SmoothTransformation
+                QSize(16, 16),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
             )
-        
+
         # Create a new pixmap with the same size
         mono_pixmap = QPixmap(pixmap.size())
         mono_pixmap.fill(Qt.GlobalColor.transparent)
-        
+
         # Create a painter to draw the monochrome version
         painter = QPainter(mono_pixmap)
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
@@ -792,13 +892,13 @@ class MainWindow(QMainWindow):
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
         painter.fillRect(mono_pixmap.rect(), QColor(100, 100, 100))  # Dark gray
         painter.end()
-        
+
         return QIcon(mono_pixmap)
-    
+
     def create_menus(self):
         """
         Create the menu bar with File and View menus.
-        
+
         File menu (application mode only): Contains "Open BPMN File" action
         View menu: Contains toggles for debug and attribute panels, plus layout reset
         """
@@ -813,22 +913,26 @@ class MainWindow(QMainWindow):
 
         # Window menu
         window_menu = menubar.addMenu("View")
-        
+
         # Debug View action
         self.debug_view_action = window_menu.addAction("Debug View")
         self.debug_view_action.setCheckable(True)
         self.debug_view_action.setChecked(True)  # Initially visible
         self.debug_view_action.triggered.connect(self.toggle_debug_panel)
-        
+
         # Attribute View action
         self.attribute_view_action = window_menu.addAction("Attribute View")
         self.attribute_view_action.setCheckable(True)
         self.attribute_view_action.setChecked(True)  # Initially visible
         self.attribute_view_action.triggered.connect(self.toggle_attribute_panel)
-        
+
         # Connect the dock widgets' visibility changed signals to update the menu checkmarks
-        self.debug_dock.visibilityChanged.connect(self.on_debug_panel_visibility_changed)
-        self.attribute_dock.visibilityChanged.connect(self.on_attribute_panel_visibility_changed)
+        self.debug_dock.visibilityChanged.connect(
+            self.on_debug_panel_visibility_changed
+        )
+        self.attribute_dock.visibilityChanged.connect(
+            self.on_attribute_panel_visibility_changed
+        )
 
         # Add a separator
         window_menu.addSeparator()
@@ -843,45 +947,22 @@ class MainWindow(QMainWindow):
             self.debug_dock.hide()
         else:
             self.debug_dock.show()
-    
+
     def on_debug_panel_visibility_changed(self, visible):
         """Update the menu checkmark when the debug panel visibility changes"""
         self.debug_view_action.setChecked(visible)
-    
+
     def toggle_attribute_panel(self):
         """Toggle the visibility of the attribute panel"""
         if self.attribute_dock.isVisible():
             self.attribute_dock.hide()
         else:
             self.attribute_dock.show()
-    
+
     def on_attribute_panel_visibility_changed(self, visible):
         """Update the menu checkmark when the attribute panel visibility changes"""
         self.attribute_view_action.setChecked(visible)
-    
-    def on_pygame_mouse_click(self, x, y):
-        """Handle mouse clicks on the pygame widget"""
-        # Display coordinates in attribute panel
-        attrs = {
-            'Click Position': '',
-            'X': x,
-            'Y': y
-        }
-        
-        # If we have a visualisation and a node was clicked, show node info
-        viz = self.pygame_widget.get_panel()
-        if viz is not None:
-            node = viz._get_node_at((x, y))
-            if node is not None:
-                attrs['Node ID'] = node.get_id()
-                attrs['Node Type'] = type(node).__name__
-                if hasattr(node, '_model_node') and node._model_node is not None:
-                    model_node = node._model_node
-                    if hasattr(model_node, 'marking'):
-                        attrs['Token Count'] = len(model_node.marking)
-        
-        self.attribute_panel.set_attributes(attrs)
-    
+
     def open_bpmn_file(self):
         """Open a file dialog to select a BPMN file and remember the last directory."""
         try:
@@ -890,26 +971,27 @@ class MainWindow(QMainWindow):
             # On Windows: HKEY_CURRENT_USER\Software\TUe\SimPN
             # On Linux: ~/.config/TUe/SimPN.conf
             settings = QSettings("TUe", "SimPN")
-            
+
             # Get the last used directory, default to user's home directory
             last_dir = settings.value("last_bpmn_directory", os.path.expanduser("~"))
-            
+
             # Open file dialog starting from the last directory
             file_dialog = QFileDialog(self)
             file_dialog.setNameFilter("BPMN Files (*.bpmn);;All Files (*)")
             file_dialog.setDirectory(last_dir)
-            
+
             if file_dialog.exec():
                 selected_files = file_dialog.selectedFiles()
                 if selected_files:
                     bpmn_file = selected_files[0]
-                    
+
                     # Save the directory of the selected file for next time
                     file_dir = os.path.dirname(bpmn_file)
                     settings.setValue("last_bpmn_directory", file_dir)
-                    
+
                     # Parse and load the BPMN file
                     from simpn.bpmn_parser import BPMNParser
+
                     parser = BPMNParser()
                     parser.parse_file(bpmn_file)
                     simproblem = parser.transform()
@@ -924,7 +1006,7 @@ class MainWindow(QMainWindow):
     def set_simulation(self, model_panel: ModelPanel):
         """
         Sets a simulation into the visualization window and handles the necessary administration.
-        
+
         This method:
         - Deregisters existing event handlers if another simulation model panel is already set
         - Stores an initial checkpoint of the simulation for reset functionality
@@ -933,7 +1015,7 @@ class MainWindow(QMainWindow):
         - Registers the model panel, attribute panel, and clock module as event handlers
         - Enables all simulation control buttons
         - Updates the display
-        
+
         :param model_panel: The ModelPanel instance containing the simulation to visualize
         """
         # If there is an existing simulation, deregister event handlers
@@ -959,8 +1041,10 @@ class MainWindow(QMainWindow):
         self.pygame_widget.set_panel(model_panel)
 
         # Dispatch the VISUALIZATION_CREATED event
-        evt = create_event(EventType.VISUALIZATION_CREATED, sim=model_panel.get_problem())
-        self._event_dispatcher.dispatch(self, evt)            
+        evt = create_event(
+            EventType.VISUALIZATION_CREATED, sim=model_panel.get_problem()
+        )
+        self._event_dispatcher.dispatch(self, evt)
 
         # Enable simulation controls
         self.step_action.setEnabled(True)
@@ -973,23 +1057,23 @@ class MainWindow(QMainWindow):
         self.zoom_reset_action.setEnabled(True)
         self.clock_increase_action.setEnabled(True)
         self.clock_decrease_action.setEnabled(True)
-        
+
         # Update the display
-        self.pygame_widget.update_display(None)                        
-    
+        self.pygame_widget.update_display(None)
+
     def step_simulation(self):
         """
         Execute one step of the simulation and update the display.
         """
-        viz = self.pygame_widget.get_panel()
-        if viz is not None:
-            viz.step()
-            self.pygame_widget.update_display()
-    
+        dispatch(
+            create_event(EventType.SIM_PLAY),
+            self
+        )
+
     def play_simulation(self):
         """
         Start continuous simulation playback.
-        
+
         Enables the play timer which executes simulation steps at regular intervals
         determined by _play_step_delay. Updates UI button states appropriately.
         """
@@ -1000,43 +1084,35 @@ class MainWindow(QMainWindow):
             self.stop_action.setEnabled(True)
             self.reset_action.setEnabled(False)
             self._play_timer.start(self._play_step_delay)
-    
+
     def _on_play_timer(self):
         """
         Timer callback for executing simulation steps during play mode.
-        
+
         Called automatically by Qt timer at intervals set by _play_step_delay.
         """
-        viz = self.pygame_widget.get_panel()
-        if viz is not None and self._playing:
-            viz.step()
-    
-    def _on_display_timer(self):
-        """
-        Timer callback for updating the display at approximately 30 FPS.
-        
-        Called automatically by Qt timer every ~33ms to provide smooth visualization updates.
-        """
         dispatch(
-            create_event(EventType.SIM_UPDATE),
+            create_event(EventType.SIM_PLAY),
             self
         )
-    
+
     def save_layout(self):
         """
         Save the current node layout to a file.
-        
+
         Only saves if a BPMN file is currently open. The layout file is saved in the
         platform-specific preferences directory with a .layout extension.
         """
         viz = self.pygame_widget.get_panel()
-        if viz is not None and hasattr(self, '_filename_open'):
-            viz.save_layout(get_preferences_directory() / (self._filename_open + ".layout"))
-    
+        if viz is not None and hasattr(self, "_filename_open"):
+            viz.save_layout(
+                get_preferences_directory() / (self._filename_open + ".layout")
+            )
+
     def get_layout(self, filename) -> str:
         """
         Get the layout file path for a given BPMN filename.
-        
+
         :param filename: Base name of the BPMN file
         :return: Full path to layout file if it exists, None otherwise
         """
@@ -1048,18 +1124,18 @@ class MainWindow(QMainWindow):
     def reset_layout(self):
         """
         Reset the visualization layout to default positioning.
-        
+
         Uses the layout algorithm to reposition all nodes.
         """
-        viz = self.pygame_widget.get_panel()
-        if viz is not None:
-            viz.reset_layout()
-            self.pygame_widget.update_display()
+        dispatch(
+            create_event(EventType.SIM_RESET_LAYOUT),
+            self
+        )
 
     def stop_simulation(self):
         """
         Stop continuous simulation playback.
-        
+
         Stops the play timer and re-enables step and reset buttons.
         """
         self._playing = False
@@ -1068,7 +1144,7 @@ class MainWindow(QMainWindow):
         self.step_action.setEnabled(True)
         self.stop_action.setEnabled(False)
         self.reset_action.setEnabled(True)
-    
+
     def reset_simulation(self):
         """Reset the simulation to the initial state."""
         viz = self.pygame_widget.get_panel()
@@ -1084,63 +1160,61 @@ class MainWindow(QMainWindow):
         self._play_step_delay = max(100, self._play_step_delay - 100)
         if self._playing:
             self._play_timer.setInterval(self._play_step_delay)
-    
+
     def slower_simulation(self):
         """Decrease simulation speed by increasing delay."""
         self._play_step_delay = min(1000, self._play_step_delay + 100)
         if self._playing:
             self._play_timer.setInterval(self._play_step_delay)
-    
+
     def zoom_in(self):
         """Zoom in on the visualization by increasing the zoom level."""
-        viz = self.pygame_widget.get_panel()
-        if viz is not None:
-            viz.zoom("increase")
-            self.pygame_widget.update_display()
-    
+        dispatch(
+            create_event(EventType.SIM_ZOOM, action="increase")
+        )
+
     def zoom_out(self):
         """Zoom out on the visualization by decreasing the zoom level."""
-        viz = self.pygame_widget.get_panel()
-        if viz is not None:
-            viz.zoom("decrease")
-            self.pygame_widget.update_display()
-    
+        dispatch(
+            create_event(EventType.SIM_ZOOM, action="decrease")
+        )
+
     def zoom_reset(self):
         """Reset zoom level to 100% (1.0x scale)."""
-        viz = self.pygame_widget.get_panel()
-        if viz is not None:
-            viz.zoom("reset")
-            self.pygame_widget.update_display()
-    
+        dispatch(
+            create_event(EventType.SIM_ZOOM, action="reset")
+        )
+
     def increase_clock_precision(self):
         """
         Increase the number of decimal places shown in the simulation clock.
         """
-        if hasattr(self, 'clock_module'):
-            self.clock_module.increase_precision()
+        dispatch(
+            create_event(EventType.CLOCK_PREC_INC)
+        )
 
     def decrease_clock_precision(self):
         """
         Decrease the number of decimal places shown in the simulation clock.
-        
+
         Minimum precision is 1 decimal place.
         """
-        if hasattr(self, 'clock_module'):
-            self.clock_module.decrease_precision()
+        dispatch(
+            create_event(EventType.CLOCK_PREC_DEC)
+        )
 
     def closeEvent(self, event):
         """
         Handle window close event gracefully.
-        
+
         Stops all timers, saves the current layout if applicable, and accepts the close event.
-        
+
         :param event: Qt close event
         """
         # Stop the timers
         self._playing = False
         self._play_timer.stop()
-        self._display_timer.stop()
-        
+
         self.save_layout()
 
         # Accept the close event
@@ -1157,40 +1231,41 @@ class MainWindow(QMainWindow):
 class Visualisation:
     """
     High-level interface for creating and displaying Petri net simulation visualizations.
-    
+
     This class provides the main entry point for visualizing SimPN simulations. It creates
     a Qt application, main window, and model panel with the specified layout configuration.
-    
+
     The class can be used in two modes:
     1. With a simulation: Immediately loads and displays the provided simulation
     2. Without a simulation: Opens as an application allowing users to load BPMN files
-    
+
     Example usage:
         ```python
         from simpn.simulator import SimProblem
         from simpn.visualisation import Visualisation
-        
+
         # Create simulation
         problem = SimProblem()
         # ... define simulation ...
-        
+
         # Create and show visualization
         viz = Visualisation(problem)
         viz.show()
         ```
     """
-    
+
     def __init__(
-            self, 
-            sim_problem=None, 
-            layout_file=None, 
-            grid_spacing=50, 
-            node_spacing=100, 
-            layout_algorithm="sugiyama",
-            extra_modules: List[object] = None):
+        self,
+        sim_problem=None,
+        layout_file=None,
+        grid_spacing=50,
+        node_spacing=100,
+        layout_algorithm="sugiyama",
+        extra_modules: List[object] = None,
+    ):
         """
         Initialize the visualization.
-        
+
         :param sim_problem: SimProblem instance to visualize (None for application mode)
         :param layout_file: Path to saved layout file for node positioning (optional)
         :param grid_spacing: Grid spacing for snapping nodes (default: 50)
@@ -1207,9 +1282,11 @@ class Visualisation:
 
         self.app = QApplication(sys.argv)
         self.event_dispatcher = get_dispatcher()
-        
+
         # Set application icon for taskbar/dock
-        logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'img', 'logo.png')
+        logo_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "logo.png"
+        )
         if os.path.exists(logo_path):
             self.app.setWindowIcon(QIcon(logo_path))
 
@@ -1225,23 +1302,23 @@ class Visualisation:
                 layout_file=layout_file,
                 grid_spacing=grid_spacing,
                 node_spacing=node_spacing,
-                layout_algorithm=layout_algorithm
+                layout_algorithm=layout_algorithm,
             )
-            self.main_window.set_simulation(model_panel)            
+            self.main_window.set_simulation(model_panel)
 
     def show(self):
         """
         Display the visualization window and start the Qt event loop.
-        
+
         This method blocks until the window is closed by the user.
         """
         self.main_window.show()
         self.app.exec()
-    
+
     def save_layout(self, layout_file: str):
         """
         Save the current node positions to a layout file.
-        
+
         :param layout_file: Path where the layout should be saved
         """
         viz = self.main_window.pygame_widget.get_panel()

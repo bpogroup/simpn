@@ -9,10 +9,13 @@ Classes:
 """
 
 import pygame
+from PyQt6.QtCore import Qt
 from pygame.surface import Surface
-from simpn.visualisation.constants import TUE_GREY, TUE_BLUE, TUE_LIGHTBLUE, LINE_WIDTH
+from simpn.visualisation.constants import TUE_BLUE, TUE_LIGHTBLUE, LINE_WIDTH
 from simpn.assets import get_img_asset
-from simpn.visualisation.events import EventType, IEventHandler, check_event
+from simpn.visualisation.events import (
+    EventType, IEventHandler, check_event, dispatch, create_event, listen_to
+)
 
 
 class ClockModule(IEventHandler):
@@ -63,6 +66,17 @@ class ClockModule(IEventHandler):
         self._font = None
         self._format = "0.0"
 
+        listen_to(
+            EventType.CLOCK_PREC_INC,
+            self.increase_precision,
+            False
+        )
+        listen_to(
+            EventType.CLOCK_PREC_DEC,
+            self.decrease_precision,
+            False
+        )
+
     def listen_to(self):
         """
         Specify which event types this handler listens to.
@@ -73,6 +87,7 @@ class ClockModule(IEventHandler):
             EventType.VISUALIZATION_CREATED,
             EventType.POST_EVENT_LOOP,
             EventType.RENDER_UI,
+            EventType.SIM_CLICK
         ]
 
     def handle_event(self, event, *args, **kwargs):
@@ -106,6 +121,26 @@ class ClockModule(IEventHandler):
 
         elif check_event(event, EventType.RENDER_UI):
             self._render_clock(event.window)
+
+        elif check_event(event, EventType.SIM_CLICK):
+            if self._clock_rect:
+                x, y = event.pos['x'], event.pos['y']
+                if self._clock_rect.collidepoint(
+                    x,
+                    y
+                ):
+                    if event.button == Qt.MouseButton.LeftButton:
+                        dispatch(
+                            create_event(
+                                EventType.CLOCK_PREC_INC
+                            )
+                        )
+                    elif event.button == Qt.MouseButton.RightButton:
+                        dispatch(
+                            create_event(
+                                EventType.CLOCK_PREC_DEC
+                            )
+                        )
 
         return True
 
