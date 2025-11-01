@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import QApplication
 from simpn.visualisation.events import EventType
 from simpn.visualisation.base import MainWindow, ModelPanel
 from simpn.visualisation.events import get_dispatcher, create_event, EventType
+from simpn.visualisation.model_panel_mods import ClockModule
 import sys
 import os
 import tempfile
@@ -192,6 +193,7 @@ class TestBasicVisualisation(unittest.TestCase):
             node_spacing=100,
             layout_algorithm="sugiyama",
         )
+        model_panel.add_mod(ClockModule())
 
         self.main_window.set_simulation(model_panel)
 
@@ -262,10 +264,17 @@ class TestBasicVisualisation(unittest.TestCase):
         # test if after some simulation time, the clock's time is the same as the simproblem's time
         panel = self.main_window.pygame_widget.get_panel()
 
+        clocker = None
+        for mod in panel.mods():
+            if isinstance(mod, ClockModule):
+                clocker = mod
+                break
+        self.assertIsNotNone(clocker, "could not find the clock module!")
+
         self.run_simulation(duration_ms=1500)
 
         # Get the clock module time from the UI
-        clock_time = self.main_window.clock_module._time
+        clock_time = clocker._time
 
         # Get the simulation time from the SimProblem
         sim_time = panel._problem.clock
@@ -340,32 +349,32 @@ class TestBasicVisualisation(unittest.TestCase):
             handler.node_clicked_called, "NODE_CLICKED event was not triggered"
         )
 
-    # def test_preferences_remember_directory(self):
-    #     """Test that the last opened directory is remembered in preferences."""
-    #     # Create a temporary directory for testing
-    #     test_dir = tempfile.mkdtemp()
+    def test_preferences_remember_directory(self):
+        """Test that the last opened directory is remembered in preferences."""
+        # Create a temporary directory for testing
+        test_dir = tempfile.mkdtemp()
 
-    #     try:
-    #         # Create QSettings instance (same as in open_bpmn_file)
-    #         settings = QSettings("TUe", "SimPN")
+        try:
+            # Create QSettings instance (same as in open_bpmn_file)
+            settings = QSettings("TUe", "SimPN")
 
-    #         # Clear any existing preference
-    #         settings.remove("last_bpmn_directory")
+            # Clear any existing preference
+            settings.remove("last_bpmn_directory")
 
-    #         # Set a test directory
-    #         settings.setValue("last_bpmn_directory", test_dir)
+            # Set a test directory
+            settings.setValue("last_bpmn_directory", test_dir)
 
-    #         # Verify it was saved
-    #         saved_dir = settings.value("last_bpmn_directory")
-    #         self.assertEqual(saved_dir, test_dir, "Directory preference was not saved correctly")
+            # Verify it was saved
+            saved_dir = settings.value("last_bpmn_directory")
+            self.assertEqual(saved_dir, test_dir, "Directory preference was not saved correctly")
 
-    #         # Verify default behavior when no preference exists
-    #         settings.remove("last_bpmn_directory")
-    #         default_dir = settings.value("last_bpmn_directory", os.path.expanduser("~"))
-    #         self.assertEqual(default_dir, os.path.expanduser("~"), "Default directory should be home directory")
-    #     except Exception as e:
-    #         print(f"had error on test :: {str(e)}")
-    #     finally:
-    #         # Clean up
-    #         os.rmdir(test_dir)
-    #         settings.remove("last_bpmn_directory")
+            # Verify default behavior when no preference exists
+            settings.remove("last_bpmn_directory")
+            default_dir = settings.value("last_bpmn_directory", os.path.expanduser("~"))
+            self.assertEqual(default_dir, os.path.expanduser("~"), "Default directory should be home directory")
+        except Exception as e:
+            print(f"had error on test :: {str(e)}")
+        finally:
+            # Clean up
+            os.rmdir(test_dir)
+            settings.remove("last_bpmn_directory")
