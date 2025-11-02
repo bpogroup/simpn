@@ -12,6 +12,7 @@ Classes:
     Visualisation: Main class for starting visualisations.
 """
 
+import enum
 import os
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
@@ -339,12 +340,17 @@ class DebugPanel(QWidget):
 
     :param parent: Parent Qt widget (default: None)
     """
+    class DebugLevel(enum.Enum):
+        INFO = 1
+        WARNING = 2
+        ERROR = 3
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, debug_level=DebugLevel.WARNING):
         super().__init__(parent)
 
         self._selected = None
         self._description = None
+        self._debug_level = debug_level
 
         # Main layout
         layout = QVBoxLayout()
@@ -389,15 +395,17 @@ class DebugPanel(QWidget):
 
         :param text: Warning message to display
         """
-        self.write_text(text, color="orange")
+        if self._debug_level in [self.DebugLevel.WARNING, self.DebugLevel.INFO]:
+            self.write_text(text, color="orange")
 
-    def write_success(self, text):
+    def write_info(self, text):
         """
-        Write success text in green to the debug panel.
+        Write informational text in blue to the debug panel.
 
-        :param text: Success message to display
+        :param text: Informational message to display
         """
-        self.write_text(text, color="green")
+        if self._debug_level == self.DebugLevel.INFO:
+            self.write_text(text, color="white")
 
     def clear_text(self):
         """Clear all text from the debug panel."""
@@ -409,11 +417,11 @@ class DebugPanel(QWidget):
 
         :return: Empty list (DebugPanel doesn't listen to events by default)
         """
-        return [EventType.ALL]  # DebugPanel doesn't listen to any events currently
+        return [EventType.ALL]  # DebugPanel listens to all events for logging
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         if not check_event(event, EventType.RENDER_UI):
-            self.write_warning(f"[EventQue] {str(event)}")
+            self.write_info(f"[EventQue] {str(event)}")
         return True
 
 
@@ -1045,6 +1053,9 @@ class MainWindow(QMainWindow):
                     model_panel = ModelPanel(simproblem, layout_file=layout_file)
                     self.set_simulation(model_panel)
                     self._filename_open = os.path.basename(bpmn_file)
+                    # Need to send a resize event to set the correct size
+                    dispatch(create_event(EventType.SIM_RESIZE, width=self.pygame_widget.width, height=self.pygame_widget.height), self)
+                    dispatch(create_event(EventType.SIM_UPDATE), self)
         except Exception as e:
             self.debug_panel.write_error(f"Error opening BPMN file: {str(e)}")
             return
