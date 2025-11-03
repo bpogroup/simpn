@@ -28,6 +28,7 @@ from PyQt6.QtGui import (
     QColor,
     QMouseEvent,
     QWheelEvent,
+    QActionGroup,
 )
 from PyQt6.QtWidgets import (
     QMainWindow,
@@ -340,6 +341,7 @@ class DebugPanel(QWidget):
 
     :param parent: Parent Qt widget (default: None)
     """
+
     class DebugLevel(enum.Enum):
         INFO = 1
         WARNING = 2
@@ -395,7 +397,7 @@ class DebugPanel(QWidget):
 
         :param text: Warning message to display
         """
-        if self._debug_level in [self.DebugLevel.WARNING, self.DebugLevel.INFO]:
+        if self._debug_level in [self.DebugLevel.WARNING]:
             self.write_text(text, color="orange")
 
     def write_info(self, text):
@@ -405,7 +407,7 @@ class DebugPanel(QWidget):
         :param text: Informational message to display
         """
         if self._debug_level == self.DebugLevel.INFO:
-            self.write_text(text, color="white")
+            self.write_text(text, color="black")
 
     def clear_text(self):
         """Clear all text from the debug panel."""
@@ -420,6 +422,8 @@ class DebugPanel(QWidget):
         return [EventType.ALL]  # DebugPanel listens to all events for logging
 
     def handle_event(self, event: pygame.event.Event) -> bool:
+        if check_event(event, EventType.DEBUG_LEVEL):
+            self._debug_level = event.level
         if not check_event(event, EventType.RENDER_UI):
             self.write_info(f"[EventQue] {str(event)}")
         return True
@@ -556,7 +560,7 @@ class AttributePanel(QWidget):
             EventType.NODE_CLICKED,
             EventType.BINDING_FIRED,
             EventType.SELECTION_CLEAR,
-            EventType.DES_POST
+            EventType.DES_POST,
         ]
 
     def handle_event(self, event: pygame.event.Event) -> bool:
@@ -995,6 +999,37 @@ class MainWindow(QMainWindow):
         layout_action = window_menu.addAction("Reset Layout")
         layout_action.triggered.connect(self.reset_layout)
 
+        # add help section
+        help_menu = menubar.addMenu("Help")
+
+        help_debug_menu = help_menu.addMenu("debug level")
+        help_debug_group = QActionGroup(self)
+        help_debug_group.setExclusive(True)
+        help_debug_menu.setToolTip("Updates the debug level for the debug panel.")
+        
+        help_debug_low_menu = help_debug_menu.addAction("ERROR")
+        help_debug_low_menu.setCheckable(True)
+        help_debug_low_menu.setChecked(True)
+        help_debug_low_menu.setActionGroup(help_debug_group)
+        help_debug_low_menu.setData(DebugPanel.DebugLevel.ERROR)
+
+        help_debug_med_menu = help_debug_menu.addAction("WARNING")
+        help_debug_med_menu.setCheckable(True)
+        help_debug_med_menu.setActionGroup(help_debug_group)
+        help_debug_med_menu.setData(DebugPanel.DebugLevel.WARNING)
+
+        help_debug_all_menu = help_debug_menu.addAction("INFO")
+        help_debug_all_menu.setCheckable(True)
+        help_debug_all_menu.setActionGroup(help_debug_group)
+        help_debug_all_menu.setData(DebugPanel.DebugLevel.INFO)
+
+        help_debug_group.triggered.connect(
+            lambda action: dispatch(
+                create_event(EventType.DEBUG_LEVEL, level=action.data()),
+                self
+            )
+        )
+
     def toggle_debug_panel(self):
         """Toggle the visibility of the debug panel"""
         if self.debug_dock.isVisible():
@@ -1054,7 +1089,14 @@ class MainWindow(QMainWindow):
                     self.set_simulation(model_panel)
                     self._filename_open = os.path.basename(bpmn_file)
                     # Need to send a resize event to set the correct size
-                    dispatch(create_event(EventType.SIM_RESIZE, width=self.pygame_widget.width, height=self.pygame_widget.height), self)
+                    dispatch(
+                        create_event(
+                            EventType.SIM_RESIZE,
+                            width=self.pygame_widget.width,
+                            height=self.pygame_widget.height,
+                        ),
+                        self,
+                    )
                     dispatch(create_event(EventType.SIM_UPDATE), self)
         except Exception as e:
             self.debug_panel.write_error(f"Error opening BPMN file: {str(e)}")
@@ -1115,10 +1157,7 @@ class MainWindow(QMainWindow):
         self.clock_decrease_action.setEnabled(True)
 
         # Update the display
-        dispatch(
-            create_event(EventType.SIM_UPDATE),
-            self
-        )
+        dispatch(create_event(EventType.SIM_UPDATE), self)
 
     def step_simulation(self):
         """
@@ -1189,10 +1228,7 @@ class MainWindow(QMainWindow):
 
     def reset_simulation(self):
         """Reset the simulation to the initial state."""
-        dispatch(
-            create_event(EventType.SIM_RESET_SIM_STATE),
-            self
-        )
+        dispatch(create_event(EventType.SIM_RESET_SIM_STATE), self)
 
     def faster_simulation(self):
         """Increase simulation speed by decreasing delay."""
@@ -1289,7 +1325,7 @@ class Visualisation:
         node_spacing=100,
         layout_algorithm="sugiyama",
         extra_modules: List[object] = None,
-        include_default_modules: bool = True
+        include_default_modules: bool = True,
     ):
         """
         Initialize the visualization.

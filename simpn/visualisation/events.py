@@ -71,6 +71,8 @@ class EventType(Enum):
 
     DES_POST = auto()
 
+    DEBUG_LEVEL = auto()
+
     ALL = auto()
 
     def __eq__(self, value):
