@@ -24,6 +24,11 @@ dependencies = [
     "pyqt6>=6.9.1"
 ]
 
+[project.optional-dependencies]
+dev = [
+    "numpy"
+]
+
 [package.data]
 include = [
     "/assets/**.*"
