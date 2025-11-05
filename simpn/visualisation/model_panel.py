@@ -783,6 +783,10 @@ class ModelPanel:
             edge.draw(scaled_surface)
 
         # Draw nodes on scaled surface
+        evt = create_event(
+            EventType.RENDER_PRE_NODES, window=scaled_surface, nodes=self._nodes.values()
+        )
+        dispatch(evt, self)
         for node in self._nodes.values():
             node._curr_time = self._problem.clock
             node.draw(scaled_surface)
