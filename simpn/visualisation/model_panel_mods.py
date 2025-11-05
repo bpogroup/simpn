@@ -232,6 +232,7 @@ class FiredTracker:
         """
         from simpn.simulator import Describable
         from html import escape
+
         name = escape(self.name)
         ret = [
             (f"Fired Event: {name}", Describable.Style.HEADING),
@@ -423,5 +424,137 @@ class FiredTrackerModule(IEventHandler):
                         ),
                         self,
                     )
+                    name = tracker.name
+                    # a hack to handle prototypes using lifecycles
+                    if "<" in name:
+                        name = name.split("<")[0]
+                    dispatch(
+                        create_event(EventType.HLIGHT_FOCUS, node=name),
+                        self
+                    )
                     return False
+        return True
+
+
+class NodeHighlightingModule(IEventHandler):
+    """
+    This visualization module highlights nodes when hovered over.
+
+    It draws a border around nodes to indicate they are being hovered.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._node_rects = []
+        self._hovered = None
+        self._highlighted = None
+
+    def listen_to(self):
+        return [
+            EventType.RENDER_PRE_NODES,
+            EventType.SIM_HOVER,
+            EventType.NODE_CLICKED,
+            EventType.SELECTION_CLEAR,
+            EventType.HLIGHT_FOCUS,
+            EventType.HLIGHT_DEFOCUS,
+            EventType.HLIGHT_HOVER,
+            EventType.HLIGHT_UNHOVER,
+        ]
+    
+    def _find_node(self, name):
+        for node, rect in self._node_rects:
+            if node.get_id() == name:
+                return node
+        return None
+
+    def handle_focus(self, event):
+        if check_event(event, EventType.HLIGHT_FOCUS):
+            self._highlighted = self._find_node(event.node)
+        elif check_event(event, EventType.HLIGHT_DEFOCUS):
+            self._highlighted = None
+        return True
+
+    def handle_hover(self, event):
+        if check_event(event, EventType.HLIGHT_HOVER):
+            self._hovered = self._find_node(event.node)
+        elif check_event(event, EventType.HLIGHT_UNHOVER):
+            self._hovered = None
+        return True
+
+    def handle_event(self, event):
+        if check_event(event, EventType.RENDER_PRE_NODES):
+            self.update_node_positions(event)
+            self.render(event)
+        elif check_event(event, EventType.SIM_HOVER):
+            self.check_for_hovered(event)
+        elif check_event(event, EventType.NODE_CLICKED):
+            self._highlighted = event.node
+        elif check_event(event, EventType.SELECTION_CLEAR):
+            self._highlighted = None
+        elif check_event(event, EventType.HLIGHT_FOCUS) or check_event(
+            event, EventType.HLIGHT_DEFOCUS
+        ):
+            self.handle_focus(event)
+        elif check_event(event, EventType.HLIGHT_HOVER) or check_event(
+            event, EventType.HLIGHT_UNHOVER
+        ):
+            self.handle_hover(event)
+        return True
+
+    def update_node_positions(self, event: Event) -> bool:
+        """
+        Update the positions of nodes before rendering.
+
+        :param event: The event containing node information
+        """
+        self._node_rects = []
+        for node in event.nodes:
+            rect = node.get_rect()
+            self._node_rects.append((node, rect))
+        return True
+
+    def check_for_hovered(self, event: Event) -> bool:
+        """
+        Check if the mouse is hovering over any node.
+
+        :param event: The event containing mouse position
+        """
+        x, y = event.pos
+        hovered_node = None
+        for node, rect in self._node_rects:
+            if rect.collidepoint(x, y):
+                hovered_node = node
+                break
+        self._hovered = hovered_node
+        return True
+
+    def render(self, event: Event) -> bool:
+        """
+        Render a highlight around the hovered node.
+
+        :param window: The pygame surface to draw on
+        :param hovered_node: The node currently being hovered over
+        """
+        surface: pygame.Surface = event.window
+        tmpsur = pygame.Surface(
+            (surface.get_width(), surface.get_height()), pygame.SRCALPHA
+        )
+        tmpsur.set_alpha(125)
+        if self._hovered is not None and self._highlighted is not self._hovered:
+            rect = self._hovered.get_rect()
+            pygame.draw.circle(
+                tmpsur,
+                TUE_RED,
+                rect.center,
+                rect.width // 2 + 10,
+            )
+        if self._highlighted is not None:
+            rect = self._highlighted.get_rect()
+            pygame.draw.circle(
+                tmpsur,
+                GREEN,
+                rect.center,
+                rect.width // 2 + 10,
+            )
+        surface.blit(tmpsur, (0, 0))
         return True

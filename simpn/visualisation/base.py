@@ -42,7 +42,11 @@ from PyQt6.QtWidgets import (
     QApplication,
     QFileDialog,
 )
-from simpn.visualisation.model_panel_mods import ClockModule, FiredTrackerModule
+from simpn.visualisation.model_panel_mods import (
+    ClockModule,
+    FiredTrackerModule,
+    NodeHighlightingModule,
+)
 from simpn.visualisation.model_panel import ModelPanel
 from simpn.visualisation.events import (
     register_handler,
@@ -1297,7 +1301,7 @@ class MainWindow(QMainWindow):
         return True
 
 
-DEFAULT_MODS = [ClockModule, FiredTrackerModule]
+DEFAULT_MODS = [ClockModule, FiredTrackerModule, NodeHighlightingModule]
 
 
 class Visualisation:
