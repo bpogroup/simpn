@@ -42,6 +42,7 @@ class EventType(Enum):
     RENDER_SIM = (
         auto()
     )  # Fired during simulation rendering; includes 'screen' attribute
+    RENDER_PRE_NODES = auto()
     RENDER_UI = auto()  # Fired during UI rendering; includes 'window' attribute
     NODE_CLICKED = auto()  # Fired when a node is clicked; includes 'node' attribute
     SELECTION_CLEAR = (
@@ -61,6 +62,7 @@ class EventType(Enum):
     SIM_CLICK = auto()
     SIM_PRESS = auto()
     SIM_MOVE = auto()
+    SIM_HOVER = auto()
     SIM_RESET_LAYOUT = auto()
     SIM_RESET_SIM_STATE = auto()
     SIM_RELEASE = auto()
@@ -70,6 +72,11 @@ class EventType(Enum):
     CLOCK_PREC_DEC = auto()
 
     DES_POST = auto()
+
+    HLIGHT_FOCUS = auto()
+    HLIGHT_DEFOCUS = auto()
+    HLIGHT_HOVER = auto()
+    HLIGHT_UNHOVER = auto()
 
     DEBUG_LEVEL = auto()
 
