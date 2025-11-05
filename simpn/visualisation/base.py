@@ -128,6 +128,8 @@ class PygameWidget(QLabel):
         self._play_timer.timeout.connect(self.trigger_step)
         self._play_timer.setInterval(self._play_step_delay)
 
+        self.setMouseTracking(True)
+
         listen_to(EventType.SIM_RENDERED, self.update_display)
         listen_to(EventType.SIM_RUN, self.start_simulation, False)
         listen_to(EventType.SIM_STOP, self.stop_simulation, False)
@@ -299,10 +301,17 @@ class PygameWidget(QLabel):
         """
         x = int(event.position().x())
         y = int(event.position().y())
-        dispatch(
-            create_event(EventType.SIM_MOVE, pos=(x, y)),
-            self,
-        )
+        
+        if event.buttons():
+            dispatch(
+                create_event(EventType.SIM_MOVE, pos=(x, y)),
+                self,
+            )
+        else:
+            dispatch(
+                create_event(EventType.SIM_HOVER, pos=(x, y)),
+                self,
+            )
         super().mouseMoveEvent(event)
 
     def wheelEvent(self, event: QWheelEvent):
