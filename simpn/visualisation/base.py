@@ -1145,6 +1145,8 @@ class MainWindow(QMainWindow):
                     simproblem = parser.transform()
                     layout_file = self.get_layout(os.path.basename(bpmn_file))
                     model_panel = ModelPanel(simproblem, layout_file=layout_file)
+                    model_panel.add_mod(ClockModule())
+                    model_panel.add_mod(NodeHighlightingModule())
                     self.set_simulation(model_panel)
                     self._filename_open = os.path.basename(bpmn_file)
                     # Need to send a resize event to set the correct size
