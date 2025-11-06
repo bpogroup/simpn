@@ -652,6 +652,7 @@ class MainWindow(QMainWindow):
 
         # Create main toolbar
         main_toolbar = QToolBar("Main Toolbar")
+        main_toolbar.setObjectName("Main Toolbar")  # Required for saveState()
         main_toolbar.setMovable(False)
         main_toolbar.setStyleSheet(
             """
@@ -805,6 +806,7 @@ class MainWindow(QMainWindow):
 
         # Create debug panel as a dock widget
         self.debug_dock = QDockWidget("Debug Console", self)
+        self.debug_dock.setObjectName("Debug Console")  # Required for saveState()
         self.debug_panel = DebugPanel()
         self.debug_dock.setWidget(self.debug_panel)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.debug_dock)
@@ -858,6 +860,7 @@ class MainWindow(QMainWindow):
 
         # Create attribute panel as a dock widget
         self.attribute_dock = QDockWidget("Attributes", self)
+        self.attribute_dock.setObjectName("Attributes Panel")  # Required for saveState()
         self.attribute_panel = AttributePanel()
         self.attribute_dock.setWidget(self.attribute_panel)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.attribute_dock)
@@ -904,6 +907,30 @@ class MainWindow(QMainWindow):
 
         # Create menu bar
         self.create_menus()
+
+        # Keep settings between sessions
+        self.settings = QSettings("TUe", "SimPN")
+        self.restoreSettings()
+    
+    def saveSettings(self):
+        """
+        Save the current window settings (size, position, dock states).
+        """
+        self.settings.setValue("geometry", self.saveGeometry())
+        self.settings.setValue("windowState", self.saveState())
+        self.settings.setValue("lastDir", self.last_dir)
+    
+    def restoreSettings(self):
+        """
+        Restore the window settings (size, position, dock states) from previous session.
+        """
+        geometry = self.settings.value("geometry")
+        if geometry:
+            self.restoreGeometry(geometry)
+        window_state = self.settings.value("windowState")
+        if window_state:
+            self.restoreState(window_state)
+        self.last_dir = self.settings.value("lastDir", os.path.expanduser("~"))
 
     def create_monochrome_icon(self, standard_pixmap):
         """
@@ -1068,28 +1095,18 @@ class MainWindow(QMainWindow):
     def open_bpmn_file(self):
         """Open a file dialog to select a BPMN file and remember the last directory."""
         try:
-            # Create QSettings instance for storing preferences
-            # On macOS: ~/Library/Preferences/com.tue.SimPN.plist
-            # On Windows: HKEY_CURRENT_USER\Software\TUe\SimPN
-            # On Linux: ~/.config/TUe/SimPN.conf
-            settings = QSettings("TUe", "SimPN")
-
-            # Get the last used directory, default to user's home directory
-            last_dir = settings.value("last_bpmn_directory", os.path.expanduser("~"))
-
             # Open file dialog starting from the last directory
             file_dialog = QFileDialog(self)
             file_dialog.setNameFilter("BPMN Files (*.bpmn);;All Files (*)")
-            file_dialog.setDirectory(last_dir)
+            file_dialog.setDirectory(self.last_dir)
 
             if file_dialog.exec():
                 selected_files = file_dialog.selectedFiles()
                 if selected_files:
                     bpmn_file = selected_files[0]
 
-                    # Save the directory of the selected file for next time
-                    file_dir = os.path.dirname(bpmn_file)
-                    settings.setValue("last_bpmn_directory", file_dir)
+                    # Update the last used directory in settings
+                    self.last_dir = os.path.dirname(bpmn_file)
 
                     # Parse and load the BPMN file
                     from simpn.bpmn_parser import BPMNParser
@@ -1288,6 +1305,8 @@ class MainWindow(QMainWindow):
         # Stop the timers
         self._playing = False
 
+        # Save layout and settings
+        self.saveSettings()
         self.save_layout()
 
         # Accept the close event
