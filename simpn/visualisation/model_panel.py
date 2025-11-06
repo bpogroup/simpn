@@ -588,6 +588,7 @@ class ModelPanel:
         listen_to(EventType.SIM_PRESS, self.handle_mouse_press)
         listen_to(EventType.SIM_RELEASE, self.handle_mouse_release)
         listen_to(EventType.SIM_MOVE, self.handle_mouse_motion)
+        listen_to(EventType.SIM_HOVER, self.scale_to_surface)
         listen_to(EventType.SIM_PLAY, self.step, False)
         listen_to(EventType.SIM_RESET_LAYOUT, self.reset_layout, False)
         listen_to(EventType.SIM_RESET_SIM_STATE, self.reset_to_inital, False)
@@ -904,6 +905,20 @@ class ModelPanel:
             node.set_pos((new_x, new_y))
 
         self._selected_nodes = nodes, new_pos
+
+    def scale_to_surface(self, event: Event) -> bool:
+        """
+        A hack to scale mouse positions from the upper
+        pywidget mouse events to the internal surface coordinates.
+        """
+        if not hasattr(event, "scaled"):
+            new_pos = (event.pos[0] / self._zoom_level, event.pos[1] / self._zoom_level)
+            dispatch(
+                create_event(EventType.SIM_HOVER, pos=new_pos, scaled=True),
+                self            
+            )
+            return False
+        return True
 
     def step(self) -> object:
         """
