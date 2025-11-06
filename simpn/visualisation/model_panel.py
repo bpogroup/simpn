@@ -820,12 +820,12 @@ class ModelPanel:
                 self._selected_nodes = [node], pos
                 # Dispatch event through centralized dispatcher
                 evt = create_event(EventType.NODE_CLICKED, node=node, button=button)
-                self._event_dispatcher.dispatch(self, evt)
+                dispatch(evt, self)
             else:
                 self._selected_nodes = list(self._nodes.values()), pos
                 # Dispatch event through centralized dispatcher
                 evt = create_event(EventType.SELECTION_CLEAR)
-                self._event_dispatcher.dispatch(self, evt)
+                dispatch(evt, self)
         return True
 
     def handle_mouse_release(self, event: Event) -> bool:
