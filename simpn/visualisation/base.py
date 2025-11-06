@@ -860,7 +860,7 @@ class MainWindow(QMainWindow):
 
         # Create attribute panel as a dock widget
         self.attribute_dock = QDockWidget("Attributes", self)
-        self.attribute_dock.setObjectName("Attributes Panel")  # Required for saveState()
+        self.attribute_dock.setObjectName("Attributes")  # Required for saveState()
         self.attribute_panel = AttributePanel()
         self.attribute_dock.setWidget(self.attribute_panel)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.attribute_dock)
@@ -910,6 +910,7 @@ class MainWindow(QMainWindow):
 
         # Keep settings between sessions
         self.settings = QSettings("TUe", "SimPN")
+        self.last_dir = os.path.expanduser("~")  # Initialize with default value
         self.restoreSettings()
     
     def saveSettings(self):
@@ -1107,6 +1108,7 @@ class MainWindow(QMainWindow):
 
                     # Update the last used directory in settings
                     self.last_dir = os.path.dirname(bpmn_file)
+                    self.settings.setValue('lastDir', self.last_dir)
 
                     # Parse and load the BPMN file
                     from simpn.bpmn_parser import BPMNParser
