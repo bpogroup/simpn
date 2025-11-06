@@ -149,3 +149,9 @@ Version 1.7.1 (2025-10-30)
 ---------------------------
 
 - [Bugfix] fixed issue with time SimVar not correctly updating to the current time.
+
+Version 1.7.2 (2025-11-06)
+--------------------------
+
+- [Minor feature] added highlighting for selected nodes in visualization.
+- [Minor feature] added trace history of fired transitions in visualization.
