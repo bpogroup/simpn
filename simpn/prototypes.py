@@ -441,24 +441,20 @@ class BPMNEndEvent(Prototype):
         if len(outgoing) != 0:
             raise TypeError("Event " + name + ": must not have output parameters.")
 
-        self._marking = []
-        result = model.add_event(incoming, outgoing, lambda c: self.behaviour(c), name=name + "<end_event>")
+        completed_name = name + "_completed"
+        self._completed_var = model.add_var(completed_name)
+        self.add_var(self._completed_var)
+
+        result = model.add_event(incoming, [self._completed_var], lambda c: [SimToken(c)], name=name + "<end_event>")
         self.add_event(result)
 
         model.add_prototype(self)
-
-    def behaviour(self, c):
-        """
-        wrapper to count tokens that made it to the end event.
-        """
-        self._marking.append(SimToken(c))
-        return []
 
     def get_description(self):
         description = [(super().get_id() + ": BPMNEndEvent", Describable.Style.HEADING)]
         description.append( (" ", Describable.Style.NORMAL) )
         description.append( ("Marking:", Describable.Style.NORMAL) )
-        for token in self._marking:
+        for token in self._completed_var.marking:
             description.append( (str(token), Describable.Style.BOXED) )
         return description
     
@@ -472,7 +468,7 @@ class BPMNEndEvent(Prototype):
             font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
 
             # draw tokens
-            vis.TokenShower(self._model_node._marking) \
+            vis.TokenShower(self._model_node._completed_var.marking) \
                 .set_pos(self._pos) \
                 .show_token_count(True) \
                 .set_time(self._curr_time) \
