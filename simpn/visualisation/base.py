@@ -67,6 +67,53 @@ if TYPE_CHECKING:
     from simpn.visualisation.model_panel import Node
 
 
+TOOLBAR_STYLESHEET = """
+            QToolBar {
+                spacing: 8px;
+                padding: 4px;
+            }
+            QToolButton {
+                max-width: 12px;
+                max-height: 12px;
+                padding: 4px;
+                margin: 2px;
+                opacity: 0.7;
+            }
+        """
+
+def create_monochrome_icon_from_file(file_path) -> QIcon:
+    """
+    Create a monochrome (dark gray) icon from an image file.
+
+    :param file_path: Path to the image file
+    :return: QIcon with monochrome rendering
+    """
+    if not os.path.exists(file_path):
+        return QIcon()
+
+    # Load the original image
+    original_pixmap = QPixmap(file_path)
+
+    # Create a new pixmap with the same size
+    mono_pixmap = QPixmap(original_pixmap.size())
+    mono_pixmap.fill(Qt.GlobalColor.transparent)
+
+    # Create a painter to draw on the new pixmap
+    painter = QPainter(mono_pixmap)
+    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+
+    # Draw the original pixmap
+    painter.drawPixmap(0, 0, original_pixmap)
+
+    # Apply a color overlay to make it monochrome (dark gray)
+    painter.setCompositionMode(
+        QPainter.CompositionMode.CompositionMode_SourceIn
+    )
+    painter.fillRect(mono_pixmap.rect(), QColor(255, 255, 255))
+    painter.end()
+
+    return QIcon(mono_pixmap)
+
 def get_preferences_directory() -> Path:
     """
     Get the cross-platform preferences directory for SimPN.
@@ -97,7 +144,7 @@ def get_preferences_directory() -> Path:
     return prefs_dir
 
 
-class PygameWidget(QLabel):
+class SimulationPanel(QWidget):
     """
     Qt widget that embeds a pygame surface for rendering simulation visualizations.
 
@@ -119,6 +166,25 @@ class PygameWidget(QLabel):
         self.setMinimumSize(width, height)
         self._panel = None  # Will hold the ModelPanel instance
 
+        # Create main layout
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        self.setLayout(main_layout)
+
+        # Create toolbar
+        self.toolbar = self._create_toolbar()
+        main_layout.addWidget(self.toolbar)
+
+        # Create display label for pygame surface
+        self.display_label = QLabel()
+        self.display_label.setMinimumSize(width, height)
+        self.display_label.setMouseTracking(True)
+        main_layout.addWidget(self.display_label)
+
+        # Enable mouse tracking on the widget itself
+        self.setMouseTracking(True)
+
         self._display_timer = QTimer(self)
         self._display_timer.timeout.connect(self.trigger_update)
         self._display_timer.start(33)  # ~30 FPS
@@ -129,16 +195,225 @@ class PygameWidget(QLabel):
 
         # Create timers for play mode and display updates
         self._play_timer = QTimer(self)
-        self._play_timer.timeout.connect(self.trigger_step)
+        self._play_timer.timeout.connect(self.step_simulation)
         self._play_timer.setInterval(self._play_step_delay)
 
-        self.setMouseTracking(True)
-
         listen_to(EventType.SIM_RENDERED, self.update_display)
-        listen_to(EventType.SIM_RUN, self.start_simulation, False)
-        listen_to(EventType.SIM_STOP, self.stop_simulation, False)
-        listen_to(EventType.SIM_SLOWER, self.slower, False)
-        listen_to(EventType.SIM_FASTER, self.faster, False)
+
+    def _create_toolbar(self):
+        """Create and configure the toolbar with simulation controls."""
+        toolbar = QToolBar("Simulation Controls")
+        toolbar.setMovable(False)
+        toolbar.setStyleSheet(TOOLBAR_STYLESHEET)
+
+        # Add Step button to toolbar
+        self.step_action = toolbar.addAction("Step")
+        self.step_action.setToolTip("Execute one simulation step")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "ide_step.png"
+        )
+        self.step_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.step_action.triggered.connect(self.step_simulation)
+        self.step_action.setEnabled(False)
+
+        # Add Play button to toolbar
+        self.play_action = toolbar.addAction("Play")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "ide_play.png"
+        )
+        self.play_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.play_action.setToolTip("Start continuous simulation")
+        self.play_action.triggered.connect(self.start_simulation)
+        self.play_action.setEnabled(False)
+
+        # Add Stop button to toolbar
+        self.stop_action = toolbar.addAction("Stop")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "ide_stop.png"
+        )
+        self.stop_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.stop_action.setToolTip("Stop continuous simulation")
+        self.stop_action.triggered.connect(self.stop_simulation)
+        self.stop_action.setEnabled(False)
+
+        # Add reset to start to toolbar
+        self.reset_action = toolbar.addAction("Reset to Start")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "time_back.png"
+        )
+        self.reset_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.reset_action.setToolTip("Reset simulation to start")
+        self.reset_action.triggered.connect(self.reset_simulation)
+        self.reset_action.setEnabled(False)
+
+        # Add Faster button to toolbar
+        self.faster_action = toolbar.addAction("Faster")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "ide_faster.png"
+        )
+        self.faster_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.faster_action.setToolTip("Increase simulation speed")
+        self.faster_action.triggered.connect(self.faster_simulation)
+        self.faster_action.setEnabled(False)
+
+        # Add Slower button to toolbar
+        self.slower_action = toolbar.addAction("Slower")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "ide_slower.png"
+        )
+        self.slower_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.slower_action.setToolTip("Decrease simulation speed")
+        self.slower_action.triggered.connect(self.slower_simulation)
+        self.slower_action.setEnabled(False)
+
+        # Add separator
+        toolbar.addSeparator()
+
+        # Add Zoom In button to toolbar
+        self.zoom_in_action = toolbar.addAction("Zoom In")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "zoom-in.png"
+        )
+        self.zoom_in_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.zoom_in_action.setToolTip("Zoom in (Ctrl++)")
+        self.zoom_in_action.triggered.connect(self.zoom_in)
+        self.zoom_in_action.setEnabled(False)
+
+        # Add Zoom Out button to toolbar
+        self.zoom_out_action = toolbar.addAction("Zoom Out")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "zoom-out.png"
+        )
+        self.zoom_out_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.zoom_out_action.setToolTip("Zoom out (Ctrl+-)")
+        self.zoom_out_action.triggered.connect(self.zoom_out)
+        self.zoom_out_action.setEnabled(False)
+
+        # Add Zoom Reset button to toolbar
+        self.zoom_reset_action = toolbar.addAction("Zoom 100%")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "zoom-reset.png"
+        )
+        self.zoom_reset_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.zoom_reset_action.setToolTip("Reset zoom to 100% (Ctrl+0)")
+        self.zoom_reset_action.triggered.connect(self.zoom_reset)
+        self.zoom_reset_action.setEnabled(False)
+
+        # Add separator
+        toolbar.addSeparator()
+
+        # Add clock precision increase button to toolbar
+        self.clock_increase_action = toolbar.addAction("Clock precision +")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "plus.png"
+        )
+        self.clock_increase_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.clock_increase_action.setToolTip("Increase clock precision")
+        self.clock_increase_action.triggered.connect(self.increase_clock_precision)
+        self.clock_increase_action.setEnabled(False)
+
+        # Add clock precision decrease button to toolbar
+        self.clock_decrease_action = toolbar.addAction("Clock precision -")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "minus.png"
+        )
+        self.clock_decrease_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.clock_decrease_action.setToolTip("Decrease clock precision")
+        self.clock_decrease_action.triggered.connect(self.decrease_clock_precision)
+        self.clock_decrease_action.setEnabled(False)
+
+        return toolbar
+
+    def enable_controls(self, enabled=True):
+        """
+        Enable or disable all toolbar controls.
+
+        :param enabled: True to enable, False to disable
+        """
+        self.step_action.setEnabled(enabled)
+        self.play_action.setEnabled(enabled)
+        self.reset_action.setEnabled(enabled)
+        self.faster_action.setEnabled(enabled)
+        self.slower_action.setEnabled(enabled)
+        self.zoom_in_action.setEnabled(enabled)
+        self.zoom_out_action.setEnabled(enabled)
+        self.zoom_reset_action.setEnabled(enabled)
+        self.clock_increase_action.setEnabled(enabled)
+        self.clock_decrease_action.setEnabled(enabled)
+
+    def step_simulation(self) -> bool:
+        """
+        Execute one step of the simulation and update the display.
+        """
+        dispatch(create_event(EventType.SIM_PLAY), self)
+        return True
+
+    def start_simulation(self):
+        """
+        Start continuous simulation playback.
+
+        Enables the play timer which executes simulation steps at regular intervals
+        determined by _play_step_delay. Updates UI button states appropriately.
+        """
+        if not self._playing:
+            self._playing = True
+            self.play_action.setEnabled(False)
+            self.step_action.setEnabled(False)
+            self.stop_action.setEnabled(True)
+            self.reset_action.setEnabled(False)
+            self._play_timer.start()
+
+    def stop_simulation(self):
+        """
+        Stop continuous simulation playback.
+
+        Stops the play timer and re-enables step and reset buttons.
+        """
+        if self._playing:
+            self._playing = False
+            self.play_action.setEnabled(True)
+            self.step_action.setEnabled(True)
+            self.stop_action.setEnabled(False)
+            self.reset_action.setEnabled(True)
+            self._play_timer.stop()
+
+    def reset_simulation(self):
+        """Reset the simulation to the initial state."""
+        dispatch(create_event(EventType.SIM_RESET_SIM_STATE), self)
+
+    def faster_simulation(self):
+        """Increase simulation speed by decreasing delay."""
+        self._play_step_delay = max(100, self._play_step_delay - 100)
+        self._play_timer.setInterval(self._play_step_delay)
+
+    def slower_simulation(self):
+        """Decrease simulation speed by increasing delay."""
+        self._play_step_delay = min(1000, self._play_step_delay + 100)
+        self._play_timer.setInterval(self._play_step_delay)
+
+    def zoom_in(self):
+        """Zoom in on the visualization by increasing the zoom level."""
+        dispatch(create_event(EventType.SIM_ZOOM, action="increase"), self)
+
+    def zoom_out(self):
+        """Zoom out on the visualization by decreasing the zoom level."""
+        dispatch(create_event(EventType.SIM_ZOOM, action="decrease"), self)
+
+    def zoom_reset(self):
+        """Reset zoom level to 100% (1.0x scale)."""
+        dispatch(create_event(EventType.SIM_ZOOM, action="reset"), self)
+
+    def increase_clock_precision(self):
+        """
+        Increase the number of decimal places shown in the simulation clock.
+        """
+        dispatch(create_event(EventType.CLOCK_PREC_INC), self)
+
+    def decrease_clock_precision(self):
+        """
+        Decrease the number of decimal places shown in the simulation clock.
+        """
+        dispatch(create_event(EventType.CLOCK_PREC_DEC), self)
 
     def set_panel(self, panel: ModelPanel):
         """
@@ -155,52 +430,6 @@ class PygameWidget(QLabel):
         :return: The current ModelPanel instance or None
         """
         return self._panel
-
-    def slower(self) -> bool:
-        """
-        If running the simulation continously, this will increase the time
-        between steps.
-        """
-        self._play_step_delay = min(1000, self._play_step_delay + 100)
-        self._play_timer.setInterval(self._play_step_delay)
-        return True
-
-    def faster(self) -> bool:
-        """
-        If running the simulation continously, this will decrease the time
-        between steps.
-        """
-        self._play_step_delay = max(100, self._play_step_delay - 100)
-        self._play_timer.setInterval(self._play_step_delay)
-        return True
-
-    def stop_simulation(self) -> bool:
-        """
-        Trigger the continous stepping of the simulation.
-        """
-        if self._playing:
-            self._playing = False
-            self._play_timer.stop()
-
-        return True
-
-    def start_simulation(self) -> bool:
-        """
-        Trigger the continous stepping of the simulation.
-        """
-        if not self._playing:
-            self._playing = True
-            self._play_timer.start()
-
-        return True
-
-    def trigger_step(self) -> bool:
-        """
-        Trigger to get the underlying simulation to move to the next
-        step.
-        """
-        dispatch(create_event(EventType.SIM_PLAY), self)
-        return True
 
     def trigger_update(self) -> bool:
         """
@@ -230,7 +459,7 @@ class PygameWidget(QLabel):
                 QImage.Format.Format_RGB888,
             )
             # Convert to QPixmap and display
-            self.setPixmap(QPixmap.fromImage(image))
+            self.display_label.setPixmap(QPixmap.fromImage(image))
         return True
 
     def resizeEvent(self, event):
@@ -244,8 +473,10 @@ class PygameWidget(QLabel):
         new_width = self.width
         new_height = self.height
         if event.size().width() > 0 and event.size().height() > 0:
+            # Account for toolbar height
+            toolbar_height = self.toolbar.sizeHint().height()
             new_width = event.size().width()
-            new_height = event.size().height()
+            new_height = event.size().height() - toolbar_height
 
         # Only resize if dimensions actually changed
         if new_width != self.width or new_height != self.height:
@@ -267,19 +498,22 @@ class PygameWidget(QLabel):
 
         :param event: Qt mouse press event
         """
+        # Adjust y coordinate for toolbar
+        toolbar_height = self.toolbar.sizeHint().height()
         x = int(event.position().x())
-        y = int(event.position().y())
+        y = int(event.position().y()) - toolbar_height
 
-        dispatch(
-            create_event(EventType.SIM_PRESS, pos=(x, y), button=event.button()),
-            self,
-        )
-        dispatch(
-            create_event(
-                EventType.SIM_CLICK, pos={"x": x, "y": y}, button=event.button()
-            ),
-            self,
-        )
+        if y >= 0:  # Only process if click is below toolbar
+            dispatch(
+                create_event(EventType.SIM_PRESS, pos=(x, y), button=event.button()),
+                self,
+            )
+            dispatch(
+                create_event(
+                    EventType.SIM_CLICK, pos={"x": x, "y": y}, button=event.button()
+                ),
+                self,
+            )
 
         super().mousePressEvent(event)
 
@@ -289,12 +523,16 @@ class PygameWidget(QLabel):
 
         :param event: Qt mouse release event
         """
+        # Adjust y coordinate for toolbar
+        toolbar_height = self.toolbar.sizeHint().height()
         x = int(event.position().x())
-        y = int(event.position().y())
-        dispatch(
-            create_event(EventType.SIM_RELEASE, pos=(x, y), button=event.button()),
-            self,
-        )
+        y = int(event.position().y()) - toolbar_height
+        
+        if y >= 0:  # Only process if release is below toolbar
+            dispatch(
+                create_event(EventType.SIM_RELEASE, pos=(x, y), button=event.button()),
+                self,
+            )
         super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -303,19 +541,22 @@ class PygameWidget(QLabel):
 
         :param event: Qt mouse move event
         """
+        # Adjust y coordinate for toolbar
+        toolbar_height = self.toolbar.sizeHint().height()
         x = int(event.position().x())
-        y = int(event.position().y())
+        y = int(event.position().y()) - toolbar_height
         
-        if event.buttons():
-            dispatch(
-                create_event(EventType.SIM_MOVE, pos=(x, y)),
-                self,
-            )
-        else:
-            dispatch(
-                create_event(EventType.SIM_HOVER, pos=(x, y)),
-                self,
-            )
+        if y >= 0:  # Only process if move is below toolbar
+            if event.buttons():
+                dispatch(
+                    create_event(EventType.SIM_MOVE, pos=(x, y)),
+                    self,
+                )
+            else:
+                dispatch(
+                    create_event(EventType.SIM_HOVER, pos=(x, y)),
+                    self,
+                )
         super().mouseMoveEvent(event)
 
     def wheelEvent(self, event: QWheelEvent):
@@ -372,12 +613,52 @@ class DebugPanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
         self.setLayout(layout)
 
+        # Create toolbar
+        self.toolbar = self._create_toolbar()
+        layout.addWidget(self.toolbar)
+
         # Text area for debug messages
         self.text_edit = QTextEdit()
         self.text_edit.setReadOnly(True)
         layout.addWidget(self.text_edit)
 
         self.setMinimumHeight(100)
+
+    def _create_toolbar(self):
+        """Create and configure the toolbar for the debug panel."""
+        toolbar = QToolBar("Debug Toolbar")
+        toolbar.setMovable(False)
+        toolbar.setStyleSheet(TOOLBAR_STYLESHEET)
+
+        # Add title label to toolbar
+        title_label = QLabel("  Debug Console")
+        title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        toolbar.addWidget(title_label)
+
+        # Add spacer to push buttons to the right
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        toolbar.addWidget(spacer)
+
+        # Clear button with icon
+        clear_action = toolbar.addAction("Clear")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "clear.png"
+        )
+        clear_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        clear_action.setToolTip("Clear debug console")
+        clear_action.triggered.connect(self.clear_text)
+
+        # Close button with icon
+        self.close_action = toolbar.addAction("Close")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "close.png"
+        )
+        self.close_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.close_action.setToolTip("Close debug console")
+        # Note: close action will be connected by parent to hide the dock
+
+        return toolbar
 
     def write_text(self, text, color=None):
         """
@@ -466,6 +747,10 @@ class AttributePanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
         self.setLayout(layout)
 
+        # Create toolbar
+        self.toolbar = self._create_toolbar()
+        layout.addWidget(self.toolbar)
+
         # Text area for attributes
         self.text_edit = QTextEdit()
         self.text_edit.setReadOnly(True)
@@ -473,6 +758,35 @@ class AttributePanel(QWidget):
         layout.addWidget(self.text_edit)
 
         self.setMinimumWidth(200)
+
+    def _create_toolbar(self):
+        """Create and configure the toolbar for the attribute panel."""
+        toolbar = QToolBar("Attribute Toolbar")
+        toolbar.setMovable(False)
+        toolbar.setStyleSheet(TOOLBAR_STYLESHEET)
+
+        # Add title label to attribute toolbar
+        title_label = QLabel("  Attributes")
+        title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        toolbar.addWidget(title_label)
+
+        # Add spacer to push close button to the right
+        spacer = QWidget()
+        spacer.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
+        toolbar.addWidget(spacer)
+
+        # Close button with icon
+        self.close_action = toolbar.addAction("Close")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "close.png"
+        )
+        self.close_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.close_action.setToolTip("Close attribute panel")
+        # Note: close action will be connected by parent to hide the dock
+
+        return toolbar
 
     def set_attributes(self, attributes_dict):
         """
@@ -605,9 +919,8 @@ class MainWindow(QMainWindow):
     Main application window for the SimPN visualization system.
 
     Provides a complete IDE-like interface for simulations with:
-    - Toolbar with simulation controls (play, step, stop, reset, speed adjustment)
-    - Zoom controls for the visualization
-    - Clock precision controls
+    - PygameWidget with embedded toolbar containing simulation controls (play, step, stop, 
+      reset, speed adjustment), zoom controls, and clock precision controls
     - Dockable debug console and attribute panel
     - File menu for loading BPMN files (in application mode)
     - Qt timer-based simulation execution to avoid threading issues
@@ -640,169 +953,19 @@ class MainWindow(QMainWindow):
             self.setWindowIcon(QIcon(logo_path))
 
         # Create pygame widget
-        self.pygame_widget = PygameWidget(640, 480)
+        self.simulation_panel = SimulationPanel(640, 480)
 
         # Add the Pygame widget to the main window
-        layout = QVBoxLayout()
-        layout.addWidget(self.pygame_widget)
+        self.setCentralWidget(self.simulation_panel)
 
-        central_widget = QWidget(self)
-        central_widget.setLayout(layout)
-        self.setCentralWidget(central_widget)
-
-        # Create main toolbar
-        main_toolbar = QToolBar("Main Toolbar")
-        main_toolbar.setObjectName("Main Toolbar")  # Required for saveState()
-        main_toolbar.setMovable(False)
-        main_toolbar.setStyleSheet(
-            """
-            QToolBar {
-                spacing: 5px;
-                padding: 3px;
-                border: none;
-            }
-            QToolButton {
-                padding: 3px;
-                margin: 1px;
-            }
-        """
-        )
-
-        # Add Step button to toolbar
-        step_action = main_toolbar.addAction("Step")
-        step_action.setToolTip("Execute one simulation step")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_step.png"
-        )
-        step_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        step_action.triggered.connect(self.step_simulation)
-        step_action.setEnabled(False)  # Disabled until a simulation is loaded
-        self.step_action = step_action  # Store reference to enable/disable later
-
-        # Add Play button to toolbar
-        play_action = main_toolbar.addAction("Play")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_play.png"
-        )
-        play_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        play_action.setToolTip("Start continuous simulation")
-        play_action.triggered.connect(self.play_simulation)
-        play_action.setEnabled(False)  # Disabled until a simulation is loaded
-        self.play_action = play_action
-
-        # Add Stop button to toolbar
-        stop_action = main_toolbar.addAction("Stop")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_stop.png"
-        )
-        stop_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        stop_action.setToolTip("Stop continuous simulation")
-        stop_action.triggered.connect(self.stop_simulation)
-        stop_action.setEnabled(False)  # Disabled until playing
-        self.stop_action = stop_action
-
-        # Add reset to start to toolbar
-        reset_action = main_toolbar.addAction("Reset to Start")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "time_back.png"
-        )
-        reset_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        reset_action.setToolTip("Reset simulation to start")
-        reset_action.triggered.connect(self.reset_simulation)
-        reset_action.setEnabled(False)  # Disabled until a simulation is loaded
-        self.reset_action = reset_action
-
-        # Add Faster button to toolbar
-        faster_action = main_toolbar.addAction("Faster")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_faster.png"
-        )
-        faster_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        faster_action.setToolTip("Increase simulation speed")
-        faster_action.triggered.connect(self.faster_simulation)
-        faster_action.setEnabled(False)  # Disabled until a simulation is loaded
-        self.faster_action = faster_action
-
-        # Add Slower button to toolbar
-        slower_action = main_toolbar.addAction("Slower")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_slower.png"
-        )
-        slower_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        slower_action.setToolTip("Decrease simulation speed")
-        slower_action.triggered.connect(self.slower_simulation)
-        slower_action.setEnabled(False)  # Disabled until a simulation is loaded
-        self.slower_action = slower_action
-
-        # Add separator
-        main_toolbar.addSeparator()
-
-        # Add Zoom In button to toolbar
-        zoom_in_action = main_toolbar.addAction("Zoom In")
-        # load the icon from assets/img/zoom-in.png
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "zoom-in.png"
-        )
-        zoom_in_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        zoom_in_action.setToolTip("Zoom in (Ctrl++)")
-        zoom_in_action.setShortcut("Ctrl++")
-        zoom_in_action.triggered.connect(self.zoom_in)
-        zoom_in_action.setEnabled(False)  # Disabled until a simulation is loaded
-        self.zoom_in_action = zoom_in_action
-
-        # Add Zoom Out button to toolbar
-        zoom_out_action = main_toolbar.addAction("Zoom Out")
-        # load the icon from assets/img/zoom-out.png
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "zoom-out.png"
-        )
-        zoom_out_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        zoom_out_action.setToolTip("Zoom out (Ctrl+-)")
-        zoom_out_action.setShortcut("Ctrl+-")
-        zoom_out_action.triggered.connect(self.zoom_out)
-        zoom_out_action.setEnabled(False)  # Disabled until a simulation is loaded
-        self.zoom_out_action = zoom_out_action
-
-        # Add Zoom Reset button to toolbar
-        zoom_reset_action = main_toolbar.addAction("Zoom 100%")
-        # load the icon from assets/img/zoom-reset.png
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "zoom-reset.png"
-        )
-        zoom_reset_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        zoom_reset_action.setToolTip("Reset zoom to 100% (Ctrl+0)")
-        zoom_reset_action.setShortcut("Ctrl+0")
-        zoom_reset_action.triggered.connect(self.zoom_reset)
-        zoom_reset_action.setEnabled(False)  # Disabled until a simulation is loaded
-        self.zoom_reset_action = zoom_reset_action
-
-        # Add separator
-        main_toolbar.addSeparator()
-
-        # Add clock precision increase button to toolbar
-        clock_increase_action = main_toolbar.addAction("Clock precision +")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "plus.png"
-        )
-        clock_increase_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        clock_increase_action.setToolTip("Increase clock precision")
-        clock_increase_action.triggered.connect(self.increase_clock_precision)
-        clock_increase_action.setEnabled(False)  # Disabled until a simulation is loaded
-        self.clock_increase_action = clock_increase_action
-
-        # Add clock precision decrease button to toolbar
-        clock_decrease_action = main_toolbar.addAction("Clock precision -")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "minus.png"
-        )
-        clock_decrease_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        clock_decrease_action.setToolTip("Decrease clock precision")
-        clock_decrease_action.triggered.connect(self.decrease_clock_precision)
-        clock_decrease_action.setEnabled(False)  # Disabled until a simulation is loaded
-        self.clock_decrease_action = clock_decrease_action
-
-        # Add toolbar to main window
-        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, main_toolbar)
+        # Add keyboard shortcuts for zoom controls (these will work window-wide)
+        self.simulation_panel.zoom_in_action.setShortcut("Ctrl++")
+        self.simulation_panel.zoom_out_action.setShortcut("Ctrl+-")
+        self.simulation_panel.zoom_reset_action.setShortcut("Ctrl+0")
+        # Make the shortcuts work from the main window
+        self.addAction(self.simulation_panel.zoom_in_action)
+        self.addAction(self.simulation_panel.zoom_out_action)
+        self.addAction(self.simulation_panel.zoom_reset_action)
 
         # Create debug panel as a dock widget
         self.debug_dock = QDockWidget("Debug Console", self)
@@ -810,53 +973,12 @@ class MainWindow(QMainWindow):
         self.debug_panel = DebugPanel()
         self.debug_dock.setWidget(self.debug_panel)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.debug_dock)
-
-        # Create toolbar for the debug dock
-        debug_toolbar = QToolBar("Debug Toolbar")
-        debug_toolbar.setMovable(False)
-        debug_toolbar.setStyleSheet(
-            """
-            QToolBar {
-                spacing: 3px;
-                padding: 2px;
-                border: none;
-            }
-            QToolButton {
-                padding: 2px;
-                margin: 0px;
-            }
-        """
-        )
-
-        # Add title label to toolbar
-        title_label = QLabel("  Debug Console")
-        title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
-        debug_toolbar.addWidget(title_label)
-
-        # Add spacer to push buttons to the right
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        debug_toolbar.addWidget(spacer)
-
-        # Clear button with icon
-        clear_action = debug_toolbar.addAction("Clear")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "clear.png"
-        )
-        clear_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        clear_action.setToolTip("Clear debug console")
-        clear_action.triggered.connect(self.debug_panel.clear_text)
-
-        # Close button with icon
-        close_action = debug_toolbar.addAction("Close")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "close.png"
-        )
-        close_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        close_action.setToolTip("Close debug console")
-        close_action.triggered.connect(self.debug_dock.hide)
-
-        self.debug_dock.setTitleBarWidget(debug_toolbar)
+        
+        # Connect the close action from the debug panel's toolbar
+        self.debug_panel.close_action.triggered.connect(self.debug_dock.hide)
+        
+        # Use the debug panel's toolbar as the title bar widget
+        self.debug_dock.setTitleBarWidget(self.debug_panel.toolbar)
 
         # Create attribute panel as a dock widget
         self.attribute_dock = QDockWidget("Attributes", self)
@@ -864,46 +986,12 @@ class MainWindow(QMainWindow):
         self.attribute_panel = AttributePanel()
         self.attribute_dock.setWidget(self.attribute_panel)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.attribute_dock)
-
-        # Create toolbar for the attribute dock
-        attr_toolbar = QToolBar("Attribute Toolbar")
-        attr_toolbar.setMovable(False)
-        attr_toolbar.setStyleSheet(
-            """
-            QToolBar {
-                spacing: 3px;
-                padding: 2px;
-                border: none;
-            }
-            QToolButton {
-                padding: 2px;
-                margin: 0px;
-            }
-        """
-        )
-
-        # Add title label to attribute toolbar
-        attr_title_label = QLabel("  Attributes")
-        attr_title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
-        attr_toolbar.addWidget(attr_title_label)
-
-        # Add spacer to push close button to the right
-        attr_spacer = QWidget()
-        attr_spacer.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
-        attr_toolbar.addWidget(attr_spacer)
-
-        # Close button with icon
-        attr_close_action = attr_toolbar.addAction("Close")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "close.png"
-        )
-        attr_close_action.setIcon(self.create_monochrome_icon_from_file(icon_path))
-        attr_close_action.setToolTip("Close attribute panel")
-        attr_close_action.triggered.connect(self.attribute_dock.hide)
-
-        self.attribute_dock.setTitleBarWidget(attr_toolbar)
+        
+        # Connect the close action from the attribute panel's toolbar
+        self.attribute_panel.close_action.triggered.connect(self.attribute_dock.hide)
+        
+        # Use the attribute panel's toolbar as the title bar widget
+        self.attribute_dock.setTitleBarWidget(self.attribute_panel.toolbar)
 
         # Create menu bar
         self.create_menus()
@@ -932,67 +1020,6 @@ class MainWindow(QMainWindow):
         if window_state:
             self.restoreState(window_state)
         self.last_dir = self.settings.value("lastDir", os.path.expanduser("~"))
-
-    def create_monochrome_icon(self, standard_pixmap):
-        """
-        Create a monochrome (dark gray) version of a standard Qt icon.
-
-        :param standard_pixmap: Qt standard pixmap enum value
-        :return: QIcon with monochrome rendering
-        """
-        # Get the original icon
-        original_icon = self.style().standardIcon(standard_pixmap)
-        pixmap = original_icon.pixmap(QSize(16, 16))
-
-        # Create a new pixmap with the same size
-        mono_pixmap = QPixmap(pixmap.size())
-        mono_pixmap.fill(Qt.GlobalColor.transparent)
-
-        # Create a painter to draw the monochrome version
-        painter = QPainter(mono_pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
-        painter.drawPixmap(0, 0, pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
-        painter.fillRect(mono_pixmap.rect(), QColor(100, 100, 100))  # Dark gray
-        painter.end()
-
-        return QIcon(mono_pixmap)
-
-    def create_monochrome_icon_from_file(self, file_path):
-        """
-        Create a monochrome (dark gray) version of an icon from a PNG file.
-
-        :param file_path: Path to the PNG icon file
-        :return: QIcon with monochrome rendering, or empty icon if file doesn't exist
-        """
-        if not os.path.exists(file_path):
-            # Return empty icon if file doesn't exist
-            return QIcon()
-
-        # Load the pixmap from file
-        pixmap = QPixmap(file_path)
-
-        # Resize to standard icon size if needed
-        if pixmap.width() != 16 or pixmap.height() != 16:
-            pixmap = pixmap.scaled(
-                QSize(16, 16),
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-
-        # Create a new pixmap with the same size
-        mono_pixmap = QPixmap(pixmap.size())
-        mono_pixmap.fill(Qt.GlobalColor.transparent)
-
-        # Create a painter to draw the monochrome version
-        painter = QPainter(mono_pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
-        painter.drawPixmap(0, 0, pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
-        painter.fillRect(mono_pixmap.rect(), QColor(100, 100, 100))  # Dark gray
-        painter.end()
-
-        return QIcon(mono_pixmap)
 
     def create_menus(self):
         """
@@ -1124,8 +1151,8 @@ class MainWindow(QMainWindow):
                     dispatch(
                         create_event(
                             EventType.SIM_RESIZE,
-                            width=self.pygame_widget.width,
-                            height=self.pygame_widget.height,
+                            width=self.simulation_panel.width,
+                            height=self.simulation_panel.height,
                         ),
                         self,
                     )
@@ -1150,10 +1177,10 @@ class MainWindow(QMainWindow):
         :param model_panel: The ModelPanel instance containing the simulation to visualize
         """
         # If there is an existing simulation, deregister event handlers
-        if self.pygame_widget.get_panel() is not None:
+        if self.simulation_panel.get_panel() is not None:
             # Deregister event handlers
-            unregister_handler(self.pygame_widget.get_panel())
-            for mod in self.pygame_widget.get_panel().mods():
+            unregister_handler(self.simulation_panel.get_panel())
+            for mod in self.simulation_panel.get_panel().mods():
                 unregister_handler(mod)
             unregister_handler(self.attribute_panel)
 
@@ -1168,7 +1195,7 @@ class MainWindow(QMainWindow):
         register_handler(self.debug_panel)
 
         # Set it in the pygame widget
-        self.pygame_widget.set_panel(model_panel)
+        self.simulation_panel.set_panel(model_panel)
 
         # Dispatch the VISUALIZATION_CREATED event
         evt = create_event(
@@ -1177,40 +1204,10 @@ class MainWindow(QMainWindow):
         dispatch(evt, self)
 
         # Enable simulation controls
-        self.step_action.setEnabled(True)
-        self.play_action.setEnabled(True)
-        self.reset_action.setEnabled(True)
-        self.faster_action.setEnabled(True)
-        self.slower_action.setEnabled(True)
-        self.zoom_in_action.setEnabled(True)
-        self.zoom_out_action.setEnabled(True)
-        self.zoom_reset_action.setEnabled(True)
-        self.clock_increase_action.setEnabled(True)
-        self.clock_decrease_action.setEnabled(True)
+        self.simulation_panel.enable_controls(True)
 
         # Update the display
         dispatch(create_event(EventType.SIM_UPDATE), self)
-
-    def step_simulation(self):
-        """
-        Execute one step of the simulation and update the display.
-        """
-        dispatch(create_event(EventType.SIM_PLAY), self)
-
-    def play_simulation(self):
-        """
-        Start continuous simulation playback.
-
-        Enables the play timer which executes simulation steps at regular intervals
-        determined by _play_step_delay. Updates UI button states appropriately.
-        """
-        if not self._playing:
-            self._playing = True
-            self.play_action.setEnabled(False)
-            self.step_action.setEnabled(False)
-            self.stop_action.setEnabled(True)
-            self.reset_action.setEnabled(False)
-            dispatch(create_event(EventType.SIM_RUN), self)
 
     def save_layout(self):
         """
@@ -1219,7 +1216,7 @@ class MainWindow(QMainWindow):
         Only saves if a BPMN file is currently open. The layout file is saved in the
         platform-specific preferences directory with a .layout extension.
         """
-        viz = self.pygame_widget.get_panel()
+        viz = self.simulation_panel.get_panel()
         if viz is not None and hasattr(self, "_filename_open"):
             viz.save_layout(
                 get_preferences_directory() / (self._filename_open + ".layout")
@@ -1244,57 +1241,6 @@ class MainWindow(QMainWindow):
         Uses the layout algorithm to reposition all nodes.
         """
         dispatch(create_event(EventType.SIM_RESET_LAYOUT), self)
-
-    def stop_simulation(self):
-        """
-        Stop continuous simulation playback.
-
-        Stops the play timer and re-enables step and reset buttons.
-        """
-        self._playing = False
-        self.play_action.setEnabled(True)
-        self.step_action.setEnabled(True)
-        self.stop_action.setEnabled(False)
-        self.reset_action.setEnabled(True)
-        dispatch(create_event(EventType.SIM_STOP))
-
-    def reset_simulation(self):
-        """Reset the simulation to the initial state."""
-        dispatch(create_event(EventType.SIM_RESET_SIM_STATE), self)
-
-    def faster_simulation(self):
-        """Increase simulation speed by decreasing delay."""
-        dispatch(create_event(EventType.SIM_FASTER), self)
-
-    def slower_simulation(self):
-        """Decrease simulation speed by increasing delay."""
-        dispatch(create_event(EventType.SIM_SLOWER), self)
-
-    def zoom_in(self):
-        """Zoom in on the visualization by increasing the zoom level."""
-        dispatch(create_event(EventType.SIM_ZOOM, action="increase"))
-
-    def zoom_out(self):
-        """Zoom out on the visualization by decreasing the zoom level."""
-        dispatch(create_event(EventType.SIM_ZOOM, action="decrease"))
-
-    def zoom_reset(self):
-        """Reset zoom level to 100% (1.0x scale)."""
-        dispatch(create_event(EventType.SIM_ZOOM, action="reset"))
-
-    def increase_clock_precision(self):
-        """
-        Increase the number of decimal places shown in the simulation clock.
-        """
-        dispatch(create_event(EventType.CLOCK_PREC_INC))
-
-    def decrease_clock_precision(self):
-        """
-        Decrease the number of decimal places shown in the simulation clock.
-
-        Minimum precision is 1 decimal place.
-        """
-        dispatch(create_event(EventType.CLOCK_PREC_DEC))
 
     def closeEvent(self, event):
         """
@@ -1426,7 +1372,7 @@ class Visualisation:
 
         :param layout_file: Path where the layout should be saved
         """
-        viz = self.main_window.pygame_widget.get_panel()
+        viz = self.main_window.simulation_panel.get_panel()
         if viz is not None:
             viz.save_layout(layout_file)
 

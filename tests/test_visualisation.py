@@ -56,14 +56,14 @@ class TestEventDispatching(unittest.TestCase):
 
         :param duration_ms: Duration to run in milliseconds
         """
-        panel = self.main_window.pygame_widget.get_panel()
+        panel = self.main_window.simulation_panel.get_panel()
 
         # Speed up simulation
         for _ in range(5):
-            self.main_window.faster_simulation()
+            self.main_window.simulation_panel.faster_simulation()
 
         # Start simulation
-        self.main_window.play_simulation()
+        self.main_window.simulation_panel.start_simulation()
 
         # Show the window
         self.main_window.show()
@@ -75,7 +75,7 @@ class TestEventDispatching(unittest.TestCase):
             sleep(0.01)
 
         # Stop simulation
-        self.main_window.stop_simulation()
+        self.main_window.simulation_panel.stop_simulation()
 
     def test_register_single_handler(self):
         class RenderUIHandler(DummyEventHandler):
@@ -208,7 +208,7 @@ class TestBasicVisualisation(unittest.TestCase):
 
         :param duration_ms: Duration to run in milliseconds
         """
-        panel = self.main_window.pygame_widget.get_panel()
+        panel = self.main_window.simulation_panel.get_panel()
 
         # Speed up simulation
         for _ in range(5):
@@ -262,7 +262,7 @@ class TestBasicVisualisation(unittest.TestCase):
 
     def test_clock_time(self):
         # test if after some simulation time, the clock's time is the same as the simproblem's time
-        panel = self.main_window.pygame_widget.get_panel()
+        panel = self.main_window.simulation_panel.get_panel()
 
         clocker = None
         for mod in panel.mods():
@@ -284,7 +284,7 @@ class TestBasicVisualisation(unittest.TestCase):
 
     def test_pause_simulation(self):
         """Test that clicking the pause button works."""
-        panel = self.main_window.pygame_widget.get_panel()
+        panel = self.main_window.simulation_panel.get_panel()
 
         # Speed up and start simulation
         for _ in range(5):
@@ -318,7 +318,7 @@ class TestBasicVisualisation(unittest.TestCase):
         handler = NodeClickedHandler()
         self.event_dispatcher.register_handler(handler)
 
-        panel = self.main_window.pygame_widget.get_panel()
+        panel = self.main_window.simulation_panel.get_panel()
         self.main_window.show()
 
         # Process events to ensure window is rendered and nodes are laid out
