@@ -1,6 +1,11 @@
-from tests.dummy_problems import create_dummy_bpmn
+from tests.dummy_problems import create_dummy_bpmn, create_dummy_pn
 from tests.utils import run_visualisation_for
-from simpn.visualisation.model_panel_mods import FiredTracker, FiredTrackerModule
+from simpn.visualisation.model_panel import ModelPanel
+from simpn.visualisation.model_panel_mods import (
+    FiredTracker,
+    FiredTrackerModule,
+    NodeHighlightingModule,
+)
 from simpn.visualisation.events import (
     create_event,
     register_handler,
@@ -118,5 +123,168 @@ class TestFiringTrackingMod(unittest.TestCase):
             1500,
             sim_problem=self.problem,
             include_default_modules=False,
-            extra_modules=[self.mod]
+            extra_modules=[self.mod],
+        )
+
+
+class TestNodeHighlightingMod(unittest.TestCase):
+
+    def setUp(self):
+        self.bpmn = create_dummy_bpmn()
+        self.net = create_dummy_pn()
+        reset_dispatcher()
+
+        self.mod = NodeHighlightingModule()
+
+    def tearDown(self):
+        reset_dispatcher()
+
+    def test_register(self):
+        register_handler(self.mod)
+        dispatcher = get_dispatcher()
+
+        handlers = set()
+        for group in dispatcher._handlers.values():
+            for handler in group:
+                handlers.add(handler)
+
+        self.assertEqual(len(handlers), 1)
+
+    def test_visualisation_connection(self):
+
+        model_panel = ModelPanel(self.bpmn)
+        model_panel.add_mod(self.mod)
+        register_handler(model_panel)
+
+    def test_focus(self):
+        register_handler(self.mod)
+
+        from simpn.visualisation.model_panel import TransitionViz
+
+        nodes = [TransitionViz(self.net.event("Task One"))]
+        surface = pygame.Surface((400, 400))
+        dispatch(
+            create_event(EventType.RENDER_PRE_NODES, window=surface, nodes=nodes), self
+        )
+
+        node_name = "Task One"
+        dispatch(create_event(EventType.HLIGHT_FOCUS, node=node_name), self)
+
+        self.assertIsNotNone(self.mod._highlighted)
+        self.assertEqual(self.mod._highlighted.get_id(), node_name)
+
+        dispatch(create_event(EventType.HLIGHT_DEFOCUS), self)
+
+        self.assertIsNone(self.mod._highlighted)
+
+    def test_hover(self):
+        register_handler(self.mod)
+
+        from simpn.visualisation.model_panel import TransitionViz
+
+        nodes = [TransitionViz(self.net.event("Task One"))]
+        surface = pygame.Surface((400, 400))
+        dispatch(
+            create_event(EventType.RENDER_PRE_NODES, window=surface, nodes=nodes), self
+        )
+
+        node_name = "Task One"
+        dispatch(create_event(EventType.HLIGHT_HOVER, node=node_name), self)
+
+        self.assertIsNotNone(self.mod._hovered)
+        self.assertEqual(self.mod._hovered.get_id(), node_name)
+
+        dispatch(create_event(EventType.HLIGHT_UNHOVER), self)
+
+        self.assertIsNone(self.mod._hovered)
+
+    def test_move(self):
+        register_handler(self.mod)
+
+        from simpn.visualisation.model_panel import TransitionViz
+
+        nodes = [TransitionViz(self.net.event("Task One"))]
+        nodes[0].set_pos((100, 100))
+        surface = pygame.Surface((400, 400))
+        nodes[0].draw(surface)
+        print(nodes[0].get_rect())
+        dispatch(
+            create_event(
+                EventType.RENDER_PRE_NODES,
+                window=surface,
+                nodes=nodes
+            ), self
+        )
+
+        node_name = "Task One"
+        dispatch(
+            create_event(
+                EventType.SIM_HOVER,
+                pos=nodes[0].get_rect().center
+            ), self
+        )
+
+        self.assertIsNotNone(self.mod._hovered)
+        self.assertEqual(self.mod._hovered.get_id(), node_name)
+
+        dispatch(create_event(EventType.SELECTION_CLEAR), self)
+
+        self.assertIsNone(self.mod._hovered)
+
+    def test_click(self):
+        register_handler(self.mod)
+
+        from simpn.visualisation.model_panel import TransitionViz
+
+        nodes = [TransitionViz(self.net.event("Task One"))]
+        nodes[0].set_pos((100, 100))
+        surface = pygame.Surface((400, 400))
+        nodes[0].draw(surface)
+        dispatch(
+            create_event(
+                EventType.RENDER_PRE_NODES,
+                window=surface,
+                nodes=nodes
+            ), self
+        )
+
+        node_name = "Task One"
+        dispatch(
+            create_event(
+                EventType.NODE_CLICKED,
+                node=nodes[0]
+            ), self
+        )
+
+        self.assertIsNotNone(self.mod._highlighted)
+        self.assertEqual(self.mod._highlighted.get_id(), node_name)
+
+        dispatch(create_event(EventType.SELECTION_CLEAR), self)
+
+        self.assertIsNone(self.mod._highlighted)
+
+    def test_rendering(self):
+        register_handler(self.mod)
+
+        from simpn.visualisation.model_panel import TransitionViz
+
+        nodes = [TransitionViz(self.net.event("Task One"))]
+        surface = pygame.Surface((400, 400), pygame.SRCALPHA)
+        initial_sum = pygame.surfarray.array3d(surface).sum()
+        dispatch(
+            create_event(EventType.RENDER_PRE_NODES, window=surface, nodes=nodes), self
+        )
+
+        node_name = "Task One"
+        dispatch(create_event(EventType.HLIGHT_HOVER, node=node_name), self)
+
+        # Render with hovered node
+        dispatch(
+            create_event(EventType.RENDER_PRE_NODES, window=surface, nodes=nodes), self
+        )
+
+        # Check if surface changed
+        final_sum = pygame.surfarray.array3d(surface).sum()
+        self.assertNotEqual(
+            initial_sum, final_sum, "Surface should be modified after rendering"
         )

@@ -491,6 +491,7 @@ class NodeHighlightingModule(IEventHandler):
             self._highlighted = event.node
         elif check_event(event, EventType.SELECTION_CLEAR):
             self._highlighted = None
+            self._hovered = None
         elif check_event(event, EventType.HLIGHT_FOCUS) or check_event(
             event, EventType.HLIGHT_DEFOCUS
         ):
@@ -539,8 +540,8 @@ class NodeHighlightingModule(IEventHandler):
         tmpsur = pygame.Surface(
             (surface.get_width(), surface.get_height()), pygame.SRCALPHA
         )
-        tmpsur.set_alpha(125)
-        if self._hovered is not None and self._highlighted is not self._hovered:
+        tmpsur.set_alpha(80)
+        if self._hovered is not None and self._hovered is not self._highlighted:
             rect = self._hovered.get_rect()
             pygame.draw.circle(
                 tmpsur,
