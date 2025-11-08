@@ -64,6 +64,10 @@ class EventType(Enum):
     SIM_RELEASE = auto()
     SIM_RESIZE = auto()
 
+    CENTRAL_PANEL_ADD = auto()
+    CENTRAL_PANEL_REMOVE = auto()
+    CENTRAL_PANEL_ACTIVATE = auto()
+
     CLOCK_PREC_INC = auto()
     CLOCK_PREC_DEC = auto()
 

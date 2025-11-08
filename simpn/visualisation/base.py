@@ -19,7 +19,7 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame
 import sys
 from pathlib import Path
-from PyQt6.QtCore import Qt, QSize, QSettings, QStandardPaths, QTimer
+from PyQt6.QtCore import Qt, QSettings, QStandardPaths, QTimer
 from PyQt6.QtGui import (
     QImage,
     QPixmap,
@@ -41,7 +41,15 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QApplication,
     QFileDialog,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QStackedWidget,
+    QProgressDialog,
 )
+import matplotlib
+matplotlib.use('QtAgg')  # Use Qt backend for matplotlib
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 from simpn.visualisation.model_panel_mods import (
     ClockModule,
     FiredTrackerModule,
@@ -65,6 +73,7 @@ from typing import List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from simpn.simulator import Describable
     from simpn.visualisation.model_panel import Node
+    from simpn.reporters import Replicator
 
 
 TOOLBAR_STYLESHEET = """
@@ -592,6 +601,289 @@ class SimulationPanel(QWidget):
         event.accept()
 
 
+class PlotPanel(QWidget):
+    """
+    Qt widget that displays matplotlib plots for simulation statistics and analysis.
+
+    This panel embeds a matplotlib figure using the Qt backend, allowing for
+    interactive plotting within the Qt application.
+
+    :param parent: Parent Qt widget (default: None)
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Create main layout
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+        
+        # Create matplotlib figure and canvas
+        self.figure = Figure(figsize=(8, 6))
+        self.canvas = FigureCanvas(self.figure)
+        layout.addWidget(self.canvas)
+        
+        # Create a dummy plot
+        self._create_dummy_plot()
+    
+    def _create_dummy_plot(self):
+        """
+        Create a dummy matplotlib plot for demonstration purposes.
+        """
+        # Clear the figure
+        self.figure.clear()
+        
+        # Create a subplot
+        ax = self.figure.add_subplot(111)
+        
+        # Generate dummy data
+        import numpy as np
+        x = np.linspace(0, 10, 100)
+        y1 = np.sin(x)
+        y2 = np.cos(x)
+        
+        # Plot the data
+        ax.plot(x, y1, label='sin(x)', linewidth=2)
+        ax.plot(x, y2, label='cos(x)', linewidth=2)
+        ax.set_xlabel('X axis')
+        ax.set_ylabel('Y axis')
+        ax.set_title('Dummy Plot - Sine and Cosine Waves')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        
+        # Refresh the canvas
+        self.canvas.draw()
+    
+    def update_plot(self, data=None):
+        """
+        Update the plot with new data.
+        
+        :param data: Optional data to plot. If None, recreates the dummy plot.
+        """
+        if data is None:
+            self._create_dummy_plot()
+        else:
+            # Custom plotting logic can be added here
+            self._create_dummy_plot()
+
+
+class CentralPanel(QStackedWidget):
+    """
+    Central panel that can hold multiple widgets in a stacked layout.
+
+    This panel allows switching between different views, such as the simulation
+    panel and other potential panels in the future.
+
+    :param parent: Parent Qt widget (default: None)
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def listen_to(self) -> List[EventType]:
+        """
+        Return a list of event types this panel listens to.
+
+        :return: List of EventType enums
+        """
+        return [EventType.CENTRAL_PANEL_ADD, EventType.CENTRAL_PANEL_REMOVE, EventType.CENTRAL_PANEL_ACTIVATE]
+    
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """
+        Handle a pygame event to update the attribute panel display.
+
+        Responds to:
+        - CENTRAL_PANEL_ADD: Adds a new widget to the stacked panel.
+        - CENTRAL_PANEL_REMOVE: Removes a widget from the stacked panel.
+        - CENTRAL_PANEL_ACTIVATE: Activates a widget in the stacked panel.
+
+        :param event: The pygame event to handle
+        :return: True to propagate event to other handlers
+        """
+        if check_event(event, EventType.CENTRAL_PANEL_ADD):
+            widget = getattr(event, "widget", None)
+            if widget and isinstance(widget, QWidget):
+                self.addWidget(widget)
+        elif check_event(event, EventType.CENTRAL_PANEL_REMOVE):
+            widget = getattr(event, "widget", None)
+            if widget and isinstance(widget, QWidget):
+                self.removeWidget(widget)
+        elif check_event(event, EventType.CENTRAL_PANEL_ACTIVATE):
+            widget = getattr(event, "widget", None)
+            if widget and isinstance(widget, QWidget):
+                self.setCurrentWidget(widget)
+
+        return True
+
+
+class ExplorerPanel(QWidget):
+    """
+    Explorer panel for displaying a tree view of simulation and analysis components.
+
+    This panel provides a hierarchical tree view that allows users to navigate between
+    different simulation views and replication analyses.
+
+    :param parent: Parent Qt widget (default: None)
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Create main layout
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+        
+        # Set toolbar
+        self.toolbar = self._create_toolbar()
+        layout.addWidget(self.toolbar)
+
+        # Create tree widget
+        self.tree = QTreeWidget()
+        self.tree.setHeaderHidden(True)
+        layout.addWidget(self.tree)
+
+        self.setMinimumWidth(200)
+
+        # Connect item click signal
+        # self.tree.itemClicked.connect(self._on_item_clicked)
+
+    def _create_toolbar(self):
+        """Create and configure the toolbar for the explorer panel."""
+        toolbar = QToolBar("Explorer Toolbar")
+        toolbar.setMovable(False)
+        toolbar.setStyleSheet(TOOLBAR_STYLESHEET)
+
+        # Add title label to explorer toolbar
+        title_label = QLabel("  Explorer")
+        title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        toolbar.addWidget(title_label)
+
+        # Add spacer to push close button to the right
+        spacer = QWidget()
+        spacer.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
+        toolbar.addWidget(spacer)
+
+        # Run button to run replications
+        self.run_action = toolbar.addAction("Run")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "ide_play.png"
+        )
+        self.run_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.run_action.setEnabled(False)  # Initially disabled, enabled when a simulator is loaded
+        self.run_action.setToolTip("Run replications")
+        self.run_action.triggered.connect(self.run_replications)
+
+        # Close button with icon
+        self.close_action = toolbar.addAction("Close")
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "img", "close.png"
+        )
+        self.close_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.close_action.setToolTip("Close attribute panel")
+        # Note: close action will be connected by parent to hide the dock
+
+        return toolbar
+            
+    def run_replications(self):
+        """
+        Run replications for the simulator (if any).
+        """
+        model_panel = self.parent().parent().simulation_panel.get_panel() # TODO: this is not a good way of getting the simulator, also, ideally the simulator is cloned, because now replications affect the state of the simulator
+        sim_problem = model_panel._problem if model_panel else None
+        if sim_problem:
+            from simpn.reporters import Replicator
+            
+            # Create progress dialog
+            progress = QProgressDialog("Running replications...", "Cancel", 0, 100, self)
+            progress.setWindowTitle("Replication Progress")
+            progress.setWindowModality(Qt.WindowModality.WindowModal)
+            progress.setMinimumDuration(0)  # Show immediately
+            progress.setValue(0)
+            
+            # Flag to track if user canceled
+            canceled = False
+            
+            def update_progress(percentage):
+                """Callback function to update progress dialog"""
+                nonlocal canceled
+                progress.setValue(int(percentage))
+                QApplication.processEvents()  # Process GUI events to keep UI responsive
+                if progress.wasCanceled():
+                    canceled = True
+                    return False  # Stop replications
+                return True  # Continue replications
+            
+            # Run replications with callback
+            replicator = Replicator(sim_problem, duration=5000, warmup=1000, nr_replications=100, callback=update_progress)
+            results = replicator.run()
+            
+            # Close progress dialog
+            progress.close()
+            
+            # TODO: now create the analysis panels and add them to the explorer and central panel
+            if not canceled:
+                print(results)
+            else:
+                print("Replication canceled by user")
+
+    def listen_to(self) -> List[EventType]:
+        """
+        Return a list of event types this panel listens to.
+
+        :return: List of EventType enums
+        """
+        return [EventType.CENTRAL_PANEL_ADD, EventType.CENTRAL_PANEL_REMOVE, EventType.CENTRAL_PANEL_ACTIVATE, EventType.VISUALIZATION_CREATED]
+    
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """
+        Handle a pygame event to update the explorer panel tree.
+
+        Responds to:
+        - CENTRAL_PANEL_ADD: Adds the name of the added central panel to the tree.
+        - CENTRAL_PANEL_REMOVE: Removes the name of the removed central panel from the tree.
+        - CENTRAL_PANEL_ACTIVATE: Highlights the active central panel in the tree.
+
+        :param event: The pygame event to handle
+        :return: True to propagate event to other handlers
+        """
+        if check_event(event, EventType.CENTRAL_PANEL_ADD):
+            name = getattr(event, "name", "Unnamed")
+            new_node = QTreeWidgetItem(self.tree)
+            new_node.setText(0, name)
+        elif check_event(event, EventType.CENTRAL_PANEL_REMOVE):
+            name = getattr(event, "name", "Unnamed")
+            # Find and remove the node
+            root = self.tree.invisibleRootItem()
+            for i in range(root.childCount()):
+                parent_node = root.child(i)
+                for j in range(parent_node.childCount()):
+                    child_node = parent_node.child(j)
+                    if child_node.text(0) == name:
+                        parent_node.removeChild(child_node)
+                        break
+        elif check_event(event, EventType.CENTRAL_PANEL_ACTIVATE):
+            name = getattr(event, "name", "Unnamed")
+            # Clear previous selection
+            self.tree.clearSelection()
+            # Find and select the active node
+            root = self.tree.invisibleRootItem()
+            for i in range(root.childCount()):
+                parent_node = root.child(i)
+                for j in range(parent_node.childCount()):
+                    child_node = parent_node.child(j)
+                    if child_node.text(0) == name:
+                        self.tree.setCurrentItem(child_node)
+                        break
+        elif check_event(event, EventType.VISUALIZATION_CREATED):
+            # Enable the run button when a visualization is created
+            self.run_action.setEnabled(True)
+        return True
+
+    
+
 class DebugPanel(QWidget):
     """
     Debug panel for displaying textual debugging information and logs.
@@ -958,11 +1250,13 @@ class MainWindow(QMainWindow):
         if os.path.exists(logo_path):
             self.setWindowIcon(QIcon(logo_path))
 
-        # Create pygame widget
+        # Create simulation panel widget
         self.simulation_panel = SimulationPanel(640, 480)
 
-        # Add the Pygame widget to the main window
-        self.setCentralWidget(self.simulation_panel)
+        # Create stacked widget and use it as central widget to allow future widgets to be added
+        self.central_panel = CentralPanel()
+        self.setCentralWidget(self.central_panel)
+        register_handler(self.central_panel)
 
         # Create debug panel as a dock widget
         self.debug_dock = QDockWidget("Debug Console", self)
@@ -970,6 +1264,7 @@ class MainWindow(QMainWindow):
         self.debug_panel = DebugPanel()
         self.debug_dock.setWidget(self.debug_panel)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.debug_dock)
+        register_handler(self.debug_panel)
         
         # Connect the close action from the debug panel's toolbar
         self.debug_panel.close_action.triggered.connect(self.debug_dock.hide)
@@ -983,6 +1278,7 @@ class MainWindow(QMainWindow):
         self.attribute_panel = AttributePanel()
         self.attribute_dock.setWidget(self.attribute_panel)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.attribute_dock)
+        register_handler(self.attribute_panel)
         
         # Connect the close action from the attribute panel's toolbar
         self.attribute_panel.close_action.triggered.connect(self.attribute_dock.hide)
@@ -990,8 +1286,28 @@ class MainWindow(QMainWindow):
         # Use the attribute panel's toolbar as the title bar widget
         self.attribute_dock.setTitleBarWidget(self.attribute_panel.toolbar)
 
+        # Create explorer panel as a dock widget
+        self.explorer_dock = QDockWidget("Explorer", self)
+        self.explorer_dock.setObjectName("Explorer")  # Required for saveState()
+        self.explorer_panel = ExplorerPanel()
+        self.explorer_dock.setWidget(self.explorer_panel)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.explorer_dock)
+        register_handler(self.explorer_panel)
+        
+        # Connect the close action from the explorer panel's toolbar
+        self.explorer_panel.close_action.triggered.connect(self.explorer_dock.hide)
+
+        # Use the explorer panel's toolbar as the title bar widget
+        self.explorer_dock.setTitleBarWidget(self.explorer_panel.toolbar)
+
         # Create menu bar
         self.create_menus()
+
+        # Create an event to add the simulation panel to the central panel
+        dispatch(
+            create_event(EventType.CENTRAL_PANEL_ADD, widget=self.simulation_panel, name="Simulation"),
+            self,
+        )
 
         # Keep settings between sessions
         self.settings = QSettings("TUe", "SimPN")
@@ -1037,19 +1353,28 @@ class MainWindow(QMainWindow):
         # Window menu
         window_menu = menubar.addMenu("View")
 
+        # Explorer View action
+        self.explorer_view_action = window_menu.addAction("Explorer View")
+        self.explorer_view_action.setCheckable(True)
+        self.explorer_view_action.setChecked(self.explorer_dock.isVisible())
+        self.explorer_view_action.triggered.connect(self.toggle_explorer_panel)
+
         # Debug View action
         self.debug_view_action = window_menu.addAction("Debug View")
         self.debug_view_action.setCheckable(True)
-        self.debug_view_action.setChecked(True)  # Initially visible
+        self.debug_view_action.setChecked(self.debug_dock.isVisible())
         self.debug_view_action.triggered.connect(self.toggle_debug_panel)
 
         # Attribute View action
         self.attribute_view_action = window_menu.addAction("Attribute View")
         self.attribute_view_action.setCheckable(True)
-        self.attribute_view_action.setChecked(True)  # Initially visible
+        self.attribute_view_action.setChecked(self.attribute_dock.isVisible())
         self.attribute_view_action.triggered.connect(self.toggle_attribute_panel)
 
         # Connect the dock widgets' visibility changed signals to update the menu checkmarks
+        self.explorer_dock.visibilityChanged.connect(
+            self.on_explorer_panel_visibility_changed
+        )
         self.debug_dock.visibilityChanged.connect(
             self.on_debug_panel_visibility_changed
         )
@@ -1094,6 +1419,17 @@ class MainWindow(QMainWindow):
                 self
             )
         )
+
+    def toggle_explorer_panel(self):
+        """Toggle the visibility of the explorer panel"""
+        if self.explorer_dock.isVisible():
+            self.explorer_dock.hide()
+        else:
+            self.explorer_dock.show()
+
+    def on_explorer_panel_visibility_changed(self, visible):
+        """Update the menu checkmark when the explorer panel visibility changes"""
+        self.explorer_view_action.setChecked(visible)
 
     def toggle_debug_panel(self):
         """Toggle the visibility of the debug panel"""
@@ -1181,7 +1517,6 @@ class MainWindow(QMainWindow):
             unregister_handler(self.simulation_panel.get_panel())
             for mod in self.simulation_panel.get_panel().mods():
                 unregister_handler(mod)
-            unregister_handler(self.attribute_panel)
 
         # Store the initial state of the simulator
         model_panel._problem.store_checkpoint("INITIAL_STATE")
@@ -1190,8 +1525,6 @@ class MainWindow(QMainWindow):
         register_handler(model_panel)
         for mod in model_panel.mods():
             register_handler(mod)
-        register_handler(self.attribute_panel)
-        register_handler(self.debug_panel)
 
         # Set it in the pygame widget
         self.simulation_panel.set_panel(model_panel)
