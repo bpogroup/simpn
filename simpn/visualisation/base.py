@@ -276,8 +276,10 @@ class SimulationPanel(QWidget):
         )
         self.zoom_in_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.zoom_in_action.setToolTip("Zoom in (Ctrl++)")
+        self.zoom_in_action.setShortcut("Ctrl++")
         self.zoom_in_action.triggered.connect(self.zoom_in)
         self.zoom_in_action.setEnabled(False)
+        self.addAction(self.zoom_in_action)
 
         # Add Zoom Out button to toolbar
         self.zoom_out_action = toolbar.addAction("Zoom Out")
@@ -286,8 +288,10 @@ class SimulationPanel(QWidget):
         )
         self.zoom_out_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.zoom_out_action.setToolTip("Zoom out (Ctrl+-)")
+        self.zoom_out_action.setShortcut("Ctrl+-")
         self.zoom_out_action.triggered.connect(self.zoom_out)
         self.zoom_out_action.setEnabled(False)
+        self.addAction(self.zoom_out_action)
 
         # Add Zoom Reset button to toolbar
         self.zoom_reset_action = toolbar.addAction("Zoom 100%")
@@ -296,8 +300,10 @@ class SimulationPanel(QWidget):
         )
         self.zoom_reset_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.zoom_reset_action.setToolTip("Reset zoom to 100% (Ctrl+0)")
+        self.zoom_reset_action.setShortcut("Ctrl+0")
         self.zoom_reset_action.triggered.connect(self.zoom_reset)
         self.zoom_reset_action.setEnabled(False)
+        self.addAction(self.zoom_reset_action)
 
         # Add separator
         toolbar.addSeparator()
@@ -957,15 +963,6 @@ class MainWindow(QMainWindow):
 
         # Add the Pygame widget to the main window
         self.setCentralWidget(self.simulation_panel)
-
-        # Add keyboard shortcuts for zoom controls (these will work window-wide)
-        self.simulation_panel.zoom_in_action.setShortcut("Ctrl++")
-        self.simulation_panel.zoom_out_action.setShortcut("Ctrl+-")
-        self.simulation_panel.zoom_reset_action.setShortcut("Ctrl+0")
-        # Make the shortcuts work from the main window
-        self.addAction(self.simulation_panel.zoom_in_action)
-        self.addAction(self.simulation_panel.zoom_out_action)
-        self.addAction(self.simulation_panel.zoom_reset_action)
 
         # Create debug panel as a dock widget
         self.debug_dock = QDockWidget("Debug Console", self)
