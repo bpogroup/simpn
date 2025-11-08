@@ -63,10 +63,10 @@ def run_visualisation_for(duration: int, **kwargs):
     """
     vis = Visualisation(**kwargs)
 
-    vis.main_window.play_simulation()
+    vis.main_window.simulation_panel.start_simulation()
 
     for _ in range(5):
-        vis.main_window.faster_simulation()
+        vis.main_window.simulation_panel.faster_simulation()
 
     def stop(duration):
         from time import sleep
