@@ -243,7 +243,8 @@ class ProcessReporter(Reporter):
 
         return results
 
-    def aggregate_results(self, results_list):
+    @staticmethod
+    def aggregate_results(results_list):
         """
         Takes a list of results as returned by get_results and aggregates them into a single result.
         It does this by computing averages and standard deviations.
@@ -276,6 +277,30 @@ class ProcessReporter(Reporter):
                 aggregated_results[section] = aggregate_section_results([result[section] for result in results_list])
 
         return aggregated_results
+
+    @staticmethod
+    def possible_graphs():
+        """
+        Returns a dict of possible graphs that can be plotted based on the results.
+
+        :return: a dict graph name -> graphing function
+        """
+        return {"Resource utilization": ProcessReporter.resource_utilization_graph}
+
+    @staticmethod
+    def resource_utilization_graph(aggregated_results, ax):
+        """
+        Plots the resource utilization graph on the given matplotlib axis.
+
+        :param aggregated_results: the aggregated results as returned by aggregate_results.
+        :param ax: the matplotlib axis to plot on.
+        """
+        resource_ids = list(aggregated_results[ProcessReporter.RESOURCES].keys())
+        utilizations = [aggregated_results[ProcessReporter.RESOURCES][res_id]["utilization"][0] for res_id in resource_ids]
+        ax.bar(resource_ids, utilizations)
+        ax.set_xlabel("Resource")
+        ax.set_ylabel("Utilization")
+        ax.set_title("Resource Utilization")
 
     def print_result(self, digits=3, digits_percentage=2):
         results = self.get_results()

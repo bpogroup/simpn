@@ -73,7 +73,7 @@ from typing import List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from simpn.simulator import Describable
     from simpn.visualisation.model_panel import Node
-    from simpn.reporters import Replicator
+    from simpn.reporters import ProcessReporter
 
 
 TOOLBAR_STYLESHEET = """
@@ -611,7 +611,7 @@ class PlotPanel(QWidget):
     :param parent: Parent Qt widget (default: None)
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, results, name, plotting_function, parent=None, activate=False):
         super().__init__(parent)
         
         # Create main layout
@@ -624,48 +624,17 @@ class PlotPanel(QWidget):
         self.canvas = FigureCanvas(self.figure)
         layout.addWidget(self.canvas)
         
-        # Create a dummy plot
-        self._create_dummy_plot()
-    
-    def _create_dummy_plot(self):
-        """
-        Create a dummy matplotlib plot for demonstration purposes.
-        """
         # Clear the figure
         self.figure.clear()
-        
-        # Create a subplot
+
         ax = self.figure.add_subplot(111)
-        
-        # Generate dummy data
-        import numpy as np
-        x = np.linspace(0, 10, 100)
-        y1 = np.sin(x)
-        y2 = np.cos(x)
-        
-        # Plot the data
-        ax.plot(x, y1, label='sin(x)', linewidth=2)
-        ax.plot(x, y2, label='cos(x)', linewidth=2)
-        ax.set_xlabel('X axis')
-        ax.set_ylabel('Y axis')
-        ax.set_title('Dummy Plot - Sine and Cosine Waves')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        
-        # Refresh the canvas
+        plotting_function(results, ax)
+
         self.canvas.draw()
-    
-    def update_plot(self, data=None):
-        """
-        Update the plot with new data.
-        
-        :param data: Optional data to plot. If None, recreates the dummy plot.
-        """
-        if data is None:
-            self._create_dummy_plot()
-        else:
-            # Custom plotting logic can be added here
-            self._create_dummy_plot()
+
+        dispatch(create_event(EventType.CENTRAL_PANEL_ADD, name=name, widget=self), self)
+        if activate:
+            dispatch(create_event(EventType.CENTRAL_PANEL_ACTIVATE, name=name, widget=self), self)
 
 
 class CentralPanel(QStackedWidget):
@@ -745,8 +714,11 @@ class ExplorerPanel(QWidget):
 
         self.setMinimumWidth(200)
 
+        # Store name -> widget mapping
+        self._name_to_widget = {}
+
         # Connect item click signal
-        # self.tree.itemClicked.connect(self._on_item_clicked)
+        self.tree.itemClicked.connect(self._on_item_clicked)        
 
     def _create_toolbar(self):
         """Create and configure the toolbar for the explorer panel."""
@@ -822,12 +794,35 @@ class ExplorerPanel(QWidget):
             
             # Close progress dialog
             progress.close()
-            
-            # TODO: now create the analysis panels and add them to the explorer and central panel
+
+            # Use the replicator to create plots for the results        
             if not canceled:
-                print(results)
-            else:
-                print("Replication canceled by user")
+                from simpn.reporters import ProcessReporter
+                i = 0
+                nr_possible_graphs = len(ProcessReporter.possible_graphs())
+                for graph_name in ProcessReporter.possible_graphs():
+                    graph_function = ProcessReporter.possible_graphs()[graph_name]
+                    last_graph = (i == nr_possible_graphs - 1)
+                    PlotPanel(results, graph_name, graph_function, parent=self.parent().parent().central_panel, activate=last_graph)
+                    i += 1
+            
+            # TODO: prevent adding multiple plots with the same name (i.e., remove old plot before adding new one by the same name)
+            # TODO: create tests for this functionality
+            # TODO: add more graphs, include whiskers in graphs for stdev
+            # TODO: check if this also works for non-main execution of the visualisation (i.e., when not running from __main__)
+            # TODO: catch errors when running for non-BPMN types of simulations (or preferably prevent running in that case)
+
+    def _on_item_clicked(self, item: QTreeWidgetItem, column: int):
+        """
+        Handle item click events in the tree view.
+
+        Activates the corresponding central panel based on the clicked item.
+
+        :param item: The clicked QTreeWidgetItem
+        :param column: The column index (unused)
+        """
+        name = item.text(0)
+        dispatch(create_event(EventType.CENTRAL_PANEL_ACTIVATE, name=name, widget=self._name_to_widget.get(name)), self)
 
     def listen_to(self) -> List[EventType]:
         """
@@ -853,6 +848,7 @@ class ExplorerPanel(QWidget):
             name = getattr(event, "name", "Unnamed")
             new_node = QTreeWidgetItem(self.tree)
             new_node.setText(0, name)
+            self._name_to_widget[name] = getattr(event, "widget", None)
         elif check_event(event, EventType.CENTRAL_PANEL_REMOVE):
             name = getattr(event, "name", "Unnamed")
             # Find and remove the node
@@ -864,6 +860,7 @@ class ExplorerPanel(QWidget):
                     if child_node.text(0) == name:
                         parent_node.removeChild(child_node)
                         break
+            del self._name_to_widget[name]
         elif check_event(event, EventType.CENTRAL_PANEL_ACTIVATE):
             name = getattr(event, "name", "Unnamed")
             # Clear previous selection
