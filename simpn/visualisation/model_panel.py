@@ -3,7 +3,7 @@ import igraph
 import threading
 import math
 from enum import Enum, auto
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Literal, Union
 import simpn
 from PyQt6.QtCore import Qt
 from simpn.visualisation.events import (
@@ -471,7 +471,9 @@ class ModelPanel:
         layout_file=None,
         grid_spacing=50,
         node_spacing=100,
-        layout_algorithm="sugiyama",
+        layout_algorithm: Union[
+            Literal["sugiyama", "davidson_harel", "grid", "auto"], None
+        ] = "sugiyama",
     ):
         """
         Initialize the visualization.
@@ -480,7 +482,7 @@ class ModelPanel:
         :param layout_file: Optional file path to load layout from
         :param grid_spacing: Spacing between grid lines
         :param node_spacing: Spacing between nodes in layout
-        :param layout_algorithm: Algorithm to use for layout (sugiyama, davidson_harel, grid, auto)
+        :param layout_algorithm: Algorithm to use for layout (sugiyama, davidson_harel, grid, auto, or None)
         """
         self._grid_spacing = grid_spacing
         self._node_spacing = node_spacing
@@ -576,7 +578,8 @@ class ModelPanel:
                     e,
                 )
         if not layout_loaded:
-            self.__layout()
+            if layout_algorithm is not None:
+                self.__layout()
 
         # listen to the event que
         self._setup_listeners()
@@ -785,7 +788,9 @@ class ModelPanel:
 
         # Draw nodes on scaled surface
         evt = create_event(
-            EventType.RENDER_PRE_NODES, window=scaled_surface, nodes=self._nodes.values()
+            EventType.RENDER_PRE_NODES,
+            window=scaled_surface,
+            nodes=self._nodes.values(),
         )
         dispatch(evt, self)
         for node in self._nodes.values():

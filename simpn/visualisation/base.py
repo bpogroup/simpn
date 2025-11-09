@@ -60,7 +60,7 @@ from simpn.visualisation.events import (
     Event,
 )
 
-from typing import List, Tuple, TYPE_CHECKING
+from typing import List, Tuple, TYPE_CHECKING, Literal, Union
 
 if TYPE_CHECKING:
     from simpn.simulator import Describable
@@ -1302,7 +1302,9 @@ class Visualisation:
         layout_file=None,
         grid_spacing=50,
         node_spacing=100,
-        layout_algorithm="sugiyama",
+        layout_algorithm: Union[
+            Literal["sugiyama", "davidson_harel", "grid", "auto"], None
+        ] = "sugiyama",
         extra_modules: List[object] = None,
         include_default_modules: bool = True,
     ):
