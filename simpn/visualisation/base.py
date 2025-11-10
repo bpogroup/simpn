@@ -59,6 +59,7 @@ from simpn.visualisation.events import (
     EventType,
     Event,
 )
+from simpn.visualisation.constants import GREEN
 
 from typing import List, Tuple, TYPE_CHECKING
 
@@ -81,6 +82,32 @@ TOOLBAR_STYLESHEET = """
             }
         """
 
+
+def create_colored_pixmap(file_path: str, color: QColor) -> QPixmap:
+    """
+    Create a colored pixmap from an image file using a specific color.
+
+    :param file_path: Path to the source image file
+    :param color: QColor to apply to the icon
+    :return: QPixmap with the specified color applied
+    """
+    if not os.path.exists(file_path):
+        return QPixmap()
+
+    original_pixmap = QPixmap(file_path)
+    colored_pixmap = QPixmap(original_pixmap.size())
+    colored_pixmap.fill(Qt.GlobalColor.transparent)
+
+    painter = QPainter(colored_pixmap)
+    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+    painter.drawPixmap(0, 0, original_pixmap)
+    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+    painter.fillRect(colored_pixmap.rect(), color)
+    painter.end()
+
+    return colored_pixmap
+
+
 def create_monochrome_icon_from_file(file_path) -> QIcon:
     """
     Create a monochrome (dark gray) icon from an image file.
@@ -91,28 +118,30 @@ def create_monochrome_icon_from_file(file_path) -> QIcon:
     if not os.path.exists(file_path):
         return QIcon()
 
-    # Load the original image
-    original_pixmap = QPixmap(file_path)
+    icon = QIcon()
 
-    # Create a new pixmap with the same size
-    mono_pixmap = QPixmap(original_pixmap.size())
-    mono_pixmap.fill(Qt.GlobalColor.transparent)
+    # Detect if we're in dark mode
+    palette = QApplication.instance().palette()
+    window_color = palette.color(palette.ColorRole.Window)
+    is_dark_theme = window_color.lightness() < 128
 
-    # Create a painter to draw on the new pixmap
-    painter = QPainter(mono_pixmap)
-    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+    # normal state
+    if is_dark_theme:
+        mono_pixmap = create_colored_pixmap(file_path, QColor(255, 255, 255))
+    else:
+        mono_pixmap = create_colored_pixmap(file_path, QColor(10, 10, 10))
+    icon.addPixmap(mono_pixmap, QIcon.Mode.Normal, QIcon.State.Off)
 
-    # Draw the original pixmap
-    painter.drawPixmap(0, 0, original_pixmap)
+    # disabled state
+    mono_pixmap_disabled = create_colored_pixmap(file_path, QColor(150, 150, 150))
+    icon.addPixmap(mono_pixmap_disabled, QIcon.Mode.Disabled, QIcon.State.Off)
 
-    # Apply a color overlay to make it monochrome (dark gray)
-    painter.setCompositionMode(
-        QPainter.CompositionMode.CompositionMode_SourceIn
-    )
-    painter.fillRect(mono_pixmap.rect(), QColor(255, 255, 255))
-    painter.end()
+    # hovered state
+    mono_pixmap_hovered = create_colored_pixmap(file_path, QColor(*GREEN))
+    icon.addPixmap(mono_pixmap_hovered, QIcon.Mode.Active, QIcon.State.Off)
 
-    return QIcon(mono_pixmap)
+    return icon
+
 
 def get_preferences_directory() -> Path:
     """
