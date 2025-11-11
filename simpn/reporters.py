@@ -296,8 +296,9 @@ class ProcessReporter(Reporter):
         :param ax: the matplotlib axis to plot on.
         """
         resource_ids = list(aggregated_results[ProcessReporter.RESOURCES].keys())
+        resource_id_strs = [str(res_id) for res_id in resource_ids]
         utilizations = [aggregated_results[ProcessReporter.RESOURCES][res_id]["utilization"][0] for res_id in resource_ids]
-        ax.bar(resource_ids, utilizations)
+        ax.bar(resource_id_strs, utilizations)
         ax.set_xlabel("Resource")
         ax.set_ylabel("Utilization")
         ax.set_title("Resource Utilization")
