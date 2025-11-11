@@ -156,8 +156,9 @@ Version 1.7.2 (2025-11-06)
 - [Minor feature] added highlighting for selected nodes in visualization.
 - [Minor feature] added trace history of fired transitions in visualization.
 
-Version 1.7.3 ()
+Version 1.7.3 (2025-11-11)
 ----------------
 
 - [Bugfix] State of BPMN completion events was not correctly reset on a reset of the simulation.
 - [Feature] Remember window and panel sizes and positions in visualization between runs.
+- [Bugfix] Fixed issue with EventLogReporter where data_fields parameter was not working correctly.
