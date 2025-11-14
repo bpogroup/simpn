@@ -1,6 +1,9 @@
 from simpn.helpers import BPMN
+from simpn.prototypes import BPMNFlow
 from simpn.simulator import SimProblem, SimToken, SimTokenValue
 from simpn.visualisation import Visualisation
+
+from simpn.priorities import FirstClassPriority
 
 import random
 from os.path import join, exists
@@ -20,9 +23,9 @@ class CustomerType(Enum):
         r = random.random()
         if r < 0.5:
             return CustomerType.NEW
-        elif r < 0.8:
+        elif r < 0.7:
             return CustomerType.BRONZE
-        elif r < 0.95:
+        elif r < 0.9:
             return CustomerType.SILVER
         else:
             return CustomerType.GOLD
@@ -30,9 +33,9 @@ class CustomerType(Enum):
     @staticmethod
     def convert_new():
         r = random.random()
-        if r < 0.6:
+        if r < 0.33:
             return CustomerType.BRONZE
-        elif r < 0.9:
+        elif r < 0.66:
             return CustomerType.SILVER
         else:
             return CustomerType.GOLD
@@ -48,7 +51,13 @@ def employee_speed(base_time, employee: SimTokenValue):
     return random.expovariate(1 / base_time) / employee.work_speed
 
 
-model = SimProblem()
+class_priority = FirstClassPriority(
+    class_atr="type",
+    priority_ordering=[
+        CustomerType.GOLD, CustomerType.SILVER, CustomerType.BRONZE
+    ],
+)
+model = SimProblem(binding_priority=class_priority)
 
 
 class EmployeePool(BPMN):
@@ -65,6 +74,8 @@ for i in range(5):
     )
 employees.set_invisible_edges()
 
+BPMNFlow(model, "considering", priority=class_priority.find_priority)
+
 
 class Start(BPMN):
     model = model
@@ -73,7 +84,7 @@ class Start(BPMN):
     outgoing = ["considering"]
 
     def interarrival_time():
-        return random.expovariate(0.8)
+        return random.expovariate(4)
 
     def behaviour(identifier: str):
         val = SimTokenValue(identifier)
@@ -215,5 +226,6 @@ if exists(LAYOUT_FILE):
 else:
     vis = Visualisation(model)
 
+model.set_binding_priority(class_priority)
 vis.show()
 vis.save_layout(join(".", "temp", "priorities_for_bps.layout"))
