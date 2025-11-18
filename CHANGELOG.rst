@@ -162,3 +162,8 @@ Version 1.7.3 (2025-11-11)
 - [Bugfix] State of BPMN completion events was not correctly reset on a reset of the simulation.
 - [Feature] Remember window and panel sizes and positions in visualization between runs.
 - [Bugfix] Fixed issue with EventLogReporter where data_fields parameter was not working correctly.
+
+Version 1.7.4 (2025-11-18)
+--------------------------
+
+- [Bugfix] Fixed issue with BPMN and Queueing prototypes hardcoding and overwriting the queueing priority preference.
