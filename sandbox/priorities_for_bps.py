@@ -52,10 +52,8 @@ def employee_speed(base_time, employee: SimTokenValue):
 
 
 class_priority = FirstClassPriority(
-    class_atr="type",
-    priority_ordering=[
-        CustomerType.GOLD, CustomerType.SILVER, CustomerType.BRONZE
-    ],
+    class_attr="type",
+    priority_ordering=[CustomerType.GOLD, CustomerType.SILVER, CustomerType.BRONZE],
 )
 model = SimProblem(binding_priority=class_priority)
 

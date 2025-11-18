@@ -63,7 +63,7 @@ class FirstClassPriority(PriorityFunction):
          Useful for handling prioritisation in SimProblems.
 
         find_priority(tok):
-         Finds the priority of a token based on the classifying attribute.
+         Finds the priority of a SimToken based on the classifying attribute.
          Useful for wanting to prioritise tokens associated with a SimVar.
 
     ^^^^^
@@ -75,14 +75,15 @@ class FirstClassPriority(PriorityFunction):
             priority_ordering=['gold', 'silver', 'bronze']
         )
         # returns the highest priority binding of bindings.
+        bindings = [ ... ] # some collection of bindings
         priority = priority(bindings)
 
         # sorts the tokens based on the classifying attribute.
         SimVar("foo", priority=priority.find_priority)
     """
 
-    def __init__(self, class_atr: str, priority_ordering: Collection[object]):
-        self.attr = class_atr
+    def __init__(self, class_attr: str, priority_ordering: Collection[object]):
+        self.attr = class_attr
         self.priorities = deepcopy(priority_ordering)
 
     def find_priority(self, token: SimToken) -> int:
