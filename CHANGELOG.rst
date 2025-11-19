@@ -167,3 +167,8 @@ Version 1.7.4 (2025-11-18)
 --------------------------
 
 - [Bugfix] Fixed issue with BPMN and Queueing prototypes hardcoding and overwriting the queueing priority preference.
+
+Version 1.7.5 (2025-11-19)
+--------------------------
+
+- [Bugfix] Fixed issue with BPMN event log reporter not logging correctly when there is no data to log.

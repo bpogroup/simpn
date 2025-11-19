@@ -403,7 +403,7 @@ class EventLogReporter(Reporter):
                     data_list = self.process_data(data)
                     for value in data_list:
                         self.logfile.write(self.sep + str(value))
-                    self.logfile.write("\n")
+                self.logfile.write("\n")
                 self.logfile.flush()
                 del self.task_start_times[(case_id, task)]
         elif event.get_id().endswith("<start_event>") or event.get_id().endswith("<intermediate_event>") or event.get_id().endswith("<end_event>"):
