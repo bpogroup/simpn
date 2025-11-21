@@ -4,12 +4,15 @@ from simpn.simulator import SimProblem, SimToken, SimTokenValue
 from simpn.visualisation import Visualisation
 
 from simpn.priorities import FirstClassPriority
+from simpn.priorities import WeightedFirstClassPriority
+from simpn.priorities import NearestToCompletionPriority
 
 import random
 from os.path import join, exists
 from enum import Enum, auto
 
 LAYOUT_FILE = join(".", "temp", "priorities_for_bps.layout")
+PRIORITY = 3
 
 
 class CustomerType(Enum):
@@ -51,10 +54,31 @@ def employee_speed(base_time, employee: SimTokenValue):
     return random.expovariate(1 / base_time) / employee.work_speed
 
 
-class_priority = FirstClassPriority(
-    class_attr="type",
-    priority_ordering=[CustomerType.GOLD, CustomerType.SILVER, CustomerType.BRONZE],
-)
+match PRIORITY:
+    case 1:
+        class_priority = FirstClassPriority(
+            class_attr="type",
+            priority_ordering=[
+                CustomerType.GOLD,
+                CustomerType.SILVER,
+                CustomerType.BRONZE,
+            ],
+        )
+    case 2:
+        class_priority = WeightedFirstClassPriority(
+            class_attr="type",
+            weights={
+                CustomerType.GOLD: 10,
+                CustomerType.SILVER: 5,
+                CustomerType.BRONZE: 2.5,
+            },
+        )
+    case 3:
+        class_priority = NearestToCompletionPriority()
+    case _:
+        raise ValueError("Unknown PRIORITY value: {}".format(PRIORITY))
+
+
 model = SimProblem(binding_priority=class_priority)
 
 
@@ -72,7 +96,18 @@ for i in range(5):
     )
 employees.set_invisible_edges()
 
-BPMNFlow(model, "considering", priority=class_priority.find_priority)
+match PRIORITY:
+    case 1 | 2:
+        BPMNFlow(
+            model,
+            "considering",
+            priority=class_priority.find_priority,
+        )
+    case 3:
+        BPMNFlow(
+            model,
+            "considering",
+        )
 
 
 class Start(BPMN):
