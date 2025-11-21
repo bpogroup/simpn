@@ -1,3 +1,34 @@
+"""
+This sandbox demonstrates the use of different priority classes for business
+process simulations.
+
+By changing the PRIORITY variable, different priority classes can be used to
+prioritise the handling of customer cases based on their type.
+
+Instances of this process will arrive randomly, be classified into different
+customer types (New, Bronze, Silver, Gold). New customers are then converted into
+one of the three paid types, when they are investigated.
+
+The priority classes handle the prioritisation of the simulation in
+different ways:
+1. FirstClassPriority: Prioritises bindings in a strict order based on
+    customer type. So gold customers are always prioritised over silver and bronze.
+2. WeightedFirstClassPriority: Assigns weights to customer types, allowing for
+    a more flexible prioritisation. Gold customers have the highest weight,
+    followed by silver and bronze.
+3. NearestToCompletionPriority: Prioritises cases that are closest to
+    completion, regardless of customer type. This approach aims to complete as
+    many cases as possible by giving higher priority to bindings with tokens that
+    have been observed more often.
+4. WeightedTaskPriority: Prioritises bindings based on the task being executed,
+    with weights assigned to different tasks.
+
+The first two priority classes also have a priority function that can be used
+on places where tokens are queued, to ensure that the highest priority tokens
+are selected first. The latter two priority classes do not support this
+functionality.
+"""
+
 from simpn.helpers import BPMN
 from simpn.prototypes import BPMNFlow
 from simpn.simulator import SimProblem, SimToken, SimTokenValue
