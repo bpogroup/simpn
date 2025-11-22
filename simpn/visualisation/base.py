@@ -45,6 +45,11 @@ from PyQt6.QtWidgets import (
     QTreeWidgetItem,
     QStackedWidget,
     QProgressDialog,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QSpinBox,
+    QDoubleSpinBox,
 )
 import matplotlib
 matplotlib.use('QtAgg')  # Use Qt backend for matplotlib
@@ -747,7 +752,10 @@ class ExplorerPanel(QWidget):
         self._name_to_widget = {}
 
         # Connect item click signal
-        self.tree.itemClicked.connect(self._on_item_clicked)        
+        self.tree.itemClicked.connect(self._on_item_clicked)
+        
+        # Settings for remembering replication parameters
+        self.settings = QSettings("TUe", "SimPN")        
 
     def _create_toolbar(self):
         """Create and configure the toolbar for the explorer panel."""
@@ -787,7 +795,65 @@ class ExplorerPanel(QWidget):
         # Note: close action will be connected by parent to hide the dock
 
         return toolbar
-            
+
+    def replication_parameters_dialog(self):
+        # Open dialog to configure replication parameters
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Configure Replication Parameters")
+        dialog.setModal(True)
+        
+        # Create form layout
+        form_layout = QFormLayout()
+        
+        # Duration input - load previous value from settings
+        duration_input = QDoubleSpinBox()
+        duration_input.setRange(0, 1000000)
+        duration_input.setValue(self.settings.value("replication/duration", 5000, type=float))
+        duration_input.setDecimals(2)
+        duration_input.setSuffix(" time units")
+        form_layout.addRow("Duration:", duration_input)
+        
+        # Warmup input - load previous value from settings
+        warmup_input = QDoubleSpinBox()
+        warmup_input.setRange(0, 1000000)
+        warmup_input.setValue(self.settings.value("replication/warmup", 1000, type=float))
+        warmup_input.setDecimals(2)
+        warmup_input.setSuffix(" time units")
+        form_layout.addRow("Warmup:", warmup_input)
+        
+        # Number of replications input - load previous value from settings
+        replications_input = QSpinBox()
+        replications_input.setRange(1, 10000)
+        replications_input.setValue(self.settings.value("replication/nr_replications", 100, type=int))
+        form_layout.addRow("Number of Replications:", replications_input)
+        
+        # Buttons
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        
+        # Set layout
+        main_layout = QVBoxLayout()
+        main_layout.addLayout(form_layout)
+        main_layout.addWidget(button_box)
+        dialog.setLayout(main_layout)
+        
+        # Show dialog and get result
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return  # User canceled
+        
+        # Get values from dialog
+        duration = duration_input.value()
+        warmup = warmup_input.value()
+        nr_replications = replications_input.value()
+        
+        # Save values to settings for next time
+        self.settings.setValue("replication/duration", duration)
+        self.settings.setValue("replication/warmup", warmup)
+        self.settings.setValue("replication/nr_replications", nr_replications)
+        
+        return duration, warmup, nr_replications
+    
     def run_replications(self):
         """
         Run replications for the simulator (if any).
@@ -797,6 +863,12 @@ class ExplorerPanel(QWidget):
         if sim_problem:
             from simpn.reporters import Replicator
             
+            # Get replication parameters from dialog
+            params = self.replication_parameters_dialog()
+            if params is None:
+                return  # User canceled
+            duration, warmup, nr_replications = params
+
             # Create progress dialog
             progress = QProgressDialog("Running replications...", "Cancel", 0, 100, self)
             progress.setWindowTitle("Replication Progress")
@@ -818,7 +890,7 @@ class ExplorerPanel(QWidget):
                 return True  # Continue replications
             
             # Run replications with callback
-            replicator = Replicator(sim_problem, duration=5000, warmup=1000, nr_replications=100, callback=update_progress)
+            replicator = Replicator(sim_problem, duration=duration, warmup=warmup, nr_replications=nr_replications, callback=update_progress)
             results = replicator.run()
             
             # Close progress dialog
