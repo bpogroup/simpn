@@ -834,12 +834,11 @@ class ExplorerPanel(QWidget):
                     last_graph = (i == nr_possible_graphs - 1)
                     PlotPanel(results, graph_name, graph_function, parent=self.parent().parent().central_panel, activate=last_graph)
                     i += 1
-            
-            # TODO: prevent adding multiple plots with the same name (i.e., remove old plot before adding new one by the same name)
-            # TODO: create tests for this functionality
+
+            # TODO: add dialog to configure replication parameters before running            
             # TODO: add more graphs, include whiskers in graphs for stdev
-            # TODO: check if this also works for non-main execution of the visualisation (i.e., when not running from __main__)
             # TODO: catch errors when running for non-BPMN types of simulations (or preferably prevent running in that case)
+            # TODO: create tests for this functionality, include tests for non-main execution
 
     def _on_item_clicked(self, item: QTreeWidgetItem, column: int):
         """
@@ -853,6 +852,16 @@ class ExplorerPanel(QWidget):
         name = item.text(0)
         dispatch(create_event(EventType.CENTRAL_PANEL_ACTIVATE, name=name, widget=self._name_to_widget.get(name)), self)
 
+    def remove_name_from_tree(self, name: str):
+        # Find and remove the node
+        root = self.tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            child_node = root.child(i)
+            if child_node.text(0) == name:
+                root.removeChild(child_node)
+                break
+        del self._name_to_widget[name]
+
     def listen_to(self) -> List[EventType]:
         """
         Return a list of event types this panel listens to.
@@ -860,7 +869,7 @@ class ExplorerPanel(QWidget):
         :return: List of EventType enums
         """
         return [EventType.CENTRAL_PANEL_ADD, EventType.CENTRAL_PANEL_REMOVE, EventType.CENTRAL_PANEL_ACTIVATE, EventType.VISUALIZATION_CREATED]
-    
+
     def handle_event(self, event: pygame.event.Event) -> bool:
         """
         Handle a pygame event to update the explorer panel tree.
@@ -875,21 +884,19 @@ class ExplorerPanel(QWidget):
         """
         if check_event(event, EventType.CENTRAL_PANEL_ADD):
             name = getattr(event, "name", "Unnamed")
+            # if a panel by this name already exists, it should first be removed
+            if name in self._name_to_widget:
+                # send remove event to remove the old node
+                dispatch(create_event(EventType.CENTRAL_PANEL_REMOVE, name=name, widget=self._name_to_widget[name]), self)
+                # remove the old widget from the mapping
+                self.remove_name_from_tree(name)
+            # Create a new node in the tree
             new_node = QTreeWidgetItem(self.tree)
             new_node.setText(0, name)
             self._name_to_widget[name] = getattr(event, "widget", None)
         elif check_event(event, EventType.CENTRAL_PANEL_REMOVE):
             name = getattr(event, "name", "Unnamed")
-            # Find and remove the node
-            root = self.tree.invisibleRootItem()
-            for i in range(root.childCount()):
-                parent_node = root.child(i)
-                for j in range(parent_node.childCount()):
-                    child_node = parent_node.child(j)
-                    if child_node.text(0) == name:
-                        parent_node.removeChild(child_node)
-                        break
-            del self._name_to_widget[name]
+            self.remove_name_from_tree(name)
         elif check_event(event, EventType.CENTRAL_PANEL_ACTIVATE):
             name = getattr(event, "name", "Unnamed")
             # Clear previous selection
