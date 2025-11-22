@@ -285,7 +285,68 @@ class ProcessReporter(Reporter):
 
         :return: a dict graph name -> graphing function
         """
-        return {"Resource utilization": ProcessReporter.resource_utilization_graph}
+        return {"General statistics": ProcessReporter.general_statistics_graph, "Resource utilization": ProcessReporter.resource_utilization_graph, "Task processing times": ProcessReporter.task_processing_times_graph}
+
+    @staticmethod
+    def general_statistics_graph(aggregated_results, ax):
+        """
+        Plots the general statistics graph on the given matplotlib axis.
+        Uses two y-axes, one for counts and one for times.
+
+        :param aggregated_results: the aggregated results as returned by aggregate_results.
+        :param ax: the matplotlib axis to plot on.
+        """
+        counts = [aggregated_results[ProcessReporter.GENERAL]["nr_started"][0], aggregated_results[ProcessReporter.GENERAL]["nr_completed"][0]]
+        counts_stddev = [aggregated_results[ProcessReporter.GENERAL]["nr_started"][1], aggregated_results[ProcessReporter.GENERAL]["nr_completed"][1]]
+        counts_whiskers = [1.96 * stddev for stddev in counts_stddev]
+
+        times = [aggregated_results[ProcessReporter.GENERAL]["avg_wait_time"][0], aggregated_results[ProcessReporter.GENERAL]["avg_proc_time"][0], aggregated_results[ProcessReporter.GENERAL]["avg_cycle_time"][0]]
+        times_stddev = [aggregated_results[ProcessReporter.GENERAL]["avg_wait_time"][1], aggregated_results[ProcessReporter.GENERAL]["avg_proc_time"][1], aggregated_results[ProcessReporter.GENERAL]["avg_cycle_time"][1]]
+        times_whiskers = [1.96 * stddev for stddev in times_stddev]
+        
+        count_bars = ax.bar(["Nr started", "Nr completed"], counts, yerr=counts_whiskers, capsize=5, color='b', label='Counts')
+        ax.set_ylabel("Counts", color='b')
+        ax.tick_params(axis='y', labelcolor='b')
+        
+        # Add value labels on count bars
+        for bar, value in zip(count_bars, counts):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height,
+                   f'{value:.1f}',
+                   ha='center', va='bottom', color='b')
+
+        ax2 = ax.twinx()
+        time_bars = ax2.bar(["Avg wait time", "Avg proc time", "Avg cycle time"], times, yerr=times_whiskers, capsize=5, color='r', label='Times')
+        ax2.set_ylabel("Times", color='r')
+        ax2.tick_params(axis='y', labelcolor='r')
+        
+        # Add value labels on time bars
+        for bar, value in zip(time_bars, times):
+            height = bar.get_height()
+            ax2.text(bar.get_x() + bar.get_width()/2., height,
+                    f'{value:.2f}',
+                    ha='center', va='bottom', color='r')
+
+        ax.set_title("General Statistics")
+        
+    @staticmethod
+    def task_processing_times_graph(aggregated_results, ax):
+        """
+        Plots the task processing times graph on the given matplotlib axis.
+
+        :param aggregated_results: the aggregated results as returned by aggregate_results.
+        :param ax: the matplotlib axis to plot on.
+        """
+        activity_ids = list(aggregated_results[ProcessReporter.ACTIVITIES].keys())
+        activity_id_strs = [str(act_id) for act_id in activity_ids]
+        avg_proc_times = [aggregated_results[ProcessReporter.ACTIVITIES][act_id]["avg_proc_time"][0] for act_id in activity_ids]
+        # add whiskers for 95% confidence interval
+        stddevs = [aggregated_results[ProcessReporter.ACTIVITIES][act_id]["avg_proc_time"][1] for act_id in activity_ids]
+        whiskers = [1.96 * stddev for stddev in stddevs]
+        ax.bar(activity_id_strs, avg_proc_times, yerr=whiskers, capsize=5)
+        ax.set_xlabel("Activity")
+        ax.set_ylabel("Average Processing Time")
+        ax.set_title("Activity Processing Times")
 
     @staticmethod
     def resource_utilization_graph(aggregated_results, ax):
@@ -298,7 +359,10 @@ class ProcessReporter(Reporter):
         resource_ids = list(aggregated_results[ProcessReporter.RESOURCES].keys())
         resource_id_strs = [str(res_id) for res_id in resource_ids]
         utilizations = [aggregated_results[ProcessReporter.RESOURCES][res_id]["utilization"][0] for res_id in resource_ids]
-        ax.bar(resource_id_strs, utilizations)
+        # add whiskers for 95% confidence interval
+        stddevs = [aggregated_results[ProcessReporter.RESOURCES][res_id]["utilization"][1] for res_id in resource_ids]
+        whiskers = [1.96 * stddev for stddev in stddevs]
+        ax.bar(resource_id_strs, utilizations, yerr=whiskers, capsize=5)
         ax.set_xlabel("Resource")
         ax.set_ylabel("Utilization")
         ax.set_title("Resource Utilization")

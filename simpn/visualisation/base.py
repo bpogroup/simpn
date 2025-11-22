@@ -907,10 +907,9 @@ class ExplorerPanel(QWidget):
                     PlotPanel(results, graph_name, graph_function, parent=self.parent().parent().central_panel, activate=last_graph)
                     i += 1
 
-            # TODO: add dialog to configure replication parameters before running            
-            # TODO: add more graphs, include whiskers in graphs for stdev
             # TODO: catch errors when running for non-BPMN types of simulations (or preferably prevent running in that case)
             # TODO: create tests for this functionality, include tests for non-main execution
+            # TODO: nice-to-have: warmup time graph
 
     def _on_item_clicked(self, item: QTreeWidgetItem, column: int):
         """
