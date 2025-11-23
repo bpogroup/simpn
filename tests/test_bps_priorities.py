@@ -329,13 +329,12 @@ class TestWeightedFirstClassPriority(unittest.TestCase):
         for _ in range(100):
             selected_binding = self.ideal_priority(bindings)
             selected_token = selected_binding[0][0][1]
-            match selected_token.value.type:
-                case "gold":
-                    golds += 1
-                case "silver":
-                    silvers += 1
-                case "bronze":
-                    bronzes += 1
+            if selected_token.value.type == "gold":
+                golds += 1
+            elif selected_token.value.type == "silver":
+                silvers += 1
+            elif selected_token.value.type == "bronze":
+                bronzes += 1
         self.assertEqual(golds + silvers + bronzes, 100)
         self.assertGreater(golds, max(silvers, bronzes))
 
@@ -357,13 +356,12 @@ class TestWeightedFirstClassPriority(unittest.TestCase):
         for _ in range(100):
             selected_binding = self.ideal_priority(bindings)
             selected_token = selected_binding[0][0][1]
-            match selected_token.value.type:
-                case "gold":
-                    golds += 1
-                case "silver":
-                    silvers += 1
-                case "bronze":
-                    bronzes += 1
+            if selected_token.value.type == "gold":
+                golds += 1
+            elif selected_token.value.type == "silver":
+                silvers += 1
+            elif selected_token.value.type == "bronze":
+                bronzes += 1
         self.assertEqual(golds + silvers + bronzes, 100)
         self.assertGreater(silvers, max(bronzes, golds))
 
@@ -597,19 +595,18 @@ class TestWeightedTasksPriority(unittest.TestCase):
             event = selected[-1]
             ev_name = event._id
 
-            match ev_name:
-                case "doing_1":
-                    d1 += 1
-                case "doing_2":
-                    d2 += 1
-                case "doing_3":
-                    d3 += 1
-                case "doing_4":
-                    d4 += 1
-                case "doing_5":
-                    d5 += 1
-                case _:
-                    self.fail(f"cannot find matching :: {ev_name}")
+            if ev_name == "doing_1":
+                d1 += 1
+            elif ev_name == "doing_2":
+                d2 += 1
+            elif ev_name == "doing_3":
+                d3 += 1
+            elif ev_name == "doing_4":
+                d4 += 1
+            elif ev_name == "doing_5":
+                d5 += 1
+            else:
+                self.fail(f"cannot find matching :: {ev_name}")
 
         self.assertGreater(d5, max(d1, d2, d3, d4))
 
