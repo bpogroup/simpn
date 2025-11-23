@@ -56,7 +56,7 @@ class FirstClassPriority(PriorityFunction):
     """
     A priority function that assigns higher priority to bindings based on
     the number of tokens in binding with a classifying attribute.
-    Furthermore, priority can be given to specific values of the attribute.
+    Furthermore, higher priority can be given to specific values of the attribute.
     For instance, we can give higher priority to 'gold' customers over 'silver'
     customers. This priority function ensures that any binding that has a 'gold'
     member will be actioned first over bindings that only have 'silver' or
@@ -242,8 +242,10 @@ class NearestToCompletionPriority(PriorityFunction):
     """
     A priority function that assigns higher priority to tasks that are nearest
     to completion. Completion is determined by the number of times a token id
-    has been seen in the process. If a token has been seen more times, it is
-    considered to be closer to completion and is given higher priority.
+    has been seen and selected by the priority fucntion.
+
+    If a token has been seen more times, it is considered to be closer to
+    completion and is given higher priority over other tokens/bindings.
 
     This priority function is useful for prioritising completing executions
     over starting new ones. The highest priority is given to the binding with
@@ -251,8 +253,8 @@ class NearestToCompletionPriority(PriorityFunction):
     Then, if multiple bindings have the same total, a random choice is made
     between them.
 
-    The class is a callable that takes a collection of bindings and returns the binding
-    with the highest priority based on token observations.
+    The class is a callable that takes a collection of bindings and returns
+    the binding with the highest priority based on token observations.
 
     .. methods::
         __call__(bindings):
@@ -357,17 +359,17 @@ class NearestToCompletionPriority(PriorityFunction):
 class WeightedTaskPriority(PriorityFunction):
     """
     A priority function that assigns priority based on weights between tasks.
-    The priority function makes a weighted random choice between events firing
-    within the bindings. The weight mapping should have keys that have would
-    be used within the names of events, in particular they should begin with
-    them. The value of mapping should be a float, where larger numbers make
-    the binding of the key's events more likely to be picked.
+    The priority function makes a weighted random choice between bindings based
+    on the event in the binding. The weight mapping should have keys that have
+    would be used within the `names` of events, in particular they should begin
+    with them. The value of mapping should be a float, where larger numbers make
+    bindings for keyyed events more likely to be picked.
 
     A default weight of 1.0 is used for events not mentioned in the
     given weight mapping.
 
-    :param weights: a mapping of prefixes to some weight to decide between
-        bindings.
+    :param weights: a mapping between event prefixes and weights to decide
+        between bindings.
 
     The class is a callable that takes a collection of bindings and returns
     the binding with the highest priority based on token observations.
