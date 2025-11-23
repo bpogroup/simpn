@@ -37,13 +37,14 @@ from simpn.visualisation import Visualisation
 from simpn.priorities import FirstClassPriority
 from simpn.priorities import WeightedFirstClassPriority
 from simpn.priorities import NearestToCompletionPriority
+from simpn.priorities import WeightedTaskPriority
 
 import random
 from os.path import join, exists
 from enum import Enum, auto
 
 LAYOUT_FILE = join(".", "temp", "priorities_for_bps.layout")
-PRIORITY = 3
+PRIORITY = 1
 
 
 class CustomerType(Enum):
@@ -106,6 +107,17 @@ match PRIORITY:
         )
     case 3:
         class_priority = NearestToCompletionPriority()
+    case 4:
+        class_priority = WeightedTaskPriority(
+            {
+                "started-process" : 10,
+                "Investigate" : 2.5,
+                "Calling Customer" : 10,
+                "Pick Package for Gold": 7.5,
+                "Invoice Gold": 7.5,
+            },
+            default_weight=0.5
+        )
     case _:
         raise ValueError("Unknown PRIORITY value: {}".format(PRIORITY))
 
@@ -134,7 +146,7 @@ match PRIORITY:
             "considering",
             priority=class_priority.find_priority,
         )
-    case 3:
+    case 3 | 4:
         BPMNFlow(
             model,
             "considering",
