@@ -27,10 +27,12 @@ class PriorityFunction(Protocol):
         pass
 
     @abstractmethod
-    def find_priority(self, token: SimToken) -> int:
+    def find_priority(self, token: SimToken) -> float:
         """
         Finds the priority of a token based on priority mechanism.
         Useful for wanting to prioritise tokens associated with a SimVar.
+        A lower priority means that that token should have higher priority
+        over over tokens.
 
         :param token: The token to evaluate.
         :return: The priority index of the token. Lower index means higher priority.
@@ -38,10 +40,16 @@ class PriorityFunction(Protocol):
         pass
 
     def get_values(self, binding) -> Collection:
-        """ "
+        """
         Helper function to extract SimTokens from a binding.
         """
         return [val for val in binding[0][0] if isinstance(val, SimToken)]
+
+    def get_event(self, binding) -> Collection:
+        """
+        Helper function to extract the event of a binding.
+        """
+        return binding[-1]
 
 
 class FirstClassPriority(PriorityFunction):
@@ -349,10 +357,75 @@ class NearestToCompletionPriority(PriorityFunction):
 class WeightedTaskPriority(PriorityFunction):
     """
     A priority function that assigns priority based on weights between tasks.
+    The priority function makes a weighted random choice between events firing
+    within the bindings. The weight mapping should have keys that have would
+    be used within the names of events, in particular they should begin with
+    them. The value of mapping should be a float, where larger numbers make
+    the binding of the key's events more likely to be picked.
+
+    A default weight of 1.0 is used for events not mentioned in the
+    given weight mapping.
+
+    :param weights: a mapping of prefixes to some weight to decide between
+        bindings.
+
+    The class is a callable that takes a collection of bindings and returns
+    the binding with the highest priority based on token observations.
+
+    .. methods::
+        __call__(bindings):
+         Finds the binding with the highest priority.
+         Useful for handling prioritisation in SimProblems.
+
+        find_priority(tok):
+         Not supported.
+         Raises RuntimeError if called.
+
+    ^^^^^
+    Example:
+    ^^^^^
+    .. code-block:: python
+        priority = WeightedTaskPriority(
+            weights={
+                "started-process" : 10,
+                "Investigate" : 2.5,
+                "Calling Customer" : 10,
+                "Pick Package for Gold": 7.5,
+                "Invoice Gold": 7.5,
+            },
+            default_weight=0.5
+        )
+        # returns the highest priority binding of bindings.
+        bindings = [ ... ] # some collection of bindings
+        priority = priority(bindings)
+
+        # this priority function does not support for place priority.
     """
 
-    def __init__(self, weights):
+    def __init__(self, weights: Dict[str, float], default_weight: int = 1.0):
         self.weights = weights
+        self.default = default_weight
 
-    def __call__(self, *args, **kwds):
-        pass
+    def find_priority(self, token):
+        raise RuntimeError(
+            "This priority function does not support for place priority."
+        )
+
+    def __call__(self, bindings):
+        weights = []
+        for binding in bindings:
+            event = self.get_event(binding)
+            name: str = event._id
+            appended = False
+
+            for key in self.weights.keys():
+                if name.lower().startswith(key.lower()):
+                    weights.append(self.weights[key])
+                    appended = True
+                    break
+
+            if not appended:
+                weights.append(self.default)
+
+        selected = random.choices(bindings, weights, k=1)[0]
+        return selected

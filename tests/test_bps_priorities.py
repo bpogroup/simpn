@@ -1,11 +1,16 @@
 import unittest
+from copy import deepcopy
 
 from tests.dummy_problems import create_dummy_bpmn
+from tests.dummy_problems import create_dummy_pn
+from tests.dummy_problems import create_linear_process
 
 from simpn.simulator import SimToken, SimTokenValue
 from simpn.simulator import SimProblem
 from simpn.priorities import FirstClassPriority
 from simpn.priorities import WeightedFirstClassPriority
+from simpn.priorities import NearestToCompletionPriority
+from simpn.priorities import WeightedTaskPriority
 
 
 def construct_scenario(
@@ -438,6 +443,205 @@ class TestWeightedFirstClassPriority(unittest.TestCase):
         from tests.utils import run_visualisation_for
 
         self.problem.simulate(duration=100)
+
+        try:
+            run_visualisation_for(duration=1500, sim_problem=self.problem)
+        except Exception as e:
+            self.fail(f"Visualisation failed when it should not have: {e}")
+
+
+class TestNearestCompletionPriority(unittest.TestCase):
+
+    def setUp(self):
+        self.problem = create_dummy_bpmn(structured=True)
+        self.ideal_priority = NearestToCompletionPriority()
+        return super().setUp()
+
+    def tearDown(self):
+        return super().tearDown()
+
+    def test_sim_works_without_attribute(self):
+        self.problem = create_dummy_pn()
+        self.problem.set_binding_priority(self.ideal_priority)
+
+        try:
+            self.problem.simulate(duration=25)
+        except Exception as e:
+            self.fail(f"Simulation failed when it should not have: {e}")
+
+    def test_sim_works_with_attribute(self):
+        self.problem.set_binding_priority(self.ideal_priority)
+
+        try:
+            self.problem.simulate(duration=25)
+        except Exception as e:
+            self.fail(f"Simulation failed when it should not have: {e}")
+
+    def test_prioritizes_correctly(self):
+
+        problem = create_linear_process()
+        problem.set_binding_priority(self.ideal_priority)
+        ordering = ["Finished", "Three", "Two", "One"]
+
+        # during firing we should fire any finished before three before
+        # two before one if all exist in bindings
+        for step in range(100):
+            bindings = problem.bindings()
+            selected = problem.binding_priority(bindings)
+
+            def check(name, binding):
+                event = binding[-1]
+                return event._id.lower().startswith(name.lower())
+
+            # check for the ordering is being preserved
+            for task_name in ordering:
+                if any([check(task_name, binding) for binding in bindings]):
+                    self.assertTrue(
+                        check(task_name, selected),
+                        f"Expected {task_name} but selected {selected}",
+                    )
+                    break
+
+            problem.fire(selected)
+
+    def test_handles_ties_randomly(self):
+        problem, toks = construct_scenario2(
+            has_gold=True,
+            golds=5,
+        )
+
+        # build a set of selected bindings
+        # we should see some differences between calls on the same
+        # set of bindings
+        seen = set()
+        bindings = problem.bindings()
+        obs = deepcopy(self.ideal_priority.observations)
+        for _ in range(25):
+            self.ideal_priority.observations = deepcopy(obs)
+            selected_binding = self.ideal_priority(bindings)
+            seen.add(selected_binding[0][0][1].value.id)
+
+        self.assertGreaterEqual(len(seen), 2, "Ties not handled randomly.")
+
+    def test_visualisation_works(self):
+        from tests.utils import run_visualisation_for
+
+        try:
+            self.problem.set_binding_priority(self.ideal_priority)
+            self.problem.simulate(duration=100)
+        except Exception as e:
+            self.fail(f"Unable to simulate problem :: {e}")
+
+        try:
+            run_visualisation_for(duration=1500, sim_problem=self.problem)
+        except Exception as e:
+            self.fail(f"Visualisation failed when it should not have: {e}")
+
+
+class TestWeightedTasksPriority(unittest.TestCase):
+
+    def setUp(self):
+        self.problem = create_dummy_bpmn(structured=True)
+        self.ideal_priority = WeightedTaskPriority(
+            {
+                "issue created": 10,
+                "Consider Issue": 10,
+                "Handle Issue": 5,
+                "Issue Handled": 10,
+            }
+        )
+        return super().setUp()
+
+    def tearDown(self):
+        return super().tearDown()
+
+    def test_sim_works_without_attribute(self):
+        problem = create_dummy_pn()
+        problem.set_binding_priority(WeightedTaskPriority({}))
+
+        try:
+            problem.simulate(duration=25)
+        except Exception as e:
+            self.fail(f"Simulation failed when it should not have: {e}")
+
+        self.problem.set_binding_priority(WeightedTaskPriority({}))
+
+        try:
+            self.problem.simulate(duration=25)
+        except Exception as e:
+            self.fail(f"Simulation failed when it should not have: {e}")
+
+    def test_sim_works_with_attribute(self):
+        self.problem.set_binding_priority(self.ideal_priority)
+
+        try:
+            self.problem.simulate(duration=25)
+        except Exception as e:
+            self.fail(f"Simulation failed when it should not have: {e}")
+
+    def test_prioritizes_correctly(self):
+
+        problem, _ = construct_scenario2(has_gold=True, golds=5, starts=5)
+        problem.set_binding_priority(
+            WeightedTaskPriority(
+                {"doing_{}".format(i + 1): i * i for i in range(5)}
+            )
+        )
+
+        # from the initial marking we should see that doing_5 is more likely
+        # than the others
+        d1, d2, d3, d4, d5 = 0, 0, 0, 0, 0
+        for step in range(100):
+            bindings = problem.bindings()
+            selected = problem.binding_priority(bindings)
+            event = selected[-1]
+            ev_name = event._id
+
+            match ev_name:
+                case "doing_1":
+                    d1 += 1
+                case "doing_2":
+                    d2 += 1
+                case "doing_3":
+                    d3 += 1
+                case "doing_4":
+                    d4 += 1
+                case "doing_5":
+                    d5 += 1
+                case _:
+                    self.fail(f"cannot find matching :: {ev_name}")
+
+        self.assertGreater(d5, max(d1, d2, d3, d4))
+
+    def test_handles_ties_randomly(self):
+        problem, toks = construct_scenario2(
+            has_gold=True,
+            golds=5,
+        )
+        problem.set_binding_priority(
+            WeightedTaskPriority(
+                {"doing_{}".format(i + 1): 1 for i in range(5)}
+            )
+        )
+
+        # build a set of selected bindings we should see some differences 
+        # between calls on the same set of bindings
+        seen = set()
+        bindings = problem.bindings()
+        for _ in range(25):
+            selected_binding = self.ideal_priority(bindings)
+            seen.add(selected_binding[0][0][1].value.id)
+
+        self.assertGreaterEqual(len(seen), 2, "Ties not handled randomly.")
+
+    def test_visualisation_works(self):
+        from tests.utils import run_visualisation_for
+
+        try:
+            self.problem.set_binding_priority(self.ideal_priority)
+            self.problem.simulate(duration=100)
+        except Exception as e:
+            self.fail(f"Unable to simulate problem :: {e}")
 
         try:
             run_visualisation_for(duration=1500, sim_problem=self.problem)
