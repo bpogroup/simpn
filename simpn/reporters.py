@@ -196,7 +196,7 @@ class EventLogReporter(Reporter):
     We recognize 3 forms of data:
     - basic datatype (int, float, str, bool): the start event and each task must have only one value and len(data_fields) == 1.
     - list or tuple of basic datatypes: the start event and each task must have len(data) == len(data_fields).
-    - dictionary of basic datatypes: the start event and each task must have all keys in data_fields.
+    - dictionary of basic datatypes: for each event, the data withs keys in data_fields will be included.
 
     :param filename: the name of the file in which the event log must be stored.
     :param timeunit: the :class:`.TimeUnit` of simulation time.
@@ -236,10 +236,7 @@ class EventLogReporter(Reporter):
                 raise ValueError("Data is a list or tuple, but its length does not match the number of data fields specified in the EventLogReporter.")
             return list(data)
         elif isinstance(data, dict):
-            for field in data:
-                if field not in self.data_fields:
-                    raise ValueError(f"Data is a dictionary, which has field '{field}' that is not specified in the EventLogReporter.")   
-            return [data.get(field, None) for field in self.data_fields]
+            return [data.get(field, "") for field in self.data_fields]
         else:
             raise ValueError("Data is of unsupported type for EventLogReporter.")
 
