@@ -50,6 +50,7 @@ from PyQt6.QtWidgets import (
     QFormLayout,
     QSpinBox,
     QDoubleSpinBox,
+    QMessageBox,
 )
 import matplotlib
 matplotlib.use('QtAgg')  # Use Qt backend for matplotlib
@@ -861,6 +862,17 @@ class ExplorerPanel(QWidget):
         model_panel = self.parent().parent().simulation_panel.get_panel() # TODO: this is not a good way of getting the simulator, also, ideally the simulator is cloned, because now replications affect the state of the simulator
         sim_problem = model_panel._problem if model_panel else None
         if sim_problem:
+            # Check if the model contains BPMN prototypes
+            from simpn.prototypes import BPMNTask
+            has_bpmn = any(isinstance(prototype, BPMNTask) for prototype in sim_problem.prototypes)
+            if not has_bpmn:
+                QMessageBox.warning(
+                    self,
+                    "BPMN Model Required",
+                    "Running replications only works for BPMN models at this stage."
+                )
+                return
+            
             from simpn.reporters import Replicator
             
             # Get replication parameters from dialog
@@ -907,7 +919,6 @@ class ExplorerPanel(QWidget):
                     PlotPanel(results, graph_name, graph_function, parent=self.parent().parent().central_panel, activate=last_graph)
                     i += 1
 
-            # TODO: catch errors when running for non-BPMN types of simulations (or preferably prevent running in that case)
             # TODO: create tests for this functionality, include tests for non-main execution
             # TODO: nice-to-have: warmup time graph
 
