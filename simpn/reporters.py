@@ -110,6 +110,7 @@ class ProcessReporter(Reporter):
     """
 
     # The names of the result sections
+    WARMUP = "warmup"
     GENERAL = "general"
     RESOURCES = "resources"
     ACTIVITIES = "activities"
@@ -117,6 +118,7 @@ class ProcessReporter(Reporter):
     def __init__(self, warmup_time=0):
         self.resource_busy_times = dict()  # mapping of resource_id -> the time the resource was busy during simulation.
         self.activity_processing_times = dict()  # mapping of activity_id -> list of processing times
+        self.avg_cycle_time_over_time = []  # list of (time, avg_cycle_time) tuples
         self.nr_started = 0  # number of cases that started
         self.nr_completed = 0  # number of cases that completed
         self.total_wait_time = 0  # sum of waiting times of completed cases
@@ -181,11 +183,15 @@ class ProcessReporter(Reporter):
                 self.total_wait_time += sum_wait_times
                 self.total_proc_time += sum_proc_times
                 self.total_cycle_time += time - arrival_time
+                self.avg_cycle_time_over_time.append((time, (self.total_cycle_time/self.nr_completed) if self.nr_completed > 0 else 0))
 
     def get_results(self):
         """
         returns a dictionary of dictionaries:
         {
+            warmup: {
+                avg_cycle_time_over_time: [(time, avg_cycle_time), ...]
+            },
             general: {
                 nr_started: (int, float), # (average, stddev)
                 nr_completed: (int, float), # (average, stddev)
@@ -210,6 +216,11 @@ class ProcessReporter(Reporter):
         }
         """
         results = dict()
+        
+        warmup = dict()
+        warmup["avg_cycle_time_over_time"] = self.avg_cycle_time_over_time
+        results[ProcessReporter.WARMUP] = warmup
+
         general = dict()
         general["nr_started"] = self.nr_started
         general["nr_completed"] = self.nr_completed
@@ -272,6 +283,10 @@ class ProcessReporter(Reporter):
                 for item in first_result[section].keys():
                     aggregated_section[item] = aggregate_section_results([result[section][item] for result in results_list])
                 aggregated_results[section] = aggregated_section
+            elif isinstance(first_result[section], dict) and len(first_result[section]) > 0 and isinstance(next(iter(first_result[section].values())), list):
+                # section contains a list of values, which typically is the warmup avg_cycle_time_over_time
+                # we aggregate by simply taking the first result's list
+                aggregated_results[section] = first_result[section]
             else:
                 # section contains direct values
                 aggregated_results[section] = aggregate_section_results([result[section] for result in results_list])
@@ -285,7 +300,23 @@ class ProcessReporter(Reporter):
 
         :return: a dict graph name -> graphing function
         """
-        return {"General statistics": ProcessReporter.general_statistics_graph, "Resource utilization": ProcessReporter.resource_utilization_graph, "Task processing times": ProcessReporter.task_processing_times_graph}
+        return {"Warmup": ProcessReporter.warmup_graph, "General statistics": ProcessReporter.general_statistics_graph, "Resource utilization": ProcessReporter.resource_utilization_graph, "Task processing times": ProcessReporter.task_processing_times_graph}
+
+    @staticmethod
+    def warmup_graph(aggregated_results, ax):
+        """
+        Plots the warmup graph on the given matplotlib axis.
+        It plots the average cycle time over time.
+
+        :param aggregated_results: the aggregated results as returned by aggregate_results.
+        :param ax: the matplotlib axis to plot on.
+        """
+        times = [t for (t, avg_cycle_time) in aggregated_results[ProcessReporter.WARMUP]["avg_cycle_time_over_time"]]
+        avg_cycle_times = [avg_cycle_time for (t, avg_cycle_time) in aggregated_results[ProcessReporter.WARMUP]["avg_cycle_time_over_time"]]
+        ax.plot(times, avg_cycle_times)
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Average Cycle Time")
+        ax.set_title("Warmup: Average Cycle Time Over Time")
 
     @staticmethod
     def general_statistics_graph(aggregated_results, ax):

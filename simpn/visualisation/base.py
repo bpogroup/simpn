@@ -920,7 +920,6 @@ class ExplorerPanel(QWidget):
                     i += 1
 
             # TODO: create tests for this functionality, include tests for non-main execution
-            # TODO: nice-to-have: warmup time graph
 
     def _on_item_clicked(self, item: QTreeWidgetItem, column: int):
         """
