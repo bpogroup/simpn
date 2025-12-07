@@ -173,3 +173,8 @@ Version 1.7.6 (2025-11-19)
 
 - [Bugfix] Fixed issue with BPMN Event Log not outputting correctly when there are no data elements.
 - [Chore] Reverted version 1.7.5, which was accidentally released with unfinished features.
+
+Version 1.7.7 (2025-12-04)
+--------------------------
+
+- [Bugfix] EventLogReporter did not handle dictionary data correctly.
