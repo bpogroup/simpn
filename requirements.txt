@@ -10,3 +10,4 @@ pygame==2.6.1
 igraph==0.11.8
 pyqt6>=6.9.1
 matplotlib>=3.9.3
+pyinstaller>=6.17.0

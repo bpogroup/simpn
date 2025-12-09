@@ -98,6 +98,23 @@ TOOLBAR_STYLESHEET = """
         """
 
 
+def resource_path(relative_path: str) -> str:
+    """
+    Get absolute path to resource, works for dev and for PyInstaller.
+    
+    :param relative_path: Relative path to the resource
+    :return: Absolute path to the resource
+    """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        # Running in normal Python environment
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
+
+
 def create_colored_pixmap(file_path: str, color: QColor) -> QPixmap:
     """
     Create a colored pixmap from an image file using a specific color.
@@ -253,18 +270,14 @@ class SimulationPanel(QWidget):
         # Add Step button to toolbar
         self.step_action = toolbar.addAction("Step")
         self.step_action.setToolTip("Execute one simulation step")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_step.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_step.png"))
         self.step_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.step_action.triggered.connect(self.step_simulation)
         self.step_action.setEnabled(False)
 
         # Add Play button to toolbar
         self.play_action = toolbar.addAction("Play")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_play.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_play.png"))
         self.play_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.play_action.setToolTip("Start continuous simulation")
         self.play_action.triggered.connect(self.start_simulation)
@@ -272,9 +285,7 @@ class SimulationPanel(QWidget):
 
         # Add Stop button to toolbar
         self.stop_action = toolbar.addAction("Stop")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_stop.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_stop.png"))
         self.stop_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.stop_action.setToolTip("Stop continuous simulation")
         self.stop_action.triggered.connect(self.stop_simulation)
@@ -282,9 +293,7 @@ class SimulationPanel(QWidget):
 
         # Add reset to start to toolbar
         self.reset_action = toolbar.addAction("Reset to Start")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "time_back.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "time_back.png"))
         self.reset_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.reset_action.setToolTip("Reset simulation to start")
         self.reset_action.triggered.connect(self.reset_simulation)
@@ -292,9 +301,7 @@ class SimulationPanel(QWidget):
 
         # Add Faster button to toolbar
         self.faster_action = toolbar.addAction("Faster")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_faster.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_faster.png"))
         self.faster_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.faster_action.setToolTip("Increase simulation speed")
         self.faster_action.triggered.connect(self.faster_simulation)
@@ -302,9 +309,7 @@ class SimulationPanel(QWidget):
 
         # Add Slower button to toolbar
         self.slower_action = toolbar.addAction("Slower")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_slower.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_slower.png"))
         self.slower_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.slower_action.setToolTip("Decrease simulation speed")
         self.slower_action.triggered.connect(self.slower_simulation)
@@ -315,9 +320,7 @@ class SimulationPanel(QWidget):
 
         # Add Zoom In button to toolbar
         self.zoom_in_action = toolbar.addAction("Zoom In")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "zoom-in.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "zoom-in.png"))
         self.zoom_in_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.zoom_in_action.setToolTip("Zoom in (Ctrl++)")
         self.zoom_in_action.setShortcut("Ctrl++")
@@ -327,9 +330,7 @@ class SimulationPanel(QWidget):
 
         # Add Zoom Out button to toolbar
         self.zoom_out_action = toolbar.addAction("Zoom Out")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "zoom-out.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "zoom-out.png"))
         self.zoom_out_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.zoom_out_action.setToolTip("Zoom out (Ctrl+-)")
         self.zoom_out_action.setShortcut("Ctrl+-")
@@ -339,9 +340,7 @@ class SimulationPanel(QWidget):
 
         # Add Zoom Reset button to toolbar
         self.zoom_reset_action = toolbar.addAction("Zoom 100%")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "zoom-reset.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "zoom-reset.png"))
         self.zoom_reset_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.zoom_reset_action.setToolTip("Reset zoom to 100% (Ctrl+0)")
         self.zoom_reset_action.setShortcut("Ctrl+0")
@@ -354,9 +353,7 @@ class SimulationPanel(QWidget):
 
         # Add clock precision increase button to toolbar
         self.clock_increase_action = toolbar.addAction("Clock precision +")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "plus.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "plus.png"))
         self.clock_increase_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.clock_increase_action.setToolTip("Increase clock precision")
         self.clock_increase_action.triggered.connect(self.increase_clock_precision)
@@ -364,9 +361,7 @@ class SimulationPanel(QWidget):
 
         # Add clock precision decrease button to toolbar
         self.clock_decrease_action = toolbar.addAction("Clock precision -")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "minus.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "minus.png"))
         self.clock_decrease_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.clock_decrease_action.setToolTip("Decrease clock precision")
         self.clock_decrease_action.triggered.connect(self.decrease_clock_precision)
@@ -778,9 +773,7 @@ class ExplorerPanel(QWidget):
 
         # Run button to run replications
         self.run_action = toolbar.addAction("Run")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_play.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_play.png"))
         self.run_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.run_action.setEnabled(False)  # Initially disabled, enabled when a simulator is loaded
         self.run_action.setToolTip("Run replications")
@@ -788,9 +781,7 @@ class ExplorerPanel(QWidget):
 
         # Close button with icon
         self.close_action = toolbar.addAction("Close")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "close.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "close.png"))
         self.close_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.close_action.setToolTip("Close attribute panel")
         # Note: close action will be connected by parent to hide the dock
@@ -1054,18 +1045,14 @@ class DebugPanel(QWidget):
 
         # Clear button with icon
         clear_action = toolbar.addAction("Clear")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "clear.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "clear.png"))
         clear_action.setIcon(create_monochrome_icon_from_file(icon_path))
         clear_action.setToolTip("Clear debug console")
         clear_action.triggered.connect(self.clear_text)
 
         # Close button with icon
         self.close_action = toolbar.addAction("Close")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "close.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "close.png"))
         self.close_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.close_action.setToolTip("Close debug console")
         # Note: close action will be connected by parent to hide the dock
@@ -1191,9 +1178,7 @@ class AttributePanel(QWidget):
 
         # Close button with icon
         self.close_action = toolbar.addAction("Close")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "close.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "close.png"))
         self.close_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.close_action.setToolTip("Close attribute panel")
         # Note: close action will be connected by parent to hide the dock
@@ -1358,9 +1343,7 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
 
         # Set window icon
-        logo_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "logo.png"
-        )
+        logo_path = resource_path(os.path.join("simpn", "assets", "img", "logo.png"))
         if os.path.exists(logo_path):
             self.setWindowIcon(QIcon(logo_path))
 
@@ -1775,9 +1758,7 @@ class Visualisation:
         self.app = QApplication(sys.argv)
 
         # Set application icon for taskbar/dock
-        logo_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "logo.png"
-        )
+        logo_path = resource_path(os.path.join("simpn", "assets", "img", "logo.png"))
         if os.path.exists(logo_path):
             self.app.setWindowIcon(QIcon(logo_path))
 
