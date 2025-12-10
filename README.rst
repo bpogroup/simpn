@@ -30,6 +30,11 @@ The SimPN package is available on PyPI and can simply be installed with pip.
 
     python -m pip install simpn
 
+There are also executables available, which allow for quick visual simulation of BPMN models. The executables can be downloaded from the `releases`_. 
+You can find more information on how to use these executables in the section `Standalone-Limited-Simulation`_.
+
+.. _`releases`: https://github.com/bpogroup/simpn/releases/
+
 Quick Start
 ===========
 
@@ -213,6 +218,24 @@ If the layout file does not exist, the model will be shown with an automatically
     v = Visualisation(shop, "layout.txt")
     v.show()
     v.save_layout("layout.txt")
+
+.. _`Standalone-Limited-Simulation`:
+Standalone Limited Simulation
+=============================
+
+Try out the standalone simulation by downloading one of the `releases`_.
+
+You can use it to open a BPMN model file, such as `example.bpmn`_.
+These BPMN files can be created using a BPMN modeling tool, such as `Signavio`_.
+Note that they contain specific annotations to specify simulation properties:
+
+- Each lane has a number of resources in its name between brackets. For example, a lane named 'employees (2)' represents that there are two employees who can perform the tasks in the employees lane.
+- Each start event has a property 'interarrival_time', which must be an expression that evaluates to a number. For example, it can be :code:`1`, meaning that there is an arrival every 1 time units. It can also be :code:`random.expovariate(1)`, which means that there is an arrival rate that is exponentially distributed with an average of 1.
+- Each task has a property 'processing_time', which must be an expression that evaluates to a number. For example, it can be :code:`1`, meaning that processing the task takes 1 time unit. It can also be :code:`random.uniform(0.5, 1.5)`, which means that the processing time is uniformly distributed between 0.5 and 1.5.
+- Each outgoing arc of an XOR-split has a percentage on it, representing the probability that this path is followed after a choice. For example, an arc with :code:`25%` on it represents that there is a 25% possibility that this path is taken after a choice.
+
+.. _`example.bpmn`: ext/bpmn_test_files/80 correct numbers.bpmn
+.. _`Signavio`: https://www.signavio.com/
 
 Documentation
 =============
