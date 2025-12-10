@@ -34,6 +34,7 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,
     QVBoxLayout,
+    QHBoxLayout,
     QLabel,
     QTextEdit,
     QDockWidget,
@@ -1312,6 +1313,65 @@ class AttributePanel(QWidget):
         return True
 
 
+class AboutDialog(QDialog):
+    """
+    About dialog displaying SimPN logo and version information.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("About SimPN")
+        self.setModal(True)
+        self.setFixedSize(400, 300)
+
+        # Import version here to avoid circular imports
+        from simpn import __version__
+
+        # Main layout
+        main_layout = QVBoxLayout()
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+
+        # Logo
+        logo_label = QLabel()
+        logo_path = resource_path("simpn/assets/img/logo.png")
+        if os.path.exists(logo_path):
+            pixmap = QPixmap(logo_path)
+            # Scale logo to reasonable size while maintaining aspect ratio
+            scaled_pixmap = pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_label.setPixmap(scaled_pixmap)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(logo_label)
+
+        # Title
+        title_label = QLabel("<h2>SimPN</h2>")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(title_label)
+
+        # Version info
+        version_label = QLabel(f"<p>Version {__version__}</p>")
+        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(version_label)
+
+        # Description
+        description_label = QLabel(
+            "<p>A package for Discrete Event Simulation,<br>"
+            "using the theory of Petri Nets.</p>"
+        )
+        description_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(description_label)
+
+        # Add stretch to push everything up
+        main_layout.addStretch()
+
+        # Close button
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+        button_box.accepted.connect(self.accept)
+        main_layout.addWidget(button_box)
+
+        self.setLayout(main_layout)
+
+
 class MainWindow(QMainWindow):
     """
     Main application window for the SimPN visualization system.
@@ -1490,7 +1550,7 @@ class MainWindow(QMainWindow):
         # add help section
         help_menu = menubar.addMenu("Help")
 
-        help_debug_menu = help_menu.addMenu("debug level")
+        help_debug_menu = help_menu.addMenu("Debug Level")
         help_debug_group = QActionGroup(self)
         help_debug_group.setExclusive(True)
         help_debug_menu.setToolTip("Updates the debug level for the debug panel.")
@@ -1517,6 +1577,13 @@ class MainWindow(QMainWindow):
                 self
             )
         )
+
+        # Add separator before About
+        help_menu.addSeparator()
+
+        # About action
+        about_action = help_menu.addAction("About SimPN")
+        about_action.triggered.connect(self.show_about_dialog)
 
     def toggle_explorer_panel(self):
         """Toggle the visibility of the explorer panel"""
@@ -1671,6 +1738,13 @@ class MainWindow(QMainWindow):
         Uses the layout algorithm to reposition all nodes.
         """
         dispatch(create_event(EventType.SIM_RESET_LAYOUT), self)
+
+    def show_about_dialog(self):
+        """
+        Show the About SimPN dialog with logo and version information.
+        """
+        dialog = AboutDialog(self)
+        dialog.exec()
 
     def closeEvent(self, event):
         """

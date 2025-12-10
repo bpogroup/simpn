@@ -2,7 +2,7 @@
 import sys
 from PyInstaller.utils.hooks import collect_all, collect_submodules
 
-datas = [('simpn/assets', 'simpn/assets')]
+datas = [('simpn/assets', 'simpn/assets'), ('pyproject.toml', '.')]
 binaries = []
 hiddenimports = ['sortedcontainers', 'pygame', 'numpy', 'python-igraph', 'igraph']
 
