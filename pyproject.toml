@@ -20,8 +20,10 @@ classifiers = [
 dependencies = [
     "sortedcontainers>=2.4.0",
     "pygame>=2.6.1",
-    "igraph>=0.11.8",
-    "pyqt6>=6.9.1"
+    "python-igraph>=1.0.0",
+    "igraph>=1.0.0",
+    "pyqt6>=6.9.1",
+    "matplotlib>=3.9.3"
 ]
 
 [project.optional-dependencies]
