@@ -19,7 +19,7 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame
 import sys
 from pathlib import Path
-from PyQt6.QtCore import Qt, QSize, QSettings, QStandardPaths, QTimer
+from PyQt6.QtCore import Qt, QSettings, QStandardPaths, QTimer
 from PyQt6.QtGui import (
     QImage,
     QPixmap,
@@ -28,12 +28,14 @@ from PyQt6.QtGui import (
     QColor,
     QMouseEvent,
     QWheelEvent,
+    QAction,
     QActionGroup,
 )
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,
     QVBoxLayout,
+    QHBoxLayout,
     QLabel,
     QTextEdit,
     QDockWidget,
@@ -41,7 +43,21 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QApplication,
     QFileDialog,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QStackedWidget,
+    QProgressDialog,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QSpinBox,
+    QDoubleSpinBox,
+    QMessageBox,
 )
+import matplotlib
+matplotlib.use('QtAgg')  # Use Qt backend for matplotlib
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 from simpn.visualisation.model_panel_mods import (
     ClockModule,
     FiredTrackerModule,
@@ -66,6 +82,7 @@ from typing import List, Tuple, TYPE_CHECKING, Literal, Union
 if TYPE_CHECKING:
     from simpn.simulator import Describable
     from simpn.visualisation.model_panel import Node
+    from simpn.reporters import ProcessReporter
 
 
 TOOLBAR_STYLESHEET = """
@@ -81,6 +98,23 @@ TOOLBAR_STYLESHEET = """
                 opacity: 0.7;
             }
         """
+
+
+def resource_path(relative_path: str) -> str:
+    """
+    Get absolute path to resource, works for dev and for PyInstaller.
+    
+    :param relative_path: Relative path to the resource
+    :return: Absolute path to the resource
+    """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        # Running in normal Python environment
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
 
 
 def create_colored_pixmap(file_path: str, color: QColor) -> QPixmap:
@@ -238,18 +272,14 @@ class SimulationPanel(QWidget):
         # Add Step button to toolbar
         self.step_action = toolbar.addAction("Step")
         self.step_action.setToolTip("Execute one simulation step")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_step.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_step.png"))
         self.step_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.step_action.triggered.connect(self.step_simulation)
         self.step_action.setEnabled(False)
 
         # Add Play button to toolbar
         self.play_action = toolbar.addAction("Play")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_play.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_play.png"))
         self.play_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.play_action.setToolTip("Start continuous simulation")
         self.play_action.triggered.connect(self.start_simulation)
@@ -257,9 +287,7 @@ class SimulationPanel(QWidget):
 
         # Add Stop button to toolbar
         self.stop_action = toolbar.addAction("Stop")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_stop.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_stop.png"))
         self.stop_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.stop_action.setToolTip("Stop continuous simulation")
         self.stop_action.triggered.connect(self.stop_simulation)
@@ -267,9 +295,7 @@ class SimulationPanel(QWidget):
 
         # Add reset to start to toolbar
         self.reset_action = toolbar.addAction("Reset to Start")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "time_back.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "time_back.png"))
         self.reset_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.reset_action.setToolTip("Reset simulation to start")
         self.reset_action.triggered.connect(self.reset_simulation)
@@ -277,9 +303,7 @@ class SimulationPanel(QWidget):
 
         # Add Faster button to toolbar
         self.faster_action = toolbar.addAction("Faster")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_faster.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_faster.png"))
         self.faster_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.faster_action.setToolTip("Increase simulation speed")
         self.faster_action.triggered.connect(self.faster_simulation)
@@ -287,9 +311,7 @@ class SimulationPanel(QWidget):
 
         # Add Slower button to toolbar
         self.slower_action = toolbar.addAction("Slower")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "ide_slower.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_slower.png"))
         self.slower_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.slower_action.setToolTip("Decrease simulation speed")
         self.slower_action.triggered.connect(self.slower_simulation)
@@ -300,9 +322,7 @@ class SimulationPanel(QWidget):
 
         # Add Zoom In button to toolbar
         self.zoom_in_action = toolbar.addAction("Zoom In")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "zoom-in.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "zoom-in.png"))
         self.zoom_in_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.zoom_in_action.setToolTip("Zoom in (Ctrl++)")
         self.zoom_in_action.setShortcut("Ctrl++")
@@ -312,9 +332,7 @@ class SimulationPanel(QWidget):
 
         # Add Zoom Out button to toolbar
         self.zoom_out_action = toolbar.addAction("Zoom Out")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "zoom-out.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "zoom-out.png"))
         self.zoom_out_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.zoom_out_action.setToolTip("Zoom out (Ctrl+-)")
         self.zoom_out_action.setShortcut("Ctrl+-")
@@ -324,9 +342,7 @@ class SimulationPanel(QWidget):
 
         # Add Zoom Reset button to toolbar
         self.zoom_reset_action = toolbar.addAction("Zoom 100%")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "zoom-reset.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "zoom-reset.png"))
         self.zoom_reset_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.zoom_reset_action.setToolTip("Reset zoom to 100% (Ctrl+0)")
         self.zoom_reset_action.setShortcut("Ctrl+0")
@@ -339,9 +355,7 @@ class SimulationPanel(QWidget):
 
         # Add clock precision increase button to toolbar
         self.clock_increase_action = toolbar.addAction("Clock precision +")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "plus.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "plus.png"))
         self.clock_increase_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.clock_increase_action.setToolTip("Increase clock precision")
         self.clock_increase_action.triggered.connect(self.increase_clock_precision)
@@ -349,9 +363,7 @@ class SimulationPanel(QWidget):
 
         # Add clock precision decrease button to toolbar
         self.clock_decrease_action = toolbar.addAction("Clock precision -")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "minus.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "minus.png"))
         self.clock_decrease_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.clock_decrease_action.setToolTip("Decrease clock precision")
         self.clock_decrease_action.triggered.connect(self.decrease_clock_precision)
@@ -483,14 +495,17 @@ class SimulationPanel(QWidget):
         """
         if event:
             surface = getattr(event, "window")
+            # Get the actual surface dimensions
+            surface_width = surface.get_width()
+            surface_height = surface.get_height()
             # Get the pygame surface as a string buffer
             data = pygame.image.tostring(surface, "RGB")
-            # Create QImage from the data
+            # Create QImage from the data using actual surface dimensions
             image = QImage(
                 data,
-                self.width,
-                self.height,
-                self.width * 3,
+                surface_width,
+                surface_height,
+                surface_width * 3,
                 QImage.Format.Format_RGB888,
             )
             # Convert to QPixmap and display
@@ -621,6 +636,362 @@ class SimulationPanel(QWidget):
         event.accept()
 
 
+class PlotPanel(QWidget):
+    """
+    Qt widget that displays matplotlib plots for simulation statistics and analysis.
+
+    This panel embeds a matplotlib figure using the Qt backend, allowing for
+    interactive plotting within the Qt application.
+
+    :param parent: Parent Qt widget (default: None)
+    """
+
+    def __init__(self, results, name, plotting_function, parent=None, activate=False):
+        super().__init__(parent)
+        
+        # Create main layout
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+        
+        # Create matplotlib figure and canvas
+        self.figure = Figure(figsize=(8, 6))
+        self.canvas = FigureCanvas(self.figure)
+        layout.addWidget(self.canvas)
+        
+        # Clear the figure
+        self.figure.clear()
+
+        ax = self.figure.add_subplot(111)
+        plotting_function(results, ax)
+
+        self.canvas.draw()
+
+        dispatch(create_event(EventType.CENTRAL_PANEL_ADD, name=name, widget=self), self)
+        if activate:
+            dispatch(create_event(EventType.CENTRAL_PANEL_ACTIVATE, name=name, widget=self), self)
+
+
+class CentralPanel(QStackedWidget):
+    """
+    Central panel that can hold multiple widgets in a stacked layout.
+
+    This panel allows switching between different views, such as the simulation
+    panel and other potential panels in the future.
+
+    :param parent: Parent Qt widget (default: None)
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def listen_to(self) -> List[EventType]:
+        """
+        Return a list of event types this panel listens to.
+
+        :return: List of EventType enums
+        """
+        return [EventType.CENTRAL_PANEL_ADD, EventType.CENTRAL_PANEL_REMOVE, EventType.CENTRAL_PANEL_ACTIVATE]
+    
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """
+        Handle a pygame event to update the attribute panel display.
+
+        Responds to:
+        - CENTRAL_PANEL_ADD: Adds a new widget to the stacked panel.
+        - CENTRAL_PANEL_REMOVE: Removes a widget from the stacked panel.
+        - CENTRAL_PANEL_ACTIVATE: Activates a widget in the stacked panel.
+
+        :param event: The pygame event to handle
+        :return: True to propagate event to other handlers
+        """
+        if check_event(event, EventType.CENTRAL_PANEL_ADD):
+            widget = getattr(event, "widget", None)
+            if widget and isinstance(widget, QWidget):
+                self.addWidget(widget)
+        elif check_event(event, EventType.CENTRAL_PANEL_REMOVE):
+            widget = getattr(event, "widget", None)
+            if widget and isinstance(widget, QWidget):
+                self.removeWidget(widget)
+        elif check_event(event, EventType.CENTRAL_PANEL_ACTIVATE):
+            widget = getattr(event, "widget", None)
+            if widget and isinstance(widget, QWidget):
+                self.setCurrentWidget(widget)
+
+        return True
+
+
+class ExplorerPanel(QWidget):
+    """
+    Explorer panel for displaying a tree view of simulation and analysis components.
+
+    This panel provides a hierarchical tree view that allows users to navigate between
+    different simulation views and replication analyses.
+
+    :param parent: Parent Qt widget (default: None)
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Create main layout
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+        
+        # Set toolbar
+        self.toolbar = self._create_toolbar()
+        layout.addWidget(self.toolbar)
+
+        # Create tree widget
+        self.tree = QTreeWidget()
+        self.tree.setHeaderHidden(True)
+        layout.addWidget(self.tree)
+
+        self.setMinimumWidth(200)
+
+        # Store name -> widget mapping
+        self._name_to_widget = {}
+
+        # Connect item click signal
+        self.tree.itemClicked.connect(self._on_item_clicked)
+        
+        # Settings for remembering replication parameters
+        self.settings = QSettings("TUe", "SimPN")        
+
+    def _create_toolbar(self):
+        """Create and configure the toolbar for the explorer panel."""
+        toolbar = QToolBar("Explorer Toolbar")
+        toolbar.setMovable(False)
+        toolbar.setStyleSheet(TOOLBAR_STYLESHEET)
+
+        # Add title label to explorer toolbar
+        title_label = QLabel("  Explorer")
+        title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        toolbar.addWidget(title_label)
+
+        # Add spacer to push close button to the right
+        spacer = QWidget()
+        spacer.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
+        toolbar.addWidget(spacer)
+
+        # Run button to run replications
+        self.run_action = toolbar.addAction("Run")
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "ide_play.png"))
+        self.run_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.run_action.setEnabled(False)  # Initially disabled, enabled when a simulator is loaded
+        self.run_action.setToolTip("Run replications")
+        self.run_action.triggered.connect(self.run_replications)
+
+        # Close button with icon
+        self.close_action = toolbar.addAction("Close")
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "close.png"))
+        self.close_action.setIcon(create_monochrome_icon_from_file(icon_path))
+        self.close_action.setToolTip("Close attribute panel")
+        # Note: close action will be connected by parent to hide the dock
+
+        return toolbar
+
+    def replication_parameters_dialog(self):
+        # Open dialog to configure replication parameters
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Configure Replication Parameters")
+        dialog.setModal(True)
+        
+        # Create form layout
+        form_layout = QFormLayout()
+        
+        # Duration input - load previous value from settings
+        duration_input = QDoubleSpinBox()
+        duration_input.setRange(0, 1000000)
+        duration_input.setValue(self.settings.value("replication/duration", 5000, type=float))
+        duration_input.setDecimals(2)
+        duration_input.setSuffix(" time units")
+        form_layout.addRow("Duration:", duration_input)
+        
+        # Warmup input - load previous value from settings
+        warmup_input = QDoubleSpinBox()
+        warmup_input.setRange(0, 1000000)
+        warmup_input.setValue(self.settings.value("replication/warmup", 1000, type=float))
+        warmup_input.setDecimals(2)
+        warmup_input.setSuffix(" time units")
+        form_layout.addRow("Warmup:", warmup_input)
+        
+        # Number of replications input - load previous value from settings
+        replications_input = QSpinBox()
+        replications_input.setRange(1, 10000)
+        replications_input.setValue(self.settings.value("replication/nr_replications", 100, type=int))
+        form_layout.addRow("Number of Replications:", replications_input)
+        
+        # Buttons
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        
+        # Set layout
+        main_layout = QVBoxLayout()
+        main_layout.addLayout(form_layout)
+        main_layout.addWidget(button_box)
+        dialog.setLayout(main_layout)
+        
+        # Show dialog and get result
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return  # User canceled
+        
+        # Get values from dialog
+        duration = duration_input.value()
+        warmup = warmup_input.value()
+        nr_replications = replications_input.value()
+        
+        # Save values to settings for next time
+        self.settings.setValue("replication/duration", duration)
+        self.settings.setValue("replication/warmup", warmup)
+        self.settings.setValue("replication/nr_replications", nr_replications)
+        
+        return duration, warmup, nr_replications
+    
+    def run_replications(self):
+        """
+        Run replications for the simulator (if any).
+        """
+        model_panel = self.parent().parent().simulation_panel.get_panel() # TODO: this is not a good way of getting the simulator, also, ideally the simulator is cloned, because now replications affect the state of the simulator
+        sim_problem = model_panel._problem if model_panel else None
+        if sim_problem:
+            # Check if the model contains BPMN prototypes
+            from simpn.prototypes import BPMNTask
+            has_bpmn = any(isinstance(prototype, BPMNTask) for prototype in sim_problem.prototypes)
+            if not has_bpmn:
+                QMessageBox.warning(
+                    self,
+                    "BPMN Model Required",
+                    "Running replications only works for BPMN models at this stage."
+                )
+                return
+            
+            from simpn.reporters import Replicator
+            
+            # Get replication parameters from dialog
+            params = self.replication_parameters_dialog()
+            if params is None:
+                return  # User canceled
+            duration, warmup, nr_replications = params
+
+            # Create progress dialog
+            progress = QProgressDialog("Running replications...", "Cancel", 0, 100, self)
+            progress.setWindowTitle("Replication Progress")
+            progress.setWindowModality(Qt.WindowModality.WindowModal)
+            progress.setMinimumDuration(0)  # Show immediately
+            progress.setValue(0)
+            
+            # Flag to track if user canceled
+            canceled = False
+            
+            def update_progress(percentage):
+                """Callback function to update progress dialog"""
+                nonlocal canceled
+                progress.setValue(int(percentage))
+                QApplication.processEvents()  # Process GUI events to keep UI responsive
+                if progress.wasCanceled():
+                    canceled = True
+                    return False  # Stop replications
+                return True  # Continue replications
+            
+            # Run replications with callback
+            replicator = Replicator(sim_problem, duration=duration, warmup=warmup, nr_replications=nr_replications, callback=update_progress)
+            results = replicator.run()
+            
+            # Close progress dialog
+            progress.close()
+
+            # Use the replicator to create plots for the results        
+            if not canceled:
+                from simpn.reporters import ProcessReporter
+                i = 0
+                nr_possible_graphs = len(ProcessReporter.possible_graphs())
+                for graph_name in ProcessReporter.possible_graphs():
+                    graph_function = ProcessReporter.possible_graphs()[graph_name]
+                    last_graph = (i == nr_possible_graphs - 1)
+                    PlotPanel(results, graph_name, graph_function, parent=self.parent().parent().central_panel, activate=last_graph)
+                    i += 1
+
+    def _on_item_clicked(self, item: QTreeWidgetItem, column: int):
+        """
+        Handle item click events in the tree view.
+
+        Activates the corresponding central panel based on the clicked item.
+
+        :param item: The clicked QTreeWidgetItem
+        :param column: The column index (unused)
+        """
+        name = item.text(0)
+        dispatch(create_event(EventType.CENTRAL_PANEL_ACTIVATE, name=name, widget=self._name_to_widget.get(name)), self)
+
+    def remove_name_from_tree(self, name: str):
+        # Find and remove the node
+        root = self.tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            child_node = root.child(i)
+            if child_node.text(0) == name:
+                root.removeChild(child_node)
+                break
+        del self._name_to_widget[name]
+
+    def listen_to(self) -> List[EventType]:
+        """
+        Return a list of event types this panel listens to.
+
+        :return: List of EventType enums
+        """
+        return [EventType.CENTRAL_PANEL_ADD, EventType.CENTRAL_PANEL_REMOVE, EventType.CENTRAL_PANEL_ACTIVATE, EventType.VISUALIZATION_CREATED]
+
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """
+        Handle a pygame event to update the explorer panel tree.
+
+        Responds to:
+        - CENTRAL_PANEL_ADD: Adds the name of the added central panel to the tree.
+        - CENTRAL_PANEL_REMOVE: Removes the name of the removed central panel from the tree.
+        - CENTRAL_PANEL_ACTIVATE: Highlights the active central panel in the tree.
+
+        :param event: The pygame event to handle
+        :return: True to propagate event to other handlers
+        """
+        if check_event(event, EventType.CENTRAL_PANEL_ADD):
+            name = getattr(event, "name", "Unnamed")
+            # if a panel by this name already exists, it should first be removed
+            if name in self._name_to_widget:
+                # send remove event to remove the old node
+                dispatch(create_event(EventType.CENTRAL_PANEL_REMOVE, name=name, widget=self._name_to_widget[name]), self)
+                # remove the old widget from the mapping
+                self.remove_name_from_tree(name)
+            # Create a new node in the tree
+            new_node = QTreeWidgetItem(self.tree)
+            new_node.setText(0, name)
+            self._name_to_widget[name] = getattr(event, "widget", None)
+        elif check_event(event, EventType.CENTRAL_PANEL_REMOVE):
+            name = getattr(event, "name", "Unnamed")
+            self.remove_name_from_tree(name)
+        elif check_event(event, EventType.CENTRAL_PANEL_ACTIVATE):
+            name = getattr(event, "name", "Unnamed")
+            # Clear previous selection
+            self.tree.clearSelection()
+            # Find and select the active node
+            root = self.tree.invisibleRootItem()
+            for i in range(root.childCount()):
+                parent_node = root.child(i)
+                for j in range(parent_node.childCount()):
+                    child_node = parent_node.child(j)
+                    if child_node.text(0) == name:
+                        self.tree.setCurrentItem(child_node)
+                        break
+        elif check_event(event, EventType.VISUALIZATION_CREATED):
+            # Enable the run button when a visualization is created
+            self.run_action.setEnabled(True)
+        return True
+
+    
+
 class DebugPanel(QWidget):
     """
     Debug panel for displaying textual debugging information and logs.
@@ -677,18 +1048,14 @@ class DebugPanel(QWidget):
 
         # Clear button with icon
         clear_action = toolbar.addAction("Clear")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "clear.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "clear.png"))
         clear_action.setIcon(create_monochrome_icon_from_file(icon_path))
         clear_action.setToolTip("Clear debug console")
         clear_action.triggered.connect(self.clear_text)
 
         # Close button with icon
         self.close_action = toolbar.addAction("Close")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "close.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "close.png"))
         self.close_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.close_action.setToolTip("Close debug console")
         # Note: close action will be connected by parent to hide the dock
@@ -814,9 +1181,7 @@ class AttributePanel(QWidget):
 
         # Close button with icon
         self.close_action = toolbar.addAction("Close")
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "close.png"
-        )
+        icon_path = resource_path(os.path.join("simpn", "assets", "img", "close.png"))
         self.close_action.setIcon(create_monochrome_icon_from_file(icon_path))
         self.close_action.setToolTip("Close attribute panel")
         # Note: close action will be connected by parent to hide the dock
@@ -949,6 +1314,65 @@ class AttributePanel(QWidget):
         return True
 
 
+class AboutDialog(QDialog):
+    """
+    About dialog displaying SimPN logo and version information.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("About SimPN")
+        self.setModal(True)
+        self.setFixedSize(400, 300)
+
+        # Import version here to avoid circular imports
+        from simpn import __version__
+
+        # Main layout
+        main_layout = QVBoxLayout()
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+
+        # Logo
+        logo_label = QLabel()
+        logo_path = resource_path("simpn/assets/img/logo.png")
+        if os.path.exists(logo_path):
+            pixmap = QPixmap(logo_path)
+            # Scale logo to reasonable size while maintaining aspect ratio
+            scaled_pixmap = pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_label.setPixmap(scaled_pixmap)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(logo_label)
+
+        # Title
+        title_label = QLabel("<h2>SimPN</h2>")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(title_label)
+
+        # Version info
+        version_label = QLabel(f"<p>Version {__version__}</p>")
+        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(version_label)
+
+        # Description
+        description_label = QLabel(
+            "<p>A package for Discrete Event Simulation,<br>"
+            "using the theory of Petri Nets.</p>"
+        )
+        description_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(description_label)
+
+        # Add stretch to push everything up
+        main_layout.addStretch()
+
+        # Close button
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+        button_box.accepted.connect(self.accept)
+        main_layout.addWidget(button_box)
+
+        self.setLayout(main_layout)
+
+
 class MainWindow(QMainWindow):
     """
     Main application window for the SimPN visualization system.
@@ -981,17 +1405,17 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
 
         # Set window icon
-        logo_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "logo.png"
-        )
+        logo_path = resource_path(os.path.join("simpn", "assets", "img", "logo.png"))
         if os.path.exists(logo_path):
             self.setWindowIcon(QIcon(logo_path))
 
-        # Create pygame widget
+        # Create simulation panel widget
         self.simulation_panel = SimulationPanel(640, 480)
 
-        # Add the Pygame widget to the main window
-        self.setCentralWidget(self.simulation_panel)
+        # Create stacked widget and use it as central widget to allow future widgets to be added
+        self.central_panel = CentralPanel()
+        self.setCentralWidget(self.central_panel)
+        register_handler(self.central_panel)
 
         # Create debug panel as a dock widget
         self.debug_dock = QDockWidget("Debug Console", self)
@@ -999,6 +1423,7 @@ class MainWindow(QMainWindow):
         self.debug_panel = DebugPanel()
         self.debug_dock.setWidget(self.debug_panel)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.debug_dock)
+        register_handler(self.debug_panel)
         
         # Connect the close action from the debug panel's toolbar
         self.debug_panel.close_action.triggered.connect(self.debug_dock.hide)
@@ -1012,6 +1437,7 @@ class MainWindow(QMainWindow):
         self.attribute_panel = AttributePanel()
         self.attribute_dock.setWidget(self.attribute_panel)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.attribute_dock)
+        register_handler(self.attribute_panel)
         
         # Connect the close action from the attribute panel's toolbar
         self.attribute_panel.close_action.triggered.connect(self.attribute_dock.hide)
@@ -1019,8 +1445,28 @@ class MainWindow(QMainWindow):
         # Use the attribute panel's toolbar as the title bar widget
         self.attribute_dock.setTitleBarWidget(self.attribute_panel.toolbar)
 
+        # Create explorer panel as a dock widget
+        self.explorer_dock = QDockWidget("Explorer", self)
+        self.explorer_dock.setObjectName("Explorer")  # Required for saveState()
+        self.explorer_panel = ExplorerPanel()
+        self.explorer_dock.setWidget(self.explorer_panel)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.explorer_dock)
+        register_handler(self.explorer_panel)
+        
+        # Connect the close action from the explorer panel's toolbar
+        self.explorer_panel.close_action.triggered.connect(self.explorer_dock.hide)
+
+        # Use the explorer panel's toolbar as the title bar widget
+        self.explorer_dock.setTitleBarWidget(self.explorer_panel.toolbar)
+
         # Create menu bar
         self.create_menus()
+
+        # Create an event to add the simulation panel to the central panel
+        dispatch(
+            create_event(EventType.CENTRAL_PANEL_ADD, widget=self.simulation_panel, name="Simulation"),
+            self,
+        )
 
         # Keep settings between sessions
         self.settings = QSettings("TUe", "SimPN")
@@ -1066,19 +1512,28 @@ class MainWindow(QMainWindow):
         # Window menu
         window_menu = menubar.addMenu("View")
 
+        # Explorer View action
+        self.explorer_view_action = window_menu.addAction("Explorer View")
+        self.explorer_view_action.setCheckable(True)
+        self.explorer_view_action.setChecked(self.explorer_dock.isVisible())
+        self.explorer_view_action.triggered.connect(self.toggle_explorer_panel)
+
         # Debug View action
         self.debug_view_action = window_menu.addAction("Debug View")
         self.debug_view_action.setCheckable(True)
-        self.debug_view_action.setChecked(True)  # Initially visible
+        self.debug_view_action.setChecked(self.debug_dock.isVisible())
         self.debug_view_action.triggered.connect(self.toggle_debug_panel)
 
         # Attribute View action
         self.attribute_view_action = window_menu.addAction("Attribute View")
         self.attribute_view_action.setCheckable(True)
-        self.attribute_view_action.setChecked(True)  # Initially visible
+        self.attribute_view_action.setChecked(self.attribute_dock.isVisible())
         self.attribute_view_action.triggered.connect(self.toggle_attribute_panel)
 
         # Connect the dock widgets' visibility changed signals to update the menu checkmarks
+        self.explorer_dock.visibilityChanged.connect(
+            self.on_explorer_panel_visibility_changed
+        )
         self.debug_dock.visibilityChanged.connect(
             self.on_debug_panel_visibility_changed
         )
@@ -1096,7 +1551,7 @@ class MainWindow(QMainWindow):
         # add help section
         help_menu = menubar.addMenu("Help")
 
-        help_debug_menu = help_menu.addMenu("debug level")
+        help_debug_menu = help_menu.addMenu("Debug Level")
         help_debug_group = QActionGroup(self)
         help_debug_group.setExclusive(True)
         help_debug_menu.setToolTip("Updates the debug level for the debug panel.")
@@ -1123,6 +1578,26 @@ class MainWindow(QMainWindow):
                 self
             )
         )
+
+        # Add separator before About
+        help_menu.addSeparator()
+
+        # About action - use AboutRole to place it in the macOS application menu
+        about_action = QAction("About SimPN", self)
+        about_action.setMenuRole(QAction.MenuRole.AboutRole)
+        about_action.triggered.connect(self.show_about_dialog)
+        help_menu.addAction(about_action)
+
+    def toggle_explorer_panel(self):
+        """Toggle the visibility of the explorer panel"""
+        if self.explorer_dock.isVisible():
+            self.explorer_dock.hide()
+        else:
+            self.explorer_dock.show()
+
+    def on_explorer_panel_visibility_changed(self, visible):
+        """Update the menu checkmark when the explorer panel visibility changes"""
+        self.explorer_view_action.setChecked(visible)
 
     def toggle_debug_panel(self):
         """Toggle the visibility of the debug panel"""
@@ -1210,7 +1685,6 @@ class MainWindow(QMainWindow):
             unregister_handler(self.simulation_panel.get_panel())
             for mod in self.simulation_panel.get_panel().mods():
                 unregister_handler(mod)
-            unregister_handler(self.attribute_panel)
 
         # Store the initial state of the simulator
         model_panel._problem.store_checkpoint("INITIAL_STATE")
@@ -1219,8 +1693,6 @@ class MainWindow(QMainWindow):
         register_handler(model_panel)
         for mod in model_panel.mods():
             register_handler(mod)
-        register_handler(self.attribute_panel)
-        register_handler(self.debug_panel)
 
         # Set it in the pygame widget
         self.simulation_panel.set_panel(model_panel)
@@ -1269,6 +1741,13 @@ class MainWindow(QMainWindow):
         Uses the layout algorithm to reposition all nodes.
         """
         dispatch(create_event(EventType.SIM_RESET_LAYOUT), self)
+
+    def show_about_dialog(self):
+        """
+        Show the About SimPN dialog with logo and version information.
+        """
+        dialog = AboutDialog(self)
+        dialog.exec()
 
     def closeEvent(self, event):
         """
@@ -1356,10 +1835,13 @@ class Visualisation:
 
         self.app = QApplication(sys.argv)
 
+        # Set application metadata for proper macOS menu handling
+        self.app.setApplicationName("SimPN")
+        self.app.setOrganizationName("TUe")
+        self.app.setOrganizationDomain("tue.nl")
+
         # Set application icon for taskbar/dock
-        logo_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "img", "logo.png"
-        )
+        logo_path = resource_path(os.path.join("simpn", "assets", "img", "logo.png"))
         if os.path.exists(logo_path):
             self.app.setWindowIcon(QIcon(logo_path))
 

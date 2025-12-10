@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta
 from enum import Enum, auto
+from typing import Callable, Optional
+
+from simpn.simulator import SimProblem
 
 
 class TimeUnit(Enum):
@@ -103,10 +106,19 @@ class ProcessReporter(Reporter):
     - total_proc_time: the sum of processing times of completed cases.
     - total_cycle_time: the sum of cycle times of completed cases.
     - resource_busy_times: a mapping of resource_id -> the time the resource was busy during simulation.
+    - activity_processing_times: a mapping of activity_id -> list of processing times.
     """
+
+    # The names of the result sections
+    WARMUP = "warmup"
+    GENERAL = "general"
+    RESOURCES = "resources"
+    ACTIVITIES = "activities"
 
     def __init__(self, warmup_time=0):
         self.resource_busy_times = dict()  # mapping of resource_id -> the time the resource was busy during simulation.
+        self.activity_processing_times = dict()  # mapping of activity_id -> list of processing times
+        self.avg_cycle_time_over_time = []  # list of (time, avg_cycle_time) tuples
         self.nr_started = 0  # number of cases that started
         self.nr_completed = 0  # number of cases that completed
         self.total_wait_time = 0  # sum of waiting times of completed cases
@@ -115,6 +127,7 @@ class ProcessReporter(Reporter):
 
         self.__status = dict()  # case_id -> (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change); time_last_busy_change is the time nr_busy_tasks last went from 0 to 1 or from 1 to 0
         self.__resource_start_times = dict()  # resource -> time
+        self.__activity_start_times = dict()  # (case_id, activity_id) -> time
         self.__last_time = 0
 
         self.warmup_time = warmup_time
@@ -131,6 +144,8 @@ class ProcessReporter(Reporter):
             case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             resource_id = binding[1][1].value  # the resource_id is always [1] the second variable in the binding, the [1] token value of that.
             self.__resource_start_times[resource_id] = time
+            activity_id = event.get_id()[:event.get_id().index("<")]
+            self.__activity_start_times[(case_id, activity_id)] = time
             (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.__status[case_id]
             if nr_busy_tasks == 0:
                 sum_wait_times += time - time_last_busy_change
@@ -140,6 +155,7 @@ class ProcessReporter(Reporter):
         elif event.get_id().endswith("<task:complete>"):
             case_id = binding[0][1].value[0][0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             resource_id = binding[0][1].value[1]  # the resource_id is always [0] the first variable in the binding, the [1] token value of that, and [1] the resource_id of the value.
+            activity_id = event.get_id()[:event.get_id().index("<")]
             if time > self.warmup_time:
                 if resource_id not in self.resource_busy_times.keys():
                     self.resource_busy_times[resource_id] = 0
@@ -147,7 +163,11 @@ class ProcessReporter(Reporter):
                     self.resource_busy_times[resource_id] += time - self.warmup_time
                 else:
                     self.resource_busy_times[resource_id] += time - self.__resource_start_times[resource_id]
+                if activity_id not in self.activity_processing_times.keys():
+                    self.activity_processing_times[activity_id] = []
+                self.activity_processing_times[activity_id].append(time - self.__activity_start_times[(case_id, activity_id)])
             del self.__resource_start_times[resource_id]
+            del self.__activity_start_times[(case_id, activity_id)]
             (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.__status[case_id]
             if nr_busy_tasks == 1:
                 sum_proc_times += time - time_last_busy_change
@@ -163,22 +183,236 @@ class ProcessReporter(Reporter):
                 self.total_wait_time += sum_wait_times
                 self.total_proc_time += sum_proc_times
                 self.total_cycle_time += time - arrival_time
+                self.avg_cycle_time_over_time.append((time, (self.total_cycle_time/self.nr_completed) if self.nr_completed > 0 else 0))
 
-    def print_result(self):
-        print("Nr. cases started:            ", self.nr_started)
-        print("Nr. cases completed:          ", self.nr_completed)
-        print("Avg. waiting time per case:   ", round(self.total_wait_time/self.nr_completed, 3))
-        print("Avg. processing time per case:", round(self.total_proc_time/self.nr_completed, 3))
-        print("Avg. cycle time per case:     ", round(self.total_cycle_time/self.nr_completed, 3))
+    def get_results(self):
+        """
+        returns a dictionary of dictionaries:
+        {
+            warmup: {
+                avg_cycle_time_over_time: [(time, avg_cycle_time), ...]
+            },
+            general: {
+                nr_started: (int, float), # (average, stddev)
+                nr_completed: (int, float), # (average, stddev)
+                avg_wait_time: (float, float), # (average, stddev)
+                avg_proc_time: (float, float), # (average, stddev)
+                avg_cycle_time: (float, float) # (average, stddev)
+            },
+            resources: {
+                resource_id: {
+                    utilization: (float, float) # (average, stddev)
+                },
+                ...
+            },
+            activities: {
+                activity_id: {
+                    nr_started: (int, float), # (average, stddev)
+                    nr_completed: (int, float), # (average, stddev)
+                    avg_proc_time: (float, float) # (average, stddev)
+                },
+                ...
+            }
+        }
+        """
+        results = dict()
+        
+        warmup = dict()
+        warmup["avg_cycle_time_over_time"] = self.avg_cycle_time_over_time
+        results[ProcessReporter.WARMUP] = warmup
 
+        general = dict()
+        general["nr_started"] = self.nr_started
+        general["nr_completed"] = self.nr_completed
+        general["avg_wait_time"] = self.total_wait_time/self.nr_completed if self.nr_completed > 0 else 0
+        general["avg_proc_time"] = self.total_proc_time/self.nr_completed if self.nr_completed > 0 else 0
+        general["avg_cycle_time"] = self.total_cycle_time/self.nr_completed if self.nr_completed > 0 else 0
+        results[ProcessReporter.GENERAL] = general
+
+        resources = dict()
         # process the resources that are currently busy
         for resource_id in self.__resource_start_times.keys():
             self.resource_busy_times[resource_id] += self.__last_time - self.__resource_start_times[resource_id]
 
         self.__resource_start_times.clear()
-        
+
         for resource_id in self.resource_busy_times.keys():
-            print("Resource", resource_id, "utilization:", round(self.resource_busy_times[resource_id]/(self.__last_time - self.warmup_time), 2))
+            utilization = self.resource_busy_times[resource_id]/(self.__last_time - self.warmup_time)
+            resources[resource_id] = {"utilization": utilization}
+        results[ProcessReporter.RESOURCES] = resources
+
+        activities = dict()
+        for activity_id in self.activity_processing_times.keys():
+            times = self.activity_processing_times[activity_id]
+            avg_time = sum(times)/len(times)
+            activities[activity_id] = {
+                "nr_started": len(times),
+                "nr_completed": len(times),
+                "avg_proc_time": avg_time
+            }
+        results[ProcessReporter.ACTIVITIES] = activities
+
+        return results
+
+    @staticmethod
+    def aggregate_results(results_list):
+        """
+        Takes a list of results as returned by get_results and aggregates them into a single result.
+        It does this by computing averages and standard deviations.
+        It does this flexibly, i.e., it is unaware of the precise items in each section, but just computes averages and standard deviations of values.
+        Note that a section is either a dictionary item -> value, or a dictionary item -> item -> value.
+        """
+        def aggregate_section_results(section_results_list):
+            aggregated_section = {}
+            for key in section_results_list[0].keys():
+                values = [result[key] for result in section_results_list]
+                avg = sum(values)/len(values)
+                variance = sum((x - avg) ** 2 for x in values) / len(values)
+                stddev = variance ** 0.5
+                aggregated_section[key] = (avg, stddev)
+            return aggregated_section
+
+        aggregated_results = {}
+
+        first_result = results_list[0]
+        for section in first_result.keys():
+            # check if the section contains items that are dictionaries themselves
+            if isinstance(first_result[section], dict) and len(first_result[section]) > 0 and isinstance(next(iter(first_result[section].values())), dict):
+                # section contains items that are dictionaries themselves
+                aggregated_section = {}
+                for item in first_result[section].keys():
+                    aggregated_section[item] = aggregate_section_results([result[section][item] for result in results_list])
+                aggregated_results[section] = aggregated_section
+            elif isinstance(first_result[section], dict) and len(first_result[section]) > 0 and isinstance(next(iter(first_result[section].values())), list):
+                # section contains a list of values, which typically is the warmup avg_cycle_time_over_time
+                # we aggregate by simply taking the first result's list
+                aggregated_results[section] = first_result[section]
+            else:
+                # section contains direct values
+                aggregated_results[section] = aggregate_section_results([result[section] for result in results_list])
+
+        return aggregated_results
+
+    @staticmethod
+    def possible_graphs():
+        """
+        Returns a dict of possible graphs that can be plotted based on the results.
+
+        :return: a dict graph name -> graphing function
+        """
+        return {"Warmup": ProcessReporter.warmup_graph, "General statistics": ProcessReporter.general_statistics_graph, "Resource utilization": ProcessReporter.resource_utilization_graph, "Task processing times": ProcessReporter.task_processing_times_graph}
+
+    @staticmethod
+    def warmup_graph(aggregated_results, ax):
+        """
+        Plots the warmup graph on the given matplotlib axis.
+        It plots the average cycle time over time.
+
+        :param aggregated_results: the aggregated results as returned by aggregate_results.
+        :param ax: the matplotlib axis to plot on.
+        """
+        times = [t for (t, avg_cycle_time) in aggregated_results[ProcessReporter.WARMUP]["avg_cycle_time_over_time"]]
+        avg_cycle_times = [avg_cycle_time for (t, avg_cycle_time) in aggregated_results[ProcessReporter.WARMUP]["avg_cycle_time_over_time"]]
+        ax.plot(times, avg_cycle_times)
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Average Cycle Time")
+        ax.set_title("Warmup: Average Cycle Time Over Time")
+
+    @staticmethod
+    def general_statistics_graph(aggregated_results, ax):
+        """
+        Plots the general statistics graph on the given matplotlib axis.
+        Uses two y-axes, one for counts and one for times.
+
+        :param aggregated_results: the aggregated results as returned by aggregate_results.
+        :param ax: the matplotlib axis to plot on.
+        """
+        counts = [aggregated_results[ProcessReporter.GENERAL]["nr_started"][0], aggregated_results[ProcessReporter.GENERAL]["nr_completed"][0]]
+        counts_stddev = [aggregated_results[ProcessReporter.GENERAL]["nr_started"][1], aggregated_results[ProcessReporter.GENERAL]["nr_completed"][1]]
+        counts_whiskers = [1.96 * stddev for stddev in counts_stddev]
+
+        times = [aggregated_results[ProcessReporter.GENERAL]["avg_wait_time"][0], aggregated_results[ProcessReporter.GENERAL]["avg_proc_time"][0], aggregated_results[ProcessReporter.GENERAL]["avg_cycle_time"][0]]
+        times_stddev = [aggregated_results[ProcessReporter.GENERAL]["avg_wait_time"][1], aggregated_results[ProcessReporter.GENERAL]["avg_proc_time"][1], aggregated_results[ProcessReporter.GENERAL]["avg_cycle_time"][1]]
+        times_whiskers = [1.96 * stddev for stddev in times_stddev]
+        
+        count_bars = ax.bar(["Nr started", "Nr completed"], counts, yerr=counts_whiskers, capsize=5, color='b', label='Counts')
+        ax.set_ylabel("Counts", color='b')
+        ax.tick_params(axis='y', labelcolor='b')
+        
+        # Add value labels on count bars
+        for bar, value in zip(count_bars, counts):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height,
+                   f'{value:.1f}',
+                   ha='center', va='bottom', color='b')
+
+        ax2 = ax.twinx()
+        time_bars = ax2.bar(["Avg wait time", "Avg proc time", "Avg cycle time"], times, yerr=times_whiskers, capsize=5, color='r', label='Times')
+        ax2.set_ylabel("Times", color='r')
+        ax2.tick_params(axis='y', labelcolor='r')
+        
+        # Add value labels on time bars
+        for bar, value in zip(time_bars, times):
+            height = bar.get_height()
+            ax2.text(bar.get_x() + bar.get_width()/2., height,
+                    f'{value:.2f}',
+                    ha='center', va='bottom', color='r')
+
+        ax.set_title("General Statistics")
+        
+    @staticmethod
+    def task_processing_times_graph(aggregated_results, ax):
+        """
+        Plots the task processing times graph on the given matplotlib axis.
+
+        :param aggregated_results: the aggregated results as returned by aggregate_results.
+        :param ax: the matplotlib axis to plot on.
+        """
+        activity_ids = list(aggregated_results[ProcessReporter.ACTIVITIES].keys())
+        activity_id_strs = [str(act_id) for act_id in activity_ids]
+        avg_proc_times = [aggregated_results[ProcessReporter.ACTIVITIES][act_id]["avg_proc_time"][0] for act_id in activity_ids]
+        # add whiskers for 95% confidence interval
+        stddevs = [aggregated_results[ProcessReporter.ACTIVITIES][act_id]["avg_proc_time"][1] for act_id in activity_ids]
+        whiskers = [1.96 * stddev for stddev in stddevs]
+        ax.bar(activity_id_strs, avg_proc_times, yerr=whiskers, capsize=5)
+        ax.set_xlabel("Activity")
+        ax.set_ylabel("Average Processing Time")
+        ax.set_title("Activity Processing Times")
+
+    @staticmethod
+    def resource_utilization_graph(aggregated_results, ax):
+        """
+        Plots the resource utilization graph on the given matplotlib axis.
+
+        :param aggregated_results: the aggregated results as returned by aggregate_results.
+        :param ax: the matplotlib axis to plot on.
+        """
+        resource_ids = list(aggregated_results[ProcessReporter.RESOURCES].keys())
+        resource_id_strs = [str(res_id) for res_id in resource_ids]
+        utilizations = [aggregated_results[ProcessReporter.RESOURCES][res_id]["utilization"][0] for res_id in resource_ids]
+        # add whiskers for 95% confidence interval
+        stddevs = [aggregated_results[ProcessReporter.RESOURCES][res_id]["utilization"][1] for res_id in resource_ids]
+        whiskers = [1.96 * stddev for stddev in stddevs]
+        ax.bar(resource_id_strs, utilizations, yerr=whiskers, capsize=5)
+        ax.set_xlabel("Resource")
+        ax.set_ylabel("Utilization")
+        ax.set_title("Resource Utilization")
+
+    def print_result(self, digits=3, digits_percentage=2):
+        results = self.get_results()
+        print("GENERAL STATISTICS")
+        for key in results[ProcessReporter.GENERAL].keys():
+            print(f"{key}: {round(results[ProcessReporter.GENERAL][key], digits)}")
+        print("\nRESOURCE STATISTICS")
+        for resource_id in results[ProcessReporter.RESOURCES].keys():
+            print(f"Resource {resource_id}:")
+            for key in results[ProcessReporter.RESOURCES][resource_id].keys():
+                print(f"  {key}: {round(results[ProcessReporter.RESOURCES][resource_id][key], digits_percentage)}")
+        print("\nACTIVITY STATISTICS")
+        for activity_id in results[ProcessReporter.ACTIVITIES].keys():
+            print(f"Activity {activity_id}:")
+            for key in results[ProcessReporter.ACTIVITIES][activity_id].keys():
+                print(f"  {key}: {round(results[ProcessReporter.ACTIVITIES][activity_id][key], digits)}")
 
 
 class EventLogReporter(Reporter):
@@ -283,6 +517,60 @@ class EventLogReporter(Reporter):
 
     def close(self):
         self.logfile.close()
+
+
+class Replicator:
+    """
+    Class to handle the replication of simulation runs.
+    The replicator uses a ProcessReporter to report on the replications.
+    
+    :param sim_problem: the simulation problem to replicate.
+    :param duration: the duration of each replication.
+    :param nr_replications: the number of replications to perform.
+    :param callback: an optional callback function that is called after each replication with the percentage of replications completed, if it returns True, replications will continue, if it returns False, replications will stop.
+
+    :return: a dictionary containing the result of each replication.
+    """
+
+    def __init__(self, sim_problem: SimProblem, duration: float, warmup: float = 0, nr_replications: int = 1, callback: Optional[Callable[[float], bool]] = None):
+        self.sim_problem = sim_problem
+        self.duration = duration
+        self.warmup = warmup
+        self.nr_replications = nr_replications
+        self.callback = callback
+
+    def run(self) -> Reporter:
+        # Check if INITIAL_STATE checkpoint exists, create it if not
+        INITIAL_STATE = "INITIAL_STATE"
+        if INITIAL_STATE not in self.sim_problem.clock_checkpoints:
+            self.sim_problem.store_checkpoint(INITIAL_STATE)
+
+        # Prepare to collect results
+        results = []
+
+        # Run the replications
+        for replication in range(self.nr_replications):
+            # Restore to initial state
+            self.sim_problem.restore_checkpoint(INITIAL_STATE)
+            
+            # Create a new ProcessReporter for this replication
+            reporter = ProcessReporter(warmup_time=self.warmup)
+
+            # Run the simulation with the reporter
+            self.sim_problem.simulate(duration=self.duration, reporter=reporter)
+            
+            # Call the callback with percentage complete
+            if self.callback is not None:
+                percentage = ((replication + 1) / self.nr_replications) * 100
+                if not self.callback(percentage):
+                    break
+            
+            # Store the results
+            results.append(reporter.get_results())
+        
+        self.sim_problem.restore_checkpoint(INITIAL_STATE)
+        # Aggregate results from all replications
+        return ProcessReporter().aggregate_results(results)        
 
 
 class BindingEventLogReporter(Reporter):
