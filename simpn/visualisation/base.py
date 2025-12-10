@@ -28,6 +28,7 @@ from PyQt6.QtGui import (
     QColor,
     QMouseEvent,
     QWheelEvent,
+    QAction,
     QActionGroup,
 )
 from PyQt6.QtWidgets import (
@@ -1581,9 +1582,11 @@ class MainWindow(QMainWindow):
         # Add separator before About
         help_menu.addSeparator()
 
-        # About action
-        about_action = help_menu.addAction("About SimPN")
+        # About action - use AboutRole to place it in the macOS application menu
+        about_action = QAction("About SimPN", self)
+        about_action.setMenuRole(QAction.MenuRole.AboutRole)
         about_action.triggered.connect(self.show_about_dialog)
+        help_menu.addAction(about_action)
 
     def toggle_explorer_panel(self):
         """Toggle the visibility of the explorer panel"""
@@ -1831,6 +1834,11 @@ class Visualisation:
         self.extra_modules = extra_modules if extra_modules is not None else []
 
         self.app = QApplication(sys.argv)
+
+        # Set application metadata for proper macOS menu handling
+        self.app.setApplicationName("SimPN")
+        self.app.setOrganizationName("TUe")
+        self.app.setOrganizationDomain("tue.nl")
 
         # Set application icon for taskbar/dock
         logo_path = resource_path(os.path.join("simpn", "assets", "img", "logo.png"))
