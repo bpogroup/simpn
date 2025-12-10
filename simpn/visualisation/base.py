@@ -913,8 +913,6 @@ class ExplorerPanel(QWidget):
                     PlotPanel(results, graph_name, graph_function, parent=self.parent().parent().central_panel, activate=last_graph)
                     i += 1
 
-            # TODO: create tests for this functionality, include tests for non-main execution
-
     def _on_item_clicked(self, item: QTreeWidgetItem, column: int):
         """
         Handle item click events in the tree view.
