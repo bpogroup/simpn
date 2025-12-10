@@ -234,7 +234,7 @@ Note that they contain specific annotations to specify simulation properties:
 - Each task has a property 'processing_time', which must be an expression that evaluates to a number. For example, it can be :code:`1`, meaning that processing the task takes 1 time unit. It can also be :code:`random.uniform(0.5, 1.5)`, which means that the processing time is uniformly distributed between 0.5 and 1.5.
 - Each outgoing arc of an XOR-split has a percentage on it, representing the probability that this path is followed after a choice. For example, an arc with :code:`25%` on it represents that there is a 25% possibility that this path is taken after a choice.
 
-.. _`example.bpmn`: ext/bpmn_test_files/80 correct numbers.bpmn
+.. _`example.bpmn`: ext/bpmn_test_files/80%20correct%20numbers.bpmn
 .. _`Signavio`: https://www.signavio.com/
 
 Documentation
