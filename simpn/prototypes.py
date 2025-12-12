@@ -117,18 +117,21 @@ class TaskTokenShower(vis.Node):
                 name = token
         # it would be nice if we did not have to do this to find the general
         # family that the token comes from
-        cut = re.compile("[0-9]").search(name).span()[0]
-        name = name[:cut]
-        # find a colour
-        if name not in self._seen_token_types:
-            colour = TASK_TOKEN_SHOW_COLOURS[self._next_tok_colour]
-            self._next_tok_colour += 1 
-            if (self._next_tok_colour >= len(TASK_TOKEN_SHOW_COLOURS)):
-                self._next_tok_colour = 0 
-            self._seen_token_types[name] = colour 
-        else:
-            colour = self._seen_token_types[name]
-        return colour
+        try:
+            cut = re.compile("[0-9]").search(name).span()[0]
+            name = name[:cut]
+            # find a colour
+            if name not in self._seen_token_types:
+                colour = TASK_TOKEN_SHOW_COLOURS[self._next_tok_colour]
+                self._next_tok_colour += 1 
+                if (self._next_tok_colour >= len(TASK_TOKEN_SHOW_COLOURS)):
+                    self._next_tok_colour = 0 
+                self._seen_token_types[name] = colour 
+            else:
+                colour = self._seen_token_types[name]
+            return colour
+        except:
+            return vis.TUE_RED # if we cannot find the color
     
     def draw(self, screen:pygame.Surface):
         """

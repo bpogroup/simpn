@@ -344,7 +344,8 @@ class SimTokenValue:
     With this class, values of tokens can be built in a pythonic manner
     without much fuss and avoids using tuples everywhere.
 
-    .. code-block:: python 
+    .. code-block:: 
+    
         # create a new value!
         val = SimTokenValue("a1", 1, 'a', mary='alice', joe={ 'value' : 5})
         # you can grab the identity of the token

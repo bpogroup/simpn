@@ -623,6 +623,23 @@ constructor.</p></li>
 <h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h2>
 <p>With this class, values of tokens can be built in a pythonic manner
 without much fuss and avoids using tuples everywhere.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># create a new value!</span>
+<span class="n">val</span> <span class="o">=</span> <span class="n">SimTokenValue</span><span class="p">(</span><span class="s2">&quot;a1&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">mary</span><span class="o">=</span><span class="s1">&#39;alice&#39;</span><span class="p">,</span> <span class="n">joe</span><span class="o">=</span><span class="p">{</span> <span class="s1">&#39;value&#39;</span> <span class="p">:</span> <span class="mi">5</span><span class="p">})</span>
+<span class="c1"># you can grab the identity of the token</span>
+<span class="nb">id</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">id</span> <span class="c1"># or val[0]</span>
+<span class="c1"># but you can still pretend to have a tuple</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="c1"># but for named arguments, you can use the dot notation on the value</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">mary</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="c1"># same as above</span>
+<span class="c1"># to ensure that immutable state is kept you can quickly make an</span>
+<span class="c1"># equivalent value reference</span>
+<span class="n">copy_of_val</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+<span class="c1"># you can quickly update values as well</span>
+<span class="n">val</span><span class="o">.</span><span class="n">mary</span><span class="o">=</span> <span class="s1">&#39;ham&#39;</span>
+<span class="n">val</span><span class="p">[</span><span class="s1">&#39;joe&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;spam&#39;</span>
+</pre></div>
+</div>
 <p><strong>Methods:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
@@ -899,6 +916,7 @@ The identifier of this SimVar is ‘time’, which consequently is a reserved na
 <li class="toctree-l1"><a class="reference internal" href="howto.html#installation">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#quick-start">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#a-basic-tutorial">A Basic Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html#standalone-limited-simulation">Standalone Limited Simulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#documentation">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#acknowledgements">Acknowledgements</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="api.html">API Documentation</a><ul class="current">

@@ -187,33 +187,34 @@ class ProcessReporter(Reporter):
 
     def get_results(self):
         """
-        returns a dictionary of dictionaries:
-        {
-            warmup: {
-                avg_cycle_time_over_time: [(time, avg_cycle_time), ...]
-            },
-            general: {
-                nr_started: (int, float), # (average, stddev)
-                nr_completed: (int, float), # (average, stddev)
-                avg_wait_time: (float, float), # (average, stddev)
-                avg_proc_time: (float, float), # (average, stddev)
-                avg_cycle_time: (float, float) # (average, stddev)
-            },
-            resources: {
-                resource_id: {
-                    utilization: (float, float) # (average, stddev)
+        Returns a dictionary of dictionaries::
+
+            {
+                warmup: {
+                    avg_cycle_time_over_time: [(time, avg_cycle_time), ...]
                 },
-                ...
-            },
-            activities: {
-                activity_id: {
+                general: {
                     nr_started: (int, float), # (average, stddev)
                     nr_completed: (int, float), # (average, stddev)
-                    avg_proc_time: (float, float) # (average, stddev)
+                    avg_wait_time: (float, float), # (average, stddev)
+                    avg_proc_time: (float, float), # (average, stddev)
+                    avg_cycle_time: (float, float) # (average, stddev)
                 },
-                ...
+                resources: {
+                    resource_id: {
+                        utilization: (float, float) # (average, stddev)
+                    },
+                    ...
+                },
+                activities: {
+                    activity_id: {
+                        nr_started: (int, float), # (average, stddev)
+                        nr_completed: (int, float), # (average, stddev)
+                        avg_proc_time: (float, float) # (average, stddev)
+                    },
+                    ...
+                }
             }
-        }
         """
         results = dict()
         

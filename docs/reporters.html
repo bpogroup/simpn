@@ -62,16 +62,19 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter" title="simpn.reporters.ProcessReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProcessReporter</span></code></a>([warmup_time])</p></td>
 <td><p>A reporter that heavily depends on the process prototypes (task, start_event, intermediate_event, end_event) to report on what happens.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.Reporter" title="simpn.reporters.Reporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reporter</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.Replicator" title="simpn.reporters.Replicator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Replicator</span></code></a>(sim_problem, duration[, warmup, ...])</p></td>
+<td><p>Class to handle the replication of simulation runs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.Reporter" title="simpn.reporters.Reporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reporter</span></code></a>()</p></td>
 <td><p>A reporter can be passed to the simpn.simulator.SimProblem.simulate function to report on what happens during the simulator.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.SimpleReporter" title="simpn.reporters.SimpleReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimpleReporter</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.SimpleReporter" title="simpn.reporters.SimpleReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimpleReporter</span></code></a>()</p></td>
 <td><p>A simple reporter that just prints the occurring events to the standard output.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.TimeUnit" title="simpn.reporters.TimeUnit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TimeUnit</span></code></a>(value[, names, module, qualname, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.TimeUnit" title="simpn.reporters.TimeUnit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TimeUnit</span></code></a>(value[, names, module, qualname, ...])</p></td>
 <td><p>An enumeration for the unit in which simulation time is measured.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.WarmupReporter" title="simpn.reporters.WarmupReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WarmupReporter</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.WarmupReporter" title="simpn.reporters.WarmupReporter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WarmupReporter</span></code></a>()</p></td>
 <td><p>A reporter that reports on the warmup period of a simulation by computing the average cycle times over time.</p></td>
 </tr>
 </tbody>
@@ -181,15 +184,46 @@ It assumes tasks are executed for cases that arrive via start_events and complet
 - total_wait_time: the sum of waiting times of completed cases.
 - total_proc_time: the sum of processing times of completed cases.
 - total_cycle_time: the sum of cycle times of completed cases.
-- resource_busy_times: a mapping of resource_id -&gt; the time the resource was busy during simulation.</p>
+- resource_busy_times: a mapping of resource_id -&gt; the time the resource was busy during simulation.
+- activity_processing_times: a mapping of activity_id -&gt; list of processing times.</p>
 <p><strong>Methods:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter.callback" title="simpn.reporters.ProcessReporter.callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">callback</span></code></a>(timed_binding)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter.aggregate_results" title="simpn.reporters.ProcessReporter.aggregate_results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aggregate_results</span></code></a>(results_list)</p></td>
+<td><p>Takes a list of results as returned by get_results and aggregates them into a single result.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter.callback" title="simpn.reporters.ProcessReporter.callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">callback</span></code></a>(timed_binding)</p></td>
 <td><p>A function that is invoked by a simpn.simulator.SimProblem each time a event happened.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter.general_statistics_graph" title="simpn.reporters.ProcessReporter.general_statistics_graph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">general_statistics_graph</span></code></a>(aggregated_results, ax)</p></td>
+<td><p>Plots the general statistics graph on the given matplotlib axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter.get_results" title="simpn.reporters.ProcessReporter.get_results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_results</span></code></a>()</p></td>
+<td><p>Returns a dictionary of dictionaries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter.possible_graphs" title="simpn.reporters.ProcessReporter.possible_graphs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">possible_graphs</span></code></a>()</p></td>
+<td><p>Returns a dict of possible graphs that can be plotted based on the results.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter.resource_utilization_graph" title="simpn.reporters.ProcessReporter.resource_utilization_graph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resource_utilization_graph</span></code></a>(...)</p></td>
+<td><p>Plots the resource utilization graph on the given matplotlib axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter.task_processing_times_graph" title="simpn.reporters.ProcessReporter.task_processing_times_graph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">task_processing_times_graph</span></code></a>(...)</p></td>
+<td><p>Plots the task processing times graph on the given matplotlib axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.reporters.ProcessReporter.warmup_graph" title="simpn.reporters.ProcessReporter.warmup_graph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">warmup_graph</span></code></a>(aggregated_results, ax)</p></td>
+<td><p>Plots the warmup graph on the given matplotlib axis.</p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.ProcessReporter.aggregate_results">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">aggregate_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.ProcessReporter.aggregate_results" title="Link to this definition">¶</a></dt>
+<dd><p>Takes a list of results as returned by get_results and aggregates them into a single result.
+It does this by computing averages and standard deviations.
+It does this flexibly, i.e., it is unaware of the precise items in each section, but just computes averages and standard deviations of values.
+Note that a section is either a dictionary item -&gt; value, or a dictionary item -&gt; item -&gt; value.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.reporters.ProcessReporter.callback">
 <span class="sig-name descname"><span class="pre">callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timed_binding</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.ProcessReporter.callback" title="Link to this definition">¶</a></dt>
@@ -205,6 +239,129 @@ It receives a timed_binding, which is a triple (binding, time, event):
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.ProcessReporter.general_statistics_graph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">general_statistics_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aggregated_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.ProcessReporter.general_statistics_graph" title="Link to this definition">¶</a></dt>
+<dd><p>Plots the general statistics graph on the given matplotlib axis.
+Uses two y-axes, one for counts and one for times.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aggregated_results</strong> – the aggregated results as returned by aggregate_results.</p></li>
+<li><p><strong>ax</strong> – the matplotlib axis to plot on.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.ProcessReporter.get_results">
+<span class="sig-name descname"><span class="pre">get_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.ProcessReporter.get_results" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of dictionaries:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="n">warmup</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">avg_cycle_time_over_time</span><span class="p">:</span> <span class="p">[(</span><span class="n">time</span><span class="p">,</span> <span class="n">avg_cycle_time</span><span class="p">),</span> <span class="o">...</span><span class="p">]</span>
+    <span class="p">},</span>
+    <span class="n">general</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">nr_started</span><span class="p">:</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="c1"># (average, stddev)</span>
+        <span class="n">nr_completed</span><span class="p">:</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="c1"># (average, stddev)</span>
+        <span class="n">avg_wait_time</span><span class="p">:</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="c1"># (average, stddev)</span>
+        <span class="n">avg_proc_time</span><span class="p">:</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="c1"># (average, stddev)</span>
+        <span class="n">avg_cycle_time</span><span class="p">:</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="c1"># (average, stddev)</span>
+    <span class="p">},</span>
+    <span class="n">resources</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">resource_id</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">utilization</span><span class="p">:</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="c1"># (average, stddev)</span>
+        <span class="p">},</span>
+        <span class="o">...</span>
+    <span class="p">},</span>
+    <span class="n">activities</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">activity_id</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">nr_started</span><span class="p">:</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="c1"># (average, stddev)</span>
+            <span class="n">nr_completed</span><span class="p">:</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="c1"># (average, stddev)</span>
+            <span class="n">avg_proc_time</span><span class="p">:</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="c1"># (average, stddev)</span>
+        <span class="p">},</span>
+        <span class="o">...</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.ProcessReporter.possible_graphs">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">possible_graphs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.ProcessReporter.possible_graphs" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a dict of possible graphs that can be plotted based on the results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a dict graph name -&gt; graphing function</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.ProcessReporter.resource_utilization_graph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">resource_utilization_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aggregated_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.ProcessReporter.resource_utilization_graph" title="Link to this definition">¶</a></dt>
+<dd><p>Plots the resource utilization graph on the given matplotlib axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aggregated_results</strong> – the aggregated results as returned by aggregate_results.</p></li>
+<li><p><strong>ax</strong> – the matplotlib axis to plot on.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.ProcessReporter.task_processing_times_graph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">task_processing_times_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aggregated_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.ProcessReporter.task_processing_times_graph" title="Link to this definition">¶</a></dt>
+<dd><p>Plots the task processing times graph on the given matplotlib axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aggregated_results</strong> – the aggregated results as returned by aggregate_results.</p></li>
+<li><p><strong>ax</strong> – the matplotlib axis to plot on.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.reporters.ProcessReporter.warmup_graph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">warmup_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aggregated_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.ProcessReporter.warmup_graph" title="Link to this definition">¶</a></dt>
+<dd><p>Plots the warmup graph on the given matplotlib axis.
+It plots the average cycle time over time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aggregated_results</strong> – the aggregated results as returned by aggregate_results.</p></li>
+<li><p><strong>ax</strong> – the matplotlib axis to plot on.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.reporters.Replicator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.reporters.</span></span><span class="sig-name descname"><span class="pre">Replicator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="simulator.html#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><span class="pre">SimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warmup</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nr_replications</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.reporters.Replicator" title="Link to this definition">¶</a></dt>
+<dd><p>Class to handle the replication of simulation runs.
+The replicator uses a ProcessReporter to report on the replications.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sim_problem</strong> – the simulation problem to replicate.</p></li>
+<li><p><strong>duration</strong> – the duration of each replication.</p></li>
+<li><p><strong>nr_replications</strong> – the number of replications to perform.</p></li>
+<li><p><strong>callback</strong> – an optional callback function that is called after each replication with the percentage of replications completed, if it returns True, replications will continue, if it returns False, replications will stop.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a dictionary containing the result of each replication.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
@@ -407,6 +564,7 @@ It receives a timed_binding, which is a triple (binding, time, event):
 <li class="toctree-l1"><a class="reference internal" href="howto.html#installation">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#quick-start">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#a-basic-tutorial">A Basic Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html#standalone-limited-simulation">Standalone Limited Simulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#documentation">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#acknowledgements">Acknowledgements</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="api.html">API Documentation</a><ul class="current">

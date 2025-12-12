@@ -66,6 +66,8 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">simpn</span>
 </pre></div>
 </div>
+<p>There are also executables available, which allow for quick visual simulation of BPMN models. The executables can be downloaded from the <a class="reference external" href="https://github.com/bpogroup/simpn/releases/">releases</a>.
+You can find more information on how to use these executables in the section <a class="reference external" href="Tryoutthestandalonesimulationbydownloadingoneofthe`releases`_.">Standalone-Limited-Simulation</a>.</p>
 </section>
 <section id="quick-start">
 <h1>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h1>
@@ -223,6 +225,18 @@ If the layout file does not exist, the model will be shown with an automatically
 </div>
 </section>
 </section>
+<section id="standalone-limited-simulation">
+<h1>Standalone Limited Simulation<a class="headerlink" href="#standalone-limited-simulation" title="Link to this heading">¶</a></h1>
+<p>You can use it to open a BPMN model file, such as <a class="reference external" href="ext/bpmn_test_files/80%20correct%20numbers.bpmn">example.bpmn</a>.
+These BPMN files can be created using a BPMN modeling tool, such as <a class="reference external" href="https://www.signavio.com/">Signavio</a>.
+Note that they contain specific annotations to specify simulation properties:</p>
+<ul class="simple">
+<li><p>Each lane has a number of resources in its name between brackets. For example, a lane named ‘employees (2)’ represents that there are two employees who can perform the tasks in the employees lane.</p></li>
+<li><p>Each start event has a property ‘interarrival_time’, which must be an expression that evaluates to a number. For example, it can be <code class="code docutils literal notranslate"><span class="pre">1</span></code>, meaning that there is an arrival every 1 time units. It can also be <code class="code docutils literal notranslate"><span class="pre">random.expovariate(1)</span></code>, which means that there is an arrival rate that is exponentially distributed with an average of 1.</p></li>
+<li><p>Each task has a property ‘processing_time’, which must be an expression that evaluates to a number. For example, it can be <code class="code docutils literal notranslate"><span class="pre">1</span></code>, meaning that processing the task takes 1 time unit. It can also be <code class="code docutils literal notranslate"><span class="pre">random.uniform(0.5,</span> <span class="pre">1.5)</span></code>, which means that the processing time is uniformly distributed between 0.5 and 1.5.</p></li>
+<li><p>Each outgoing arc of an XOR-split has a percentage on it, representing the probability that this path is followed after a choice. For example, an arc with <code class="code docutils literal notranslate"><span class="pre">25%</span></code> on it represents that there is a 25% possibility that this path is taken after a choice.</p></li>
+</ul>
+</section>
 <section id="documentation">
 <h1>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h1>
 <p>For more information, including the <a class="reference external" href="https://bpogroup.github.io/simpn/api.html">API specification</a>, and a far more extensive <a class="reference external" href="https://bpogroup.github.io/simpn/teaching.html">tutorial</a>, please visit the <a class="reference external" href="https://bpogroup.github.io/simpn/">documentation</a>.</p>
@@ -248,6 +262,7 @@ If the layout file does not exist, the model will be shown with an automatically
 <li class="toctree-l1"><a class="reference internal" href="howto.html#installation">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#quick-start">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#a-basic-tutorial">A Basic Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html#standalone-limited-simulation">Standalone Limited Simulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#documentation">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#acknowledgements">Acknowledgements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a></li>

@@ -219,11 +219,10 @@ If the layout file does not exist, the model will be shown with an automatically
     v.show()
     v.save_layout("layout.txt")
 
-.. _`Standalone-Limited-Simulation`:
-Standalone Limited Simulation
+Standalone Limited Simulation 
 =============================
 
-Try out the standalone simulation by downloading one of the `releases`_.
+.. _`Standalone-Limited-Simulation`: Try out the standalone simulation by downloading one of the `releases`_.
 
 You can use it to open a BPMN model file, such as `example.bpmn`_.
 These BPMN files can be created using a BPMN modeling tool, such as `Signavio`_.

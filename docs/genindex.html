@@ -71,8 +71,6 @@
 </li>
       <li><a href="simulator.html#simpn.simulator.SimProblem.add_prototype_var">add_prototype_var() (simpn.simulator.SimProblem method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="simulator.html#simpn.simulator.SimVar.add_token">add_token() (simpn.simulator.SimVar method)</a>
 
       <ul>
@@ -81,9 +79,13 @@
         <li><a href="simulator.html#simpn.simulator.SimVarTime.add_token">(simpn.simulator.SimVarTime method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="simulator.html#simpn.simulator.SimProblem.add_transition">add_transition() (simpn.simulator.SimProblem method)</a>
 </li>
       <li><a href="simulator.html#simpn.simulator.SimProblem.add_var">add_var() (simpn.simulator.SimProblem method)</a>
+</li>
+      <li><a href="reporters.html#simpn.reporters.ProcessReporter.aggregate_results">aggregate_results() (simpn.reporters.ProcessReporter static method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -187,6 +189,8 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reporters.html#simpn.reporters.ProcessReporter.general_statistics_graph">general_statistics_graph() (simpn.reporters.ProcessReporter static method)</a>
+</li>
       <li><a href="prototypes.html#simpn.prototypes.BPMNEndEvent.get_description">get_description() (simpn.prototypes.BPMNEndEvent method)</a>
 
       <ul>
@@ -211,6 +215,10 @@
         <li><a href="simulator.html#simpn.simulator.SimVar.get_description">(simpn.simulator.SimVar method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reporters.html#simpn.reporters.ProcessReporter.get_results">get_results() (simpn.reporters.ProcessReporter method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -254,14 +262,16 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="simulator.html#simpn.simulator.SimProblem.place">place() (simpn.simulator.SimProblem method)</a>
 </li>
+      <li><a href="reporters.html#simpn.reporters.ProcessReporter.possible_graphs">possible_graphs() (simpn.reporters.ProcessReporter static method)</a>
+</li>
       <li><a href="simulator.html#simpn.simulator.SimProblem.PRIORITY_BINDING">PRIORITY_BINDING() (simpn.simulator.SimProblem static method)</a>
 </li>
       <li><a href="simulator.html#simpn.simulator.SimProblem.PRIORITY_QUEUE_BINDING">PRIORITY_QUEUE_BINDING() (simpn.simulator.SimProblem static method)</a>
 </li>
-      <li><a href="reporters.html#simpn.reporters.ProcessReporter">ProcessReporter (class in simpn.reporters)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reporters.html#simpn.reporters.ProcessReporter">ProcessReporter (class in simpn.reporters)</a>
+</li>
       <li><a href="prototypes.html#simpn.prototypes.Prototype">Prototype (class in simpn.prototypes)</a>
 </li>
       <li><a href="simulator.html#simpn.simulator.SimVar.put">put() (simpn.simulator.SimVar method)</a>
@@ -290,7 +300,11 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reporters.html#simpn.reporters.Replicator">Replicator (class in simpn.reporters)</a>
+</li>
       <li><a href="reporters.html#simpn.reporters.Reporter">Reporter (class in simpn.reporters)</a>
+</li>
+      <li><a href="reporters.html#simpn.reporters.ProcessReporter.resource_utilization_graph">resource_utilization_graph() (simpn.reporters.ProcessReporter static method)</a>
 </li>
       <li><a href="simulator.html#simpn.simulator.SimProblem.restore_checkpoint">restore_checkpoint() (simpn.simulator.SimProblem method)</a>
 
@@ -379,6 +393,8 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reporters.html#simpn.reporters.ProcessReporter.task_processing_times_graph">task_processing_times_graph() (simpn.reporters.ProcessReporter static method)</a>
+</li>
       <li><a href="prototypes.html#simpn.prototypes.TaskTokenShower">TaskTokenShower (class in simpn.prototypes)</a>
 </li>
   </ul></td>
@@ -401,6 +417,10 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reporters.html#simpn.reporters.ProcessReporter.warmup_graph">warmup_graph() (simpn.reporters.ProcessReporter static method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reporters.html#simpn.reporters.WarmupReporter">WarmupReporter (class in simpn.reporters)</a>
 </li>
   </ul></td>
@@ -421,6 +441,7 @@
 <li class="toctree-l1"><a class="reference internal" href="howto.html#installation">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#quick-start">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#a-basic-tutorial">A Basic Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html#standalone-limited-simulation">Standalone Limited Simulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#documentation">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="howto.html#acknowledgements">Acknowledgements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a></li>

@@ -178,3 +178,7 @@ Version 1.7.7 (2025-12-04)
 --------------------------
 
 - [Bugfix] EventLogReporter did not handle dictionary data correctly.
+
+Version 1.7.8 (2025-12-12)
+
+- [Bugfix] When naming convention of BPMN resources was not followed, created an exception.
