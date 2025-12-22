@@ -611,7 +611,7 @@ class RecorderModule(IEventHandler):
         format: Literal["gif"] = "gif",
         include_ui: bool = False,
         settings: RecordingSettings = None,
-        size: Tuple[int, int] = (512, 256),
+        size: Tuple[int, int] = None,
     ):
         super().__init__()
         self._fname = fname
@@ -664,6 +664,8 @@ class RecorderModule(IEventHandler):
         """
         Extracts the screen state into a frame for recording.
         """
+        if self._size is None:
+            self._size = screen.get_width(), screen.get_height()
         temp_surface = pygame.Surface(self._size)
         pygame.transform.smoothscale(
             screen, self._size, temp_surface
