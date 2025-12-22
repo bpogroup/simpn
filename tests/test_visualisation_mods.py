@@ -5,6 +5,7 @@ from simpn.visualisation.model_panel_mods import (
     FiredTracker,
     FiredTrackerModule,
     NodeHighlightingModule,
+    RecorderModule
 )
 from simpn.visualisation.events import (
     create_event,
@@ -17,6 +18,7 @@ from simpn.visualisation.events import (
 
 import unittest
 import pygame
+from tempfile import TemporaryFile
 
 pygame.init()
 
@@ -288,3 +290,59 @@ class TestNodeHighlightingMod(unittest.TestCase):
         self.assertNotEqual(
             initial_sum, final_sum, "Surface should be modified after rendering"
         )
+
+
+class TestRecorderMod(unittest.TestCase):
+    """
+    Testing for the recorder module.
+    """
+    def setUp(self):
+        self.bpmn = create_dummy_bpmn()
+        self.net = create_dummy_pn()
+        reset_dispatcher()
+
+        self.mod = RecorderModule(fname=TemporaryFile("w", suffix=".gif"))
+
+    def tearDown(self):
+        reset_dispatcher()
+
+    def test_register(self):
+        register_handler(self.mod)
+        dispatcher = get_dispatcher()
+
+        handlers = set()
+        for group in dispatcher._handlers.values():
+            for handler in group:
+                handlers.add(handler)
+
+        self.assertEqual(len(handlers), 1)
+
+    def test_recording_nodes_pn(self):
+
+        run_visualisation_for(duration=1000, sim_problem=self.net, extra_modules=[self.mod])
+
+        assert len(self.mod._frames) > 0
+
+    def test_recording_nodes_bpmn(self):
+
+        run_visualisation_for(duration=1000, sim_problem=self.bpmn, extra_modules=[self.mod])
+
+        assert len(self.mod._frames) > 0
+
+    def test_recording_ui_pn(self):
+
+        self.mod._includeui = True
+
+        run_visualisation_for(duration=1000, sim_problem=self.net, extra_modules=[self.mod])
+
+        assert len(self.mod._frames) > 0
+
+    def test_recording_ui_bpmn(self):
+
+        self.mod._includeui = True
+
+        run_visualisation_for(duration=1000, sim_problem=self.bpmn, extra_modules=[self.mod])
+
+        assert len(self.mod._frames) > 0
+
+

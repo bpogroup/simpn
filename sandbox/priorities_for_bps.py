@@ -45,6 +45,7 @@ from enum import Enum, auto
 
 LAYOUT_FILE = join(".", "temp", "priorities_for_bps.layout")
 PRIORITY = 2
+RECORD = True
 
 
 class CustomerType(Enum):
@@ -295,10 +296,17 @@ class HandledCustomer(BPMN):
     name = "Handled Customer"
 
 
+mods = []
+if RECORD:
+    from simpn.visualisation.model_panel_mods import RecorderModule
+    mods.append(
+        RecorderModule(join(".", "temp", "priorities_demo.gif"), include_ui=True)
+    )
+
 if exists(LAYOUT_FILE):
-    vis = Visualisation(model, layout_file=LAYOUT_FILE)
+    vis = Visualisation(model, layout_file=LAYOUT_FILE, extra_modules=mods)
 else:
-    vis = Visualisation(model)
+    vis = Visualisation(model, extra_modules=mods)
 
 model.set_binding_priority(class_priority)
 vis.show()

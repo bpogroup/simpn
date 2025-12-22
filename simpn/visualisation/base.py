@@ -409,6 +409,7 @@ class SimulationPanel(QWidget):
             self.stop_action.setEnabled(True)
             self.reset_action.setEnabled(False)
             self._play_timer.start()
+            dispatch(create_event(EventType.SIM_PLAYING), self)
 
     def stop_simulation(self):
         """
@@ -423,6 +424,7 @@ class SimulationPanel(QWidget):
             self.stop_action.setEnabled(False)
             self.reset_action.setEnabled(True)
             self._play_timer.stop()
+            dispatch(create_event(EventType.SIM_STOP), self)
 
     def reset_simulation(self):
         """Reset the simulation to the initial state."""
@@ -1763,6 +1765,10 @@ class MainWindow(QMainWindow):
         # Save layout and settings
         self.saveSettings()
         self.save_layout()
+
+        # inform listeners about closure
+        evt = create_event(EventType.SIM_CLOSE)
+        dispatch(evt, self)
 
         # Accept the close event
         event.accept()
