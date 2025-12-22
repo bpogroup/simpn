@@ -30,8 +30,9 @@ from simpn.visualisation.events import (
 )
 from dataclasses import dataclass
 from collections import deque
-from typing import List, Tuple
+from typing import List, Tuple, Literal
 from .text import prevent_overflow_while_rendering
+import imageio
 
 
 class ClockModule(IEventHandler):
@@ -428,10 +429,7 @@ class FiredTrackerModule(IEventHandler):
                     # a hack to handle prototypes using lifecycles
                     if "<" in name:
                         name = name.split("<")[0]
-                    dispatch(
-                        create_event(EventType.HLIGHT_FOCUS, node=name),
-                        self
-                    )
+                    dispatch(create_event(EventType.HLIGHT_FOCUS, node=name), self)
                     return False
         return True
 
@@ -460,7 +458,7 @@ class NodeHighlightingModule(IEventHandler):
             EventType.HLIGHT_HOVER,
             EventType.HLIGHT_UNHOVER,
         ]
-    
+
     def _find_node(self, name):
         for node, rect in self._node_rects:
             if node.get_id() == name:
@@ -559,3 +557,139 @@ class NodeHighlightingModule(IEventHandler):
             )
         surface.blit(tmpsur, (0, 0))
         return True
+
+
+class RecorderModule(IEventHandler):
+    """
+    This module records the visulisation of the `SimProblem` for latter
+    use.
+
+    The module records the format in a gif format so that it can be used to
+    show the unfolding of a system. The module begins recording as soon as
+    the visualisation executes the problem for the first time, i.e. either
+    a step is trigger or playing is trigger.
+
+    parameters:
+        filepath:
+            Where to save the recording after the visualisation has been
+            closed
+        format:
+            What format should be the recording be, current options include:
+            "gif".
+        include_ui:
+            Whether to include the ui in the recording. Specifically the
+            UI for the visualisation, not the application ui.
+        size:
+            Tuple[int, int]
+            The gif size for all frames, all surfaces will be scaled to match
+            these dimensions.
+        settings:
+            A `RecordingSettings` dataclass for adjusting the output
+            parameters for the recording.
+
+    methods:
+        save():
+            Force the recording to be saved out.
+    """
+
+    @dataclass
+    class RecordingSettings:
+        """
+        A light wrapper around the settings for mimsave api call for imageio.
+
+        See docs (<https://imageio.readthedocs.io/en/stable/_autosummary/imageio.plugins.pillow_legacy.html>)
+        for more information on these settings.
+        """
+
+        fps: int = 30
+        palettesize: int = 256
+        subrectangles: bool = True
+
+    def __init__(
+        self,
+        fname: str,
+        format: Literal["gif"] = "gif",
+        include_ui: bool = False,
+        settings: RecordingSettings = None,
+        size: Tuple[int, int] = (512, 256),
+    ):
+        super().__init__()
+        self._fname = fname
+        self._format = format
+        self._frames = []
+        self._started = False
+        self._includeui = include_ui
+        self._size = size
+
+        if settings is None:
+            self._settings = self.RecordingSettings()
+        else:
+            self._setting = settings
+
+    def listen_to(self):
+        return [
+            EventType.SIM_PLAY,
+            EventType.SIM_PLAYING,
+            EventType.SIM_STOP,
+            EventType.RENDER_POST_NODES,
+            EventType.RENDER_POST_UI,
+            EventType.SIM_CLOSE,
+        ]
+
+    def handle_event(self, event):
+
+        if not self._started and any(
+            [
+                check_event(event, EventType.SIM_PLAY),
+                check_event(event, EventType.SIM_PLAYING),
+            ]
+        ):
+            self._started = True
+
+        if check_event(event, EventType.SIM_STOP):
+            self._started = False
+
+        if self._started:
+            if not self._includeui and check_event(event, EventType.RENDER_POST_NODES):
+                self._handle_frames(event.window)
+
+            if self._includeui and check_event(event, EventType.RENDER_POST_UI):
+                self._handle_frames(event.window)
+
+        if check_event(event, EventType.SIM_CLOSE):
+            self._started = False
+            self.save()
+
+    def _handle_frames(self, screen: pygame.Surface):
+        """
+        Extracts the screen state into a frame for recording.
+        """
+        temp_surface = pygame.Surface(self._size)
+        pygame.transform.smoothscale(
+            screen, self._size, temp_surface
+        )
+        frame = pygame.surfarray.array3d(temp_surface)
+        frame = frame.transpose([1, 0, 2])  # Convert to (height, width, channels)
+
+        self._frames.append(frame)
+
+    def save(self):
+        if self._format == "gif":
+            if len(self._frames) > 0:
+                print("RecorderModule:: saving out recording...")
+                imageio.mimsave(
+                    self._fname,
+                    self._frames,
+                    fps=self._settings.fps,
+                    palettesize=self._settings.palettesize,
+                    subrectangles=self._settings.subrectangles,
+                )
+            else:
+                import warnings
+
+                warnings.warn(
+                    "RecorderModule:: No frames have been saved,"
+                    " no ouput will be produced."
+                )
+        else:
+            raise ValueError(f"Unknown format for saving :: {self._format}")

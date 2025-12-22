@@ -797,6 +797,13 @@ class ModelPanel:
             node._curr_time = self._problem.clock
             node.draw(scaled_surface)
 
+        # show the surface after nodes have been drawn
+        evt = create_event(
+            EventType.RENDER_POST_NODES,
+            window=scaled_surface
+        )
+        dispatch(evt, self)
+
         # Scale the surface back to original size and blit
         surface.fill(TUE_GREY)
         scaled_back = pygame.transform.smoothscale(
@@ -807,6 +814,11 @@ class ModelPanel:
         # Dispatch RENDER_UI event to all modules
         evt = create_event(EventType.RENDER_UI, window=surface)
         dispatch(evt, self)
+
+        # share the final surface after ui rendering
+        evt = create_event(EventType.RENDER_POST_UI, window=surface)
+        dispatch(evt, self)
+
         dispatch(create_event(EventType.SIM_RENDERED, window=surface), self)
 
     def handle_mouse_press(self, event: Event) -> Optional[object]:
