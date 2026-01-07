@@ -4,7 +4,7 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 datas = [('simpn/assets', 'simpn/assets'), ('pyproject.toml', '.')]
 binaries = []
-hiddenimports = ['sortedcontainers', 'pygame', 'numpy', 'python-igraph', 'igraph']
+hiddenimports = ['sortedcontainers', 'pygame', 'numpy', 'python-igraph', 'igraph', 'imageio']
 
 # Collect matplotlib
 tmp_ret = collect_all('matplotlib')

@@ -11,3 +11,4 @@ igraph>=1.0.0
 pyqt6>=6.9.1
 matplotlib>=3.9.3
 pyinstaller>=6.17.0
+ImageIO>=2.7
