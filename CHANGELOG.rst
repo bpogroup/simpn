@@ -184,7 +184,8 @@ Version 1.7.8 (2025-12-12)
 
 - [Bugfix] When naming convention of BPMN resources was not followed, created an exception.
 
-Version 1.7.9
--------------
+Version 1.7.9 (2026-01-17)
+--------------------------
 
 - [Feature] Added visualization module for saving simulation animations.
+- [Bugfix] Icons in visualization were not working anymore.
