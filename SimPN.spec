@@ -1,8 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 import sys
-from PyInstaller.utils.hooks import collect_all, collect_submodules
+from PyInstaller.utils.hooks import collect_all, collect_submodules, copy_metadata
 
 datas = [('simpn/assets', 'simpn/assets'), ('pyproject.toml', '.')]
+datas += copy_metadata('imageio')
 binaries = []
 hiddenimports = ['sortedcontainers', 'pygame', 'numpy', 'python-igraph', 'igraph', 'imageio']
 
