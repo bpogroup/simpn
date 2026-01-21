@@ -149,7 +149,7 @@ class BPMNParser:
         if tag in ("definitions", "process", "extensionElements", "timerEventDefinition", 
                    "messageEventDefinition", "outgoing", "incoming", "collaboration", "laneSet",
                    "conditionExpression", "flowNodeRef", "documentation", "signavioMetaData",
-                   "signavioDiagramMetaData", "property", "dataState"):
+                   "signavioDiagramMetaData", "property", "dataState", "signavioLabel"):
             return True
         
         # Prefix match ignores (case-insensitive for BPMN diagram elements)
@@ -186,17 +186,16 @@ class BPMNParser:
                 self.errors.append("The model contains a lane that has no name.")
             # The name must have the form "role_name (nr_resources)"
             match = re.match(r"^(.*?)(?:\s*\((\d+)\))?$", name)
-            if not match:
+            if (not match) or (match.group(2) is None):
                 self.errors.append(f"The lane name '{name}' is not valid. It must be of the form 'role_name (nr_resources)'.")
             else:
-                role_name = match.group(1).strip()
+                name = match.group(1).strip()
                 nr_resources_str = match.group(2)
-                if nr_resources_str is not None:
-                    try:
-                        nr_resources = int(nr_resources_str)
-                    except ValueError:
-                        self.errors.append(f"The number of resources for lane '{name}' is not a valid integer.")
-            role = BPMNRole(role_name, nr_resources)
+                try:
+                    nr_resources = int(nr_resources_str)
+                except ValueError:
+                    self.errors.append(f"The number of resources for lane '{name}' is not a valid integer.")
+            role = BPMNRole(name, nr_resources)
             self.result.add_role(role)
             self.role2contained_ids[role] = []
             
@@ -299,31 +298,40 @@ class BPMNParser:
             
         elif tag == "exclusiveGateway":
             id_ = elem.get("id")
+            name = elem.get("name", "")
+            if not name:
+                name = id_
             if not id_:
                 raise BPMNParseException("Unexpected error: the model contains an event that has no identifier.")
             if id_ in self.id2node:
                 raise BPMNParseException("Unexpected error: the model contains two nodes with the same identifier.")
-            node = BPMNNode("", NodeType.ExclusiveSplit)
+            node = BPMNNode(name, NodeType.ExclusiveSplit)
             self.result.add_node(node)
             self.id2node[id_] = node
             
         elif tag == "eventBasedGateway":
             id_ = elem.get("id")
+            name = elem.get("name", "")
+            if not name:
+                name = id_
             if not id_:
                 raise BPMNParseException("Unexpected error: the model contains an event that has no identifier.")
             if id_ in self.id2node:
                 raise BPMNParseException("Unexpected error: the model contains two nodes with the same identifier.")
-            node = BPMNNode("", NodeType.EventBasedGateway)
+            node = BPMNNode(name, NodeType.EventBasedGateway)
             self.result.add_node(node)
             self.id2node[id_] = node
             
         elif tag == "parallelGateway":
             id_ = elem.get("id")
+            name = elem.get("name", "")
+            if not name:
+                name = id_
             if not id_:
                 raise BPMNParseException("Unexpected error: the model contains an event that has no identifier.")
             if id_ in self.id2node:
                 raise BPMNParseException("Unexpected error: the model contains two nodes with the same identifier.")
-            node = BPMNNode("", NodeType.ParallelSplit)
+            node = BPMNNode(name, NodeType.ParallelSplit)
             self.result.add_node(node)
             self.id2node[id_] = node
             
@@ -537,7 +545,7 @@ class BPMNParser:
             # Add resource tokens based on nr_resources (default to 1 if not set)
             nr_resources = role.nr_resources if role.nr_resources > 0 else 1
             for i in range(1, nr_resources + 1):
-                resource.put(i)
+                resource.put(role.name + " " + str(i))
             role_resources[role] = resource
         
         # Create flows for each arc
@@ -591,10 +599,10 @@ class BPMNParser:
                     raise BPMNParseException(f"Task '{node.name}' is not in any role/lane.")
                 resource = role_resources[role]
 
-                def processing_time_factory(duration):
-                    return eval("lambda: " + duration)
+                def task_behavior_factory(duration):
+                    return eval("lambda case, res: [SimToken((case, res), delay=" + duration + ")]")
                 processing_time_expression = node.properties.get("processing_time")
-                default_behavior = lambda case, res: [SimToken((case, res), delay=processing_time_factory(processing_time_expression)())]
+                default_behavior = task_behavior_factory(processing_time_expression)
 
                 prototype.BPMNTask(
                     sim_problem,

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from enum import Enum, auto
+import re
 from typing import Callable, Optional
 
 from simpn.simulator import SimProblem
@@ -159,15 +160,19 @@ class ProcessReporter(Reporter):
             if time > self.warmup_time:
                 if resource_id not in self.resource_busy_times.keys():
                     self.resource_busy_times[resource_id] = 0
-                if self.__resource_start_times[resource_id] < self.warmup_time:
-                    self.resource_busy_times[resource_id] += time - self.warmup_time
-                else:
-                    self.resource_busy_times[resource_id] += time - self.__resource_start_times[resource_id]
+                if resource_id in self.__resource_start_times.keys():
+                    if self.__resource_start_times[resource_id] < self.warmup_time:
+                        self.resource_busy_times[resource_id] += time - self.warmup_time
+                    else:
+                        self.resource_busy_times[resource_id] += time - self.__resource_start_times[resource_id]
                 if activity_id not in self.activity_processing_times.keys():
                     self.activity_processing_times[activity_id] = []
-                self.activity_processing_times[activity_id].append(time - self.__activity_start_times[(case_id, activity_id)])
-            del self.__resource_start_times[resource_id]
-            del self.__activity_start_times[(case_id, activity_id)]
+                if (case_id, activity_id) in self.__activity_start_times.keys():
+                    self.activity_processing_times[activity_id].append(time - self.__activity_start_times[(case_id, activity_id)])
+            if resource_id in self.__resource_start_times.keys():
+                del self.__resource_start_times[resource_id]
+            if (case_id, activity_id) in self.__activity_start_times.keys():
+                del self.__activity_start_times[(case_id, activity_id)]
             (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.__status[case_id]
             if nr_busy_tasks == 1:
                 sum_proc_times += time - time_last_busy_change
@@ -177,7 +182,8 @@ class ProcessReporter(Reporter):
         elif event.get_id().endswith("<end_event>"):
             case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
             (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.__status[case_id]
-            del self.__status[case_id]
+            if case_id in self.__status.keys():
+                del self.__status[case_id]
             if arrival_time > self.warmup_time:
                 self.nr_completed += 1
                 self.total_wait_time += sum_wait_times
@@ -201,7 +207,7 @@ class ProcessReporter(Reporter):
                     avg_cycle_time: (float, float) # (average, stddev)
                 },
                 resources: {
-                    resource_id: {
+                    role: {
                         utilization: (float, float) # (average, stddev)
                     },
                     ...
@@ -231,8 +237,10 @@ class ProcessReporter(Reporter):
         results[ProcessReporter.GENERAL] = general
 
         resources = dict()
-        # process the resources that are currently busy
+        # process the resources that are currently busy        
         for resource_id in self.__resource_start_times.keys():
+            if resource_id not in self.resource_busy_times.keys():
+                self.resource_busy_times[resource_id] = 0
             self.resource_busy_times[resource_id] += self.__last_time - self.__resource_start_times[resource_id]
 
         self.__resource_start_times.clear()
@@ -240,7 +248,28 @@ class ProcessReporter(Reporter):
         for resource_id in self.resource_busy_times.keys():
             utilization = self.resource_busy_times[resource_id]/(self.__last_time - self.warmup_time)
             resources[resource_id] = {"utilization": utilization}
-        results[ProcessReporter.RESOURCES] = resources
+        
+        # Group resources by name and compute average utilization per group
+        resource_groups = {}
+        for resource_id in resources.keys():
+            # Extract name part (everything before the last space and number)
+            match = re.match(r'^(.*?)\s+\d+$', str(resource_id))
+            if match:
+                group_name = match.group(1)
+            else:
+                group_name = str(resource_id)
+            
+            if group_name not in resource_groups:
+                resource_groups[group_name] = []
+            resource_groups[group_name].append(resources[resource_id]["utilization"])
+        
+        # Compute average utilization per group
+        grouped_resources = {}
+        for group_name, utilizations in resource_groups.items():
+            avg_utilization = sum(utilizations) / len(utilizations)
+            grouped_resources[group_name] = {"utilization": avg_utilization}
+        
+        results[ProcessReporter.RESOURCES] = grouped_resources
 
         activities = dict()
         for activity_id in self.activity_processing_times.keys():
