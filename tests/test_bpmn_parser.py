@@ -320,7 +320,7 @@ class TestBPMNParser(unittest.TestCase):
             self.assertIn("start<start_event>", event_names)
             self.assertIn("end1<end_event>", event_names)
             self.assertIn("end2<end_event>", event_names)
-            self.assertIn("xor split<xor_split>", event_names)
+            self.assertIn("sid-DB395279-95E2-48E7-9D34-6D9813896248<xor_split>", event_names)
 
         except BPMNParseException as e:
             self.fail(f"Transformation structure check raised an exception: {e}")
@@ -355,7 +355,7 @@ class TestBPMNParser(unittest.TestCase):
         self.assertIn(var_dict["employee"], task_a.outgoing)
 
         # Check "Task A" to "xor split" connection
-        xor_split = event_dict["xor split<xor_split>"]
+        xor_split = event_dict["sid-DB395279-95E2-48E7-9D34-6D9813896248<xor_split>"]
         self.assertIs(task_a.outgoing[0], xor_split.incoming[0])
 
         # Check "xor split" to "Task B" and "Task C" connections
@@ -396,7 +396,7 @@ class TestBPMNParser(unittest.TestCase):
         self.assertAlmostEqual(avg_processing_a, 4, delta=0.5)
 
         # Check that the xor split samples the first and second path with approx. 50% probability each
-        xor_split = event_dict["xor split<xor_split>"]
+        xor_split = event_dict["sid-DB395279-95E2-48E7-9D34-6D9813896248<xor_split>"]
         path_counts = [0, 0]
         for _ in range(1000):
             result = xor_split.behavior("case1")
