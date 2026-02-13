@@ -1,5 +1,6 @@
 import unittest
 from simpn.simulator import SimProblem, SimToken, SimVarQueue
+from simpn.reporters import Reporter, OutputReporter
 import simpn.prototypes as prototype
 from random import randint
 
@@ -861,6 +862,82 @@ class TestPriorities(unittest.TestCase):
 
         self.assertGreater(start1_count, 10, "there are at least 10 starts of task 1")
         self.assertGreater(start2_count, 10, "there are at least 10 starts of task 2")
+
+
+class TestReporters(unittest.TestCase):
+    
+    def test_reporter_callback(self):
+
+        class TestReporter(Reporter):
+            def __init__(self):
+                self.reported = []
+            def callback(self, timed_binding):
+                self.reported.append(timed_binding)
+
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        b = test_problem.add_var("b")
+        a.put("a1", 1)
+        test_problem.add_event([a], [b], lambda x: [SimToken("b1", delay=1)], name="a_to_b")
+        reporter = TestReporter()
+        test_problem.simulate(10, reporter=reporter)
+
+        # the reporter should have been called once with the binding for the event a_to_b, at time 1
+        self.assertEqual(len(reporter.reported), 1, "the reporter should have been called once")
+        (binding, time, event) = reporter.reported[0]
+        self.assertEqual(binding[0][1].value, "a1", "the binding should be for the token with value a1")
+        self.assertEqual(time, 1, "the time should be 1")
+        self.assertEqual(event._id, "a_to_b", "the event should be a_to_b")
+
+    def test_outputreporter_callback(self):
+
+        class TestReporter(OutputReporter):
+            def __init__(self):
+                self.reported = []
+            def callback(self, input_binding, time, event, output_binding):
+                self.reported.append((input_binding, time, event, output_binding))
+
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        b = test_problem.add_var("b")
+        a.put("a1", 1)
+        test_problem.add_event([a], [b], lambda x: [SimToken("b1", delay=1)], name="a_to_b")
+        output_reporter = TestReporter()
+        test_problem.simulate(10, reporter=output_reporter)
+
+        # the output reporter should have printed the binding for the event a_to_b, at time 1
+        self.assertEqual(len(output_reporter.reported), 1, "the output reporter should have been called once")
+        (input_binding, time, event, output_binding) = output_reporter.reported[0]
+        self.assertEqual(input_binding[0][1].value, "a1", "the input binding should be for the token with value a1")
+        self.assertEqual(time, 1, "the time should be 1")
+        self.assertEqual(event._id, "a_to_b", "the event should be a_to_b")
+        self.assertEqual(output_binding[0][1].value, "b1", "the output binding should be for the token with value b1")
+
+    def test_list_of_reporters(self):
+        class TestReporter(Reporter):
+            def __init__(self):
+                self.reported = []
+            def callback(self, timed_binding):
+                self.reported.append(timed_binding)
+
+        class TestOutputReporter(OutputReporter):
+            def __init__(self):
+                self.reported = []
+            def callback(self, input_binding, time, event, output_binding):
+                self.reported.append((input_binding, time, event, output_binding))
+
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        b = test_problem.add_var("b")
+        a.put("a1", 1)
+        test_problem.add_event([a], [b], lambda x: [SimToken("b1", delay=1)], name="a_to_b")
+        reporter = TestReporter()
+        output_reporter = TestOutputReporter()
+        test_problem.simulate(10, reporter=[reporter, output_reporter])
+
+        # both reporters should have been called once with the binding for the event a_to_b, at time 1
+        self.assertEqual(len(reporter.reported), 1, "the reporter should have been called once")
+        self.assertEqual(len(output_reporter.reported), 1, "the output reporter should have been called once")
 
 
 if __name__ == '__main__':

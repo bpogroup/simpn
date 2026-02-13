@@ -52,6 +52,23 @@ class Reporter:
         raise NotImplementedError
 
 
+class OutputReporter(Reporter):
+    """
+    A reporter can be passed to the simpn.simulator.SimProblem.simulate function to report on what happens during the simulator.
+    To this end, a reported must implement the callback function.
+    """
+    def callback(self, input_binding, time, event, output_binding):
+        """
+        A function that is invoked by a simpn.simulator.SimProblem each time a event happened.
+        It receives:
+        :param input_binding: [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), ...] of the variable values that caused the event
+        :param time: the simulation time at which the event happened.
+        :param event: SimEvent is the event that happened.
+        :param output_binding: [(v1: SimVar, t1: SimToken), (v2: SimVar, t2: SimToken), ...] of the variable values that were the result of the event.
+        """
+        raise NotImplementedError
+
+
 class SimpleReporter(Reporter):
     """
     A simple reporter that just prints the occurring events to the standard output.
@@ -311,7 +328,7 @@ class ProcessReporter(Reporter):
                 # section contains items that are dictionaries themselves
                 aggregated_section = {}
                 for item in first_result[section].keys():
-                    aggregated_section[item] = aggregate_section_results([result[section][item] for result in results_list])
+                    aggregated_section[item] = aggregate_section_results([result[section][item] for result in results_list if item in result[section].keys()])
                 aggregated_results[section] = aggregated_section
             elif isinstance(first_result[section], dict) and len(first_result[section]) > 0 and isinstance(next(iter(first_result[section].values())), list):
                 # section contains a list of values, which typically is the warmup avg_cycle_time_over_time

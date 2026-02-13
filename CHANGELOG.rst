@@ -189,3 +189,9 @@ Version 1.7.9 (2026-01-17)
 
 - [Feature] Added visualization module for saving simulation animations.
 - [Bugfix] Icons in visualization were not working anymore.
+
+Version 1.7.11 (2026-02-13)
+---------------------------
+
+- [Bugfix] Replications in simulation would crash the simulator if there was no data on some item.
+- [Minor feature] reporters.OutputReporter that has both the input and the output binding of the event that happened.

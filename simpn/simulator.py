@@ -1024,16 +1024,21 @@ class SimProblem:
                             raise TypeError("Event " + str(event) + ": does not generate a numeric value for the time of variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ".")
                 i += 1
 
+        output_binding = []
         for i in range(len(result)):
             if result[i] is not None:
                 if isinstance(event.outgoing[i], SimVarQueue):
                     event.outgoing[i].add_token(result[i])
+                    output_binding.append((event.outgoing[i], result[i]))
                 else:
                     if result[i].time > 0 and result[i].delay == 0:
                         raise TypeError("Deprecated functionality: Event " + str(event) + ": generates a token with a delay of 0, but a time > 0, for variable " + str(event.outgoing[i]) + " for values " + str(variable_assignment) + ". It seems you are using the time of the token to represent the delay.")
                     token = SimToken(result[i].value, time=self.clock + result[i].delay)
                     event.outgoing[i].add_token(token)
-
+                    output_binding.append((event.outgoing[i], token))
+    
+        return output_binding
+    
     def step(self):
         """
         Executes a single step of the simulation.
@@ -1064,12 +1069,16 @@ class SimProblem:
             bindings = self.bindings()
             if len(bindings) > 0:
                 timed_binding = self.binding_priority(bindings)
-                self.fire(timed_binding)
+                output_binding = self.fire(timed_binding)                
                 if reporter is not None:
-                    if type(reporter) == list:
-                        for r in reporter:
+                    if not type(reporter) == list:
+                        reporter = [reporter]
+                    for r in reporter:
+                        # if r inherits from OutputReporter, we call the callback with parameters (input_binding, time, event, output_binding)
+                        from simpn.reporters import OutputReporter
+                        if isinstance(r, OutputReporter):
+                            r.callback(timed_binding[0], timed_binding[1], timed_binding[2], output_binding)
+                        else:
                             r.callback(timed_binding)
-                    else:
-                        reporter.callback(timed_binding)
             else:
                 active_model = False
