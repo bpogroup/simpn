@@ -1,5 +1,6 @@
 import inspect
-from sortedcontainers import SortedList
+import traceback
+from sortedcontainers import SortedKeyList
 import simpn.visualisation as vis
 
 from random import choice
@@ -27,6 +28,38 @@ class Describable:
         return []
 
 
+class Marking(SortedKeyList):
+    """
+    A Marking is a SortedKeyList of tokens.
+    It does everything a SortedKeyList does, but ensures that all elements are SimToken.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for token in self:
+            if not isinstance(token, SimToken):
+                raise TypeError("Marking must be a list of tokens. Element " + str(token) + " does not appear to be a token.")
+    
+    def add(self, value):
+        """Add an element to the sorted list, ensuring it's a SimToken."""
+        if not isinstance(value, SimToken):
+            raise TypeError("Marking must contain only SimToken elements. Element " + str(value) + " does not appear to be a token.")
+        super().add(value)
+    
+    def update(self, iterable):
+        """Update the sorted list with elements from an iterable, ensuring all are SimToken."""
+        for value in iterable:
+            if not isinstance(value, SimToken):
+                raise TypeError("Marking must contain only SimToken elements. Element " + str(value) + " does not appear to be a token.")
+        super().update(iterable)
+    
+    def __setitem__(self, index, value):
+        """Set an element at the given index, ensuring it's a SimToken."""
+        if not isinstance(value, SimToken):
+            raise TypeError("Marking must contain only SimToken elements. Element " + str(value) + " does not appear to be a token.")
+        super().__setitem__(index, value)
+    
+
+
 class SimVar(Describable):
     """
     A simulation variable SimVar has an identifier and a marking.
@@ -47,7 +80,7 @@ class SimVar(Describable):
             self._sorted_by_time = True
         else:
             self._sorted_by_time = False
-        self.marking = SortedList(key=priority)
+        self.marking = Marking(key=priority)
         self.checkpoints = dict()
         self.queue = SimVarQueue(self)
         self.visualize = True
@@ -166,7 +199,7 @@ class SimVarQueue(SimVar):
         # removing a queue token means removing the queue.
         # However, the queue object should remain intact, because that is the same object that is passed as a token.
         # Therefore, we set the marking to a new empty list.
-        self.simvar.marking = SortedList(key=self.simvar.marking.key)
+        self.simvar.marking = Marking(key=self.simvar.marking.key)
 
     def __str__(self):
         return self._id
@@ -193,7 +226,7 @@ class SimVarTime(SimVar):
     @property
     def marking(self):
         token = SimTokenTime(None, problem=self.problem)
-        return SortedList([token])
+        return Marking([token])
 
     def put(self, value, time=0):
         pass
@@ -316,6 +349,28 @@ class SimEvent(Describable):
     def get_description(self):
         description = [(self._id + ": SimEvent", Describable.Style.HEADING)]
         return description
+
+
+class SimGlobalEvent(SimEvent):
+    """
+    A global simulation event is a special kind of SimEvent that has access to the entire state of the simulator.
+    For that reason, its behavior function has all incoming SimVar, but also an additional state variable.
+    Via this additional state variable, it can access the markings of all SimVar in the simulator, using state.simvar_name.
+    Each marking is an ordered list of SimToken.
+    Note that changing the markings should be done with care, as each marking is supposed to stay a sorted list of tokens.
+    The behavior function must return the empty list, because the event does not have outgoing SimVar. The behavior function should perform its changes to the state via the state variable, and not by returning tokens.
+
+    :param _id: the identifier of the event.
+    :param incoming: a list of incoming SimVar of the event.
+    :param outgoing: a list of outgoing SimVar of the event
+    :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.
+    :param behavior: a function that takes len(incoming) + 1 parameters. The first len(incoming) parameters are the values of the incoming SimVar. The last parameter is a state accessor that can be used to access the markings of all SimVar in the simulator. When the event happens, the function is performed on the incoming SimVar.
+    """
+
+    def __init__(self, _id, guard=None, behavior=None, incoming=None, state_accessor=None):
+        encapsulated_behavior = lambda *args: behavior(*args, state=state_accessor)
+        super().__init__(_id, guard=guard, behavior=encapsulated_behavior, incoming=incoming)
+
 
 class SimTokenValue:
     """
@@ -557,6 +612,38 @@ class SimTokenTime(SimToken):
         return 0
 
 
+class StateAccessor:
+    """
+    A class that provides easy access to the state of the simulator.
+    It works, such that the marking of each place can be accessed as an attribute of the StateAccessor with the same name as the place. 
+    For example, if there is a place with name "p1", then the marking of this place can be accessed as state_accessor.p1.
+    """
+    def __init__(self, problem):
+        object.__setattr__(self, 'problem', problem)
+    
+    def __getattr__(self, var_name):
+        if var_name not in self.problem.id2node:
+            raise AttributeError("No node with name " + var_name + ".")
+        node = self.problem.id2node[var_name]
+        if isinstance(node, SimVar):
+            return node.marking
+        else:
+            raise AttributeError("Node with name " + var_name + " is not a SimVar.")
+    
+    def __setattr__(self, var_name, marking):
+        if var_name == 'problem':
+            object.__setattr__(self, var_name, marking)
+            return
+        if var_name == SimVarTime.TIME_ID:
+            raise AttributeError("Cannot set the value of the time variable. The time variable is automatically updated by the simulator.")
+        if var_name not in self.problem.id2node:
+            raise AttributeError("No node with name " + var_name + ".")
+        if not isinstance(marking, Marking):
+            raise TypeError("The marking must be a Marking.")
+        node = self.problem.id2node[var_name]
+        node.marking = marking
+
+
 class SimProblem:
     """
     A simulation problem SimProblem, which consists of a collection of simulation variables SimVar and a collection of simulation events SimEvent.
@@ -585,7 +672,7 @@ class SimProblem:
         return choice(bindings)
 
     def __init__(self, debugging=True, binding_priority=None):
-        self.places = []
+        self.places = []     
         self.events = []
         self.prototypes = []
         self.id2node = dict()
@@ -596,6 +683,7 @@ class SimProblem:
             self.binding_priority = self.PRIORITY_QUEUE_BINDING
         else:
             self.binding_priority = binding_priority
+        self.state_accessor = StateAccessor(self)
 
     def __str__(self):
         result = ""
@@ -841,6 +929,64 @@ class SimProblem:
         self = args[0]
         return self.add_event(*(args[1:]), **kwargs)
 
+    def add_global_event(self, inflow, behavior, name=None, guard=None):
+        """
+        Creates a new SimGlobalEvent with the specified parameters (also see SimGlobalEvent). Adds the SimGlobalEvent to the problem and returns it.
+
+        :param inflow: a list of incoming SimVar of the event.
+        :param behavior: a function that takes a number of parameters len(incoming)+1. The function must return an empty list. When the event happens, the function is performed on the incoming SimVar and the state of the simulator.
+        :param name: the identifier of the event.
+        :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.
+        :return: a SimGlobalEvent with the specified parameters.
+        """
+
+        # Check name
+        t_name = name
+        if t_name is None:
+            if behavior.__name__ == "<lambda>":
+                raise TypeError("Event name must be set or procedure behavior function must be named.")
+            else:
+                t_name = behavior.__name__
+        if t_name in self.id2node:
+            raise TypeError("Event " + t_name + ": node with the same name already exists. Names must be unique.")
+
+        # Check inflow
+        c = 0
+        for i in inflow:
+            if not isinstance(i, SimVar):
+                raise TypeError("Event " + t_name + ": inflow with index " + str(c) + " is not a SimVar.")
+            c += 1
+
+        # Check behavior function
+        if not callable(behavior):
+            raise TypeError("Event " + t_name + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
+        parameters = inspect.signature(behavior).parameters
+        num_mandatory_params = sum(
+            1 for p in parameters.values()
+            if p.kind not in [inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD] # count all parameters which are not "*args" or "**kwargs"
+        )
+        if num_mandatory_params != len(inflow) + 1:
+            raise TypeError("Event " + t_name + ": the behavior function must take one parameter for each input variable plus one parameter for the state.")
+
+        # Check constraint
+        if guard is not None:
+            if not callable(guard):
+                raise TypeError("Event " + t_name + ": the constraint must be a function. (Maybe you made it a function call, exclude the brackets.)")
+            parameters = inspect.signature(guard).parameters
+            num_mandatory_params = sum(
+                1 for p in parameters.values()
+                if p.kind not in [inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD] # count all parameters which are not "*args" or "**kwargs"
+            )
+            if num_mandatory_params > len(inflow):
+                raise TypeError("Event " + t_name + ": the constraint function must take as many parameters as there are input variables.")
+
+        # Generate and add SimGlobalEvent
+        result = SimGlobalEvent(t_name, guard=guard, behavior=behavior, incoming=inflow, state_accessor=self.state_accessor)
+        self.events.append(result)
+        self.id2node[t_name] = result
+
+        return result
+    
     def add_prototype(self, prototype):
         if len(prototype.places) == 0 and len(prototype.events) == 0:
             raise TypeError("Prototype " + prototype.name + ": does not have any variables or events. That should not be possible, please notify the developer.")
@@ -875,7 +1021,8 @@ class SimProblem:
         try:
             enabled = event.guard(*variable_values)
         except Exception as e:
-            raise TypeError("Event " + event + ": guard generates exception for values " + str(variable_values) + ".") from e
+            tb = traceback.format_exc()
+            raise TypeError("Event " + event + ": guard generates exception for values " + str(variable_values) + ".\n\nOriginal exception:\n" + tb)
         if not isinstance(enabled, bool):
             raise TypeError("Event " + event + ": guard does evaluate to a Boolean for values " + str(variable_values) + ".")
         return enabled
@@ -1003,7 +1150,8 @@ class SimProblem:
         try:
             result = event.behavior(*variable_assignment)
         except Exception as e:
-            raise TypeError("Event " + str(event) + ": behavior function generates exception for values " + str(variable_assignment) + ".") from e
+            tb = traceback.format_exc()
+            raise TypeError("Event " + str(event) + ": behavior function generates exception for values " + str(variable_assignment) + ".\n\nOriginal exception:\n" + tb)
         if self._debugging:
             if type(result) != list:
                 raise TypeError("Event " + str(event) + ": behavior function does not generate a list for values " + str(variable_assignment) + ".")

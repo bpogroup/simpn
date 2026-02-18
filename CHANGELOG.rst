@@ -195,3 +195,9 @@ Version 1.7.11 (2026-02-13)
 
 - [Bugfix] Replications in simulation would crash the simulator if there was no data on some item.
 - [Minor feature] reporters.OutputReporter that has both the input and the output binding of the event that happened.
+
+Version 1.8.0 (2026-02-18)
+--------------------------
+
+- [Major feature] added SimGlobalEvent (also see sandbox.global_event for an example)
+- [Minor feature] as part of SimGlobalEvent also created a Marking class. This ensures that a Marking is a list of SimToken, which the original SortedList did not.

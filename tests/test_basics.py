@@ -544,6 +544,168 @@ class TestSimVarQueue(unittest.TestCase):
         self.assertEqual(len(test_problem.bindings()), 0, "An empty queue does not fire.")
 
 
+class TestGlobalEvent(unittest.TestCase):
+
+    def test_global_event_too_few_parameters(self):
+        # adding a global event with a behavior function that has fewer parameters than inflow variables + state should raise an exception
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        # for 1 inflow variable, we need 2 parameters (1 for inflow + 1 for state)
+        # here we only provide 1 parameter
+        with self.assertRaises(TypeError) as context:
+            test_problem.add_global_event([a], lambda x: [], name="test_event")
+        self.assertIn("behavior function must take one parameter for each input variable plus one parameter for the state", str(context.exception))
+
+    def test_global_event_too_many_parameters(self):
+        # adding a global event with a behavior function that has more parameters than inflow variables + state should raise an exception
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        # for 1 inflow variable, we need 2 parameters (1 for inflow + 1 for state)
+        # here we provide 3 parameters
+        with self.assertRaises(TypeError) as context:
+            test_problem.add_global_event([a], lambda x, y, z: [], name="test_event")
+        self.assertIn("behavior function must take one parameter for each input variable plus one parameter for the state", str(context.exception))
+
+    def test_global_event_access_state_and_inflow(self):
+        # the behavior function should have access to the state and the inflow variables
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put("test_value")
+        b = test_problem.add_var("b")
+        
+        # track what the behavior function received
+        received_inflow = []
+        received_state = []
+        
+        def test_behavior(inflow_value, state):
+            received_inflow.append(inflow_value)
+            received_state.append(state)
+            return []
+        
+        test_problem.add_global_event([a], test_behavior, name="test_event")
+        test_problem.fire(test_problem.bindings()[0])
+        
+        # verify the behavior function was called with the correct inflow value
+        self.assertEqual(len(received_inflow), 1, "behavior function should be called once")
+        self.assertEqual(received_inflow[0], "test_value", "behavior function should receive the inflow value")
+        # verify the behavior function received a state accessor
+        self.assertIsNotNone(received_state[0], "behavior function should receive state")
+
+    def test_global_event_state_access_all_variables(self):
+        # the state should have access to all variables in the problem
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put("value_a")
+        b = test_problem.add_var("b")
+        b.put("value_b")
+        c = test_problem.add_var("c")
+        c.put("value_c")
+        
+        accessed_variables = {}
+        
+        def test_behavior(inflow_value, state):
+            # access all variables through state
+            accessed_variables["a"] = state.a
+            accessed_variables["b"] = state.b
+            accessed_variables["c"] = state.c
+            return []
+        
+        test_problem.add_global_event([a], test_behavior, name="test_event")
+        test_problem.fire(test_problem.bindings()[0])
+        
+        # verify all variables were accessible
+        self.assertIn("a", accessed_variables, "state should have access to variable a")
+        self.assertIn("b", accessed_variables, "state should have access to variable b")
+        self.assertIn("c", accessed_variables, "state should have access to variable c")
+
+    def test_global_event_state_has_expected_marking(self):
+        # the variables should have the expected marking
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put("trigger")
+        b = test_problem.add_var("b")
+        b.put("b1", 1)
+        b.put("b2", 2)
+        c = test_problem.add_var("c")
+        c.put("c1", 3)
+        
+        accessed_markings = {}
+        
+        def test_behavior(inflow_value, state):
+            accessed_markings["b"] = list(state.b)
+            accessed_markings["c"] = list(state.c)
+            return []
+        
+        test_problem.add_global_event([a], test_behavior, name="test_event")
+        test_problem.fire(test_problem.bindings()[0])
+        
+        # verify the markings have the expected values
+        self.assertEqual(len(accessed_markings["b"]), 2, "b should have 2 tokens")
+        self.assertEqual(accessed_markings["b"][0].value, "b1", "first token in b should be b1")
+        self.assertEqual(accessed_markings["b"][1].value, "b2", "second token in b should be b2")
+        self.assertEqual(len(accessed_markings["c"]), 1, "c should have 1 token")
+        self.assertEqual(accessed_markings["c"][0].value, "c1", "token in c should be c1")
+
+    def test_global_event_must_return_empty_list(self):
+        # when the behavior returns something other than [], an exception should be produced
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        
+        # test returning a non-list value
+        test_problem.add_global_event([a], lambda x, state: None, name="test_event_none")
+        with self.assertRaises(TypeError) as context:
+            test_problem.fire(test_problem.bindings()[0])
+        self.assertIn("does not generate a list", str(context.exception))
+        
+        # reset
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        
+        # test returning a non-empty list
+        test_problem.add_global_event([a], lambda x, state: [SimToken(1)], name="test_event_nonempty")
+        with self.assertRaises(TypeError) as context:
+            test_problem.fire(test_problem.bindings()[0])
+        self.assertIn("does not generate as many values as there are output variables", str(context.exception))
+
+    def test_global_event_cannot_add_non_simtoken(self):
+        # when the behavior adds something other than SimTokens to a state variable, an exception should be produced
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        b = test_problem.add_var("b")
+        
+        def test_behavior(x, state):
+            # try to add a non-SimToken to the marking
+            state.b.add("invalid_value")
+            return []
+        
+        test_problem.add_global_event([a], test_behavior, name="test_event")
+        with self.assertRaises(TypeError) as context:
+            test_problem.fire(test_problem.bindings()[0])
+        self.assertIn("SimToken", str(context.exception))
+
+    def test_global_event_cannot_set_non_marking(self):
+        # when the behavior sets one of the variables to something other than a Marking, an exception should be produced
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        b = test_problem.add_var("b")
+        
+        def test_behavior(x, state):
+            # try to set a variable to something other than a Marking
+            state.b = [SimToken(1)]  # this is a list, not a Marking
+            return []
+        
+        test_problem.add_global_event([a], test_behavior, name="test_event")
+        with self.assertRaises(TypeError) as context:
+            test_problem.fire(test_problem.bindings()[0])
+        self.assertIn("Marking", str(context.exception))
+
+
 class TestTimeVariable(unittest.TestCase):
 
     def test_available(self):
