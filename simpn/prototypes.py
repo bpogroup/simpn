@@ -784,3 +784,66 @@ class BPMNParallelJoinGateway(SimEvent):
             
     def get_visualisation(self):
         return self.BPMNParallelJoinGatewayViz(self)
+    
+
+class BPMNLane(SimVar):
+    """
+    A SimVar that represents a BPMN lane.
+    It is just a SimVar with a different visualisation.
+    """
+
+    def __init__(self, model, _id, priority=None):
+        super().__init__(_id, priority=priority)
+        
+        self.visualize_edges = False
+
+        model.add_prototype_var(self)
+    
+    def get_description(self):
+        description = [(super().get_id() + ": BPMNLane", Describable.Style.HEADING)]
+        description.append( (" ", Describable.Style.NORMAL) )
+        description.append( ("Marking:", Describable.Style.NORMAL) )
+        for token in self.marking:
+            description.append( (str(token), Describable.Style.BOXED) )
+        return description
+    
+    class BPMNLaneViz(vis.Node):
+        def __init__(self, model_node):
+            super().__init__(model_node)
+            self._height = 150
+            self._width = self._height / 4
+            self._half_width = self._width / 2
+            self._half_height = self._height / 2
+        
+        def draw(self, screen):
+            # Calculate rectangle position (centered at self._pos)
+            x_pos = int(self._pos[0] - self._half_width)
+            y_pos = int(self._pos[1] - self._half_height)
+            
+            pygame.draw.rect(screen, vis.TUE_LIGHTBLUE, pygame.Rect(x_pos, y_pos, self._width, self._height))
+            pygame.draw.rect(screen, vis.TUE_BLUE, pygame.Rect(x_pos, y_pos, self._width, self._height), vis.LINE_WIDTH)
+            
+            # Draw two horizontal lines to the right of the rectangle
+            line_start_x = int(self._pos[0] + self._half_width)
+            line_end_x = int(line_start_x + self._width)
+            pygame.draw.line(screen, vis.TUE_BLUE, (line_start_x, y_pos), (line_end_x, y_pos), vis.LINE_WIDTH)
+            pygame.draw.line(screen, vis.TUE_BLUE, (line_start_x, y_pos + self._height - vis.LINE_WIDTH), (line_end_x, y_pos + self._height - vis.LINE_WIDTH), vis.LINE_WIDTH)
+            
+            # Draw label rotated 90 degrees anti-clockwise inside the rectangle
+            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+            rotated_label = pygame.transform.rotate(label, 90)
+            label_x_pos = int(self._pos[0] - rotated_label.get_width() / 2)
+            label_y_pos = int(self._pos[1] - rotated_label.get_height() / 2)
+            screen.blit(rotated_label, (label_x_pos, label_y_pos))
+
+            # draw tokens over the rectangle
+            shower_pos = (self._pos[0], self._pos[1] - self._half_height + vis.STANDARD_NODE_HEIGHT/2)
+            vis.TokenShower(self._model_node.marking) \
+                .set_pos(shower_pos) \
+                .show_token_count(True) \
+                .set_time(self._curr_time) \
+                .draw(screen)
+
+    def get_visualisation(self):
+        return self.BPMNLaneViz(self)

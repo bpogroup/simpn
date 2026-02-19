@@ -68,22 +68,25 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNIntermediateEvent" title="simpn.prototypes.BPMNIntermediateEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNIntermediateEvent</span></code></a>(model, incoming, ...)</p></td>
 <td><p>Generates a composition of SimVar and SimEvent that represents a BPMN intermediate event.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNParallelJoinGateway" title="simpn.prototypes.BPMNParallelJoinGateway"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNParallelJoinGateway</span></code></a>(model, incoming, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNLane" title="simpn.prototypes.BPMNLane"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNLane</span></code></a>(model, _id[, priority])</p></td>
+<td><p>A SimVar that represents a BPMN lane.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNParallelJoinGateway" title="simpn.prototypes.BPMNParallelJoinGateway"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNParallelJoinGateway</span></code></a>(model, incoming, ...)</p></td>
 <td><p>A SimVar that represents a parallel join gateway.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNParallelSplitGateway" title="simpn.prototypes.BPMNParallelSplitGateway"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNParallelSplitGateway</span></code></a>(model, incoming, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNParallelSplitGateway" title="simpn.prototypes.BPMNParallelSplitGateway"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNParallelSplitGateway</span></code></a>(model, incoming, ...)</p></td>
 <td><p>A SimVar that represents a parallel split gateway.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNStartEvent" title="simpn.prototypes.BPMNStartEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNStartEvent</span></code></a>(model, incoming, outgoing, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNStartEvent" title="simpn.prototypes.BPMNStartEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNStartEvent</span></code></a>(model, incoming, outgoing, ...)</p></td>
 <td><p>Generates a composition of SimVar and SimEvent that represents a BPMN start event.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNTask" title="simpn.prototypes.BPMNTask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNTask</span></code></a>(model, incoming, outgoing, name, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNTask" title="simpn.prototypes.BPMNTask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNTask</span></code></a>(model, incoming, outgoing, name, ...)</p></td>
 <td><p>Generates a composition of SimVar and SimEvent that represents a BPMN task.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.Prototype" title="simpn.prototypes.Prototype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prototype</span></code></a>(model, incoming, outgoing, name)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.Prototype" title="simpn.prototypes.Prototype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prototype</span></code></a>(model, incoming, outgoing, name)</p></td>
 <td><p>Superclass for all prototypes.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.TaskTokenShower" title="simpn.prototypes.TaskTokenShower"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TaskTokenShower</span></code></a>(model_node)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.TaskTokenShower" title="simpn.prototypes.TaskTokenShower"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TaskTokenShower</span></code></a>(model_node)</p></td>
 <td><p>A helper drawer that captures the in-flights tokens that are being  processed by a BPMN prototype.</p></td>
 </tr>
 </tbody>
@@ -236,6 +239,29 @@ The intermediate event can make changes to the data of a case and can generate w
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.prototypes.BPMNIntermediateEvent.get_description">
 <span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNIntermediateEvent.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a description of the object. This is can be used for visualisation purposes.
+The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
+:return: a list of tuples.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNLane">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">BPMNLane</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNLane" title="Link to this definition">¶</a></dt>
+<dd><p>A SimVar that represents a BPMN lane.
+It is just a SimVar with a different visualisation.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNLane.get_description" title="simpn.prototypes.BPMNLane.get_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_description</span></code></a>()</p></td>
+<td><p>Returns a description of the object.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.BPMNLane.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.BPMNLane.get_description" title="Link to this definition">¶</a></dt>
 <dd><p>Returns a description of the object. This is can be used for visualisation purposes.
 The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
 :return: a list of tuples.</p>
