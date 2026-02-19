@@ -23,13 +23,17 @@ def serve_customer(customer, resource):
     return [SimToken(resource, delay=0.75)]
 shop.add_event([customers, resources], [resources], serve_customer)
 
-def plan_customer(customer, state):
-    print("Planning customer " + customer)
+def plan_customer_guard(state):
+    return len(state.waiting_customers) > 0 and len(state.resources) > 0
+
+def plan_customer_behavior(state):
     print("  Waiting: " + str(state.waiting_customers))
     print("  Resources: " + str(state.resources))
     print("  Planned customers: " + str(state.customers))
+    customer = state.waiting_customers.pop(0)
+    print("Planning customer " + str(customer))
     state.customers.add(SimToken(customer))
     return []
-shop.add_global_event([waiting_customers], plan_customer)
+shop.add_global_event(behavior=plan_customer_behavior, guard=plan_customer_guard)
 
 shop.simulate(10, SimpleReporter())

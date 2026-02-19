@@ -272,21 +272,21 @@ Precondition: for each edge (a, self), a must be in self.incoming; for each edge
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimGlobalEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimGlobalEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_accessor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimGlobalEvent" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimGlobalEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_accessor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimGlobalEvent" title="Link to this definition">¶</a></dt>
 <dd><p>A global simulation event is a special kind of SimEvent that has access to the entire state of the simulator.
-For that reason, its behavior function has all incoming SimVar, but also an additional state variable.
-Via this additional state variable, it can access the markings of all SimVar in the simulator, using state.simvar_name.
+For that reason, its guard and behavior function have (only) a state parameter.
+Via this state parameter, it can access the markings of all SimVar in the simulator, using state.simvar_name.
 Each marking is an ordered list of SimToken.
-Note that changing the markings should be done with care, as each marking is supposed to stay a sorted list of tokens.
-The behavior function must return the empty list, because the event does not have outgoing SimVar. The behavior function should perform its changes to the state via the state variable, and not by returning tokens.</p>
+The global event must have a guard function that describes when it is enabled.
+The behavior function must return the empty list, because the event does not have outgoing SimVar. 
+The behavior function should perform its changes to the state via the state variable, and not by returning tokens.
+Note that changing the markings should be done with care, as each marking is supposed to stay a sorted list of tokens.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>_id</strong> – the identifier of the event.</p></li>
-<li><p><strong>incoming</strong> – a list of incoming SimVar of the event.</p></li>
-<li><p><strong>outgoing</strong> – a list of outgoing SimVar of the event</p></li>
-<li><p><strong>guard</strong> – a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.</p></li>
-<li><p><strong>behavior</strong> – a function that takes len(incoming) + 1 parameters. The first len(incoming) parameters are the values of the incoming SimVar. The last parameter is a state accessor that can be used to access the markings of all SimVar in the simulator. When the event happens, the function is performed on the incoming SimVar.</p></li>
+<li><p><strong>guard</strong> – a function that takes exactly one parameter, the state of the simulator. The function must evaluate to True or False for all possible states of the simulator. The event can only happen for states for which the guard function evaluates to True.</p></li>
+<li><p><strong>behavior</strong> – a function that takes exactly one parameter, the state of the simulator. When the event happens, the function is performed on the state.</p></li>
 </ul>
 </dd>
 </dl>
@@ -324,7 +324,7 @@ it can happen on any of these values.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_event" title="simpn.simulator.SimProblem.add_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_event</span></code></a>(inflow, outflow, behavior[, name, ...])</p></td>
 <td><p>Creates a new SimEvent with the specified parameters (also see SimEvent).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_global_event" title="simpn.simulator.SimProblem.add_global_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_global_event</span></code></a>(inflow, behavior[, name, guard])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_global_event" title="simpn.simulator.SimProblem.add_global_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_global_event</span></code></a>(behavior, guard[, name])</p></td>
 <td><p>Creates a new SimGlobalEvent with the specified parameters (also see SimGlobalEvent).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem.add_place" title="simpn.simulator.SimProblem.add_place"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_place</span></code></a>(**kwargs)</p></td>
@@ -426,15 +426,15 @@ it can happen on any of these values.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_global_event">
-<span class="sig-name descname"><span class="pre">add_global_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_global_event" title="Link to this definition">¶</a></dt>
-<dd><p>Creates a new SimGlobalEvent with the specified parameters (also see SimGlobalEvent). Adds the SimGlobalEvent to the problem and returns it.</p>
+<span class="sig-name descname"><span class="pre">add_global_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_global_event" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a new SimGlobalEvent with the specified parameters (also see SimGlobalEvent). 
+Adds the SimGlobalEvent to the problem and returns it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>inflow</strong> – a list of incoming SimVar of the event.</p></li>
-<li><p><strong>behavior</strong> – a function that takes a number of parameters len(incoming)+1. The function must return an empty list. When the event happens, the function is performed on the incoming SimVar and the state of the simulator.</p></li>
+<li><p><strong>behavior</strong> – a function describing the behavior of the global event on the state of the system. The function must return an empty list, because it has 0 outflow variables.</p></li>
+<li><p><strong>guard</strong> – a function describing in which state of the system the event can happen. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.</p></li>
 <li><p><strong>name</strong> – the identifier of the event.</p></li>
-<li><p><strong>guard</strong> – a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

@@ -547,50 +547,46 @@ class TestSimVarQueue(unittest.TestCase):
 class TestGlobalEvent(unittest.TestCase):
 
     def test_global_event_too_few_parameters(self):
-        # adding a global event with a behavior function that has fewer parameters than inflow variables + state should raise an exception
+        # adding a global event with a behavior function that has fewer parameters than required should raise an exception
         test_problem = SimProblem()
         a = test_problem.add_var("a")
         a.put(1)
-        # for 1 inflow variable, we need 2 parameters (1 for inflow + 1 for state)
-        # here we only provide 1 parameter
+        # the behavior function must take exactly 1 parameter (state)
+        # here we provide 0 parameters
         with self.assertRaises(TypeError) as context:
-            test_problem.add_global_event([a], lambda x: [], name="test_event")
-        self.assertIn("behavior function must take one parameter for each input variable plus one parameter for the state", str(context.exception))
+            test_problem.add_global_event(behavior=lambda: [], guard=lambda state: True, name="test_event")
+        self.assertIn("behavior function must have exactly one parameter", str(context.exception))
 
     def test_global_event_too_many_parameters(self):
-        # adding a global event with a behavior function that has more parameters than inflow variables + state should raise an exception
+        # adding a global event with a behavior function that has more parameters than required should raise an exception
         test_problem = SimProblem()
         a = test_problem.add_var("a")
         a.put(1)
-        # for 1 inflow variable, we need 2 parameters (1 for inflow + 1 for state)
-        # here we provide 3 parameters
+        # the behavior function must take exactly 1 parameter (state)
+        # here we provide 2 parameters
         with self.assertRaises(TypeError) as context:
-            test_problem.add_global_event([a], lambda x, y, z: [], name="test_event")
-        self.assertIn("behavior function must take one parameter for each input variable plus one parameter for the state", str(context.exception))
+            test_problem.add_global_event(behavior=lambda x, y: [], guard=lambda state: True, name="test_event")
+        self.assertIn("behavior function must have exactly one parameter", str(context.exception))
 
-    def test_global_event_access_state_and_inflow(self):
-        # the behavior function should have access to the state and the inflow variables
+    def test_global_event_access_state(self):
+        # the behavior function should have access to the state
         test_problem = SimProblem()
         a = test_problem.add_var("a")
         a.put("test_value")
         b = test_problem.add_var("b")
         
         # track what the behavior function received
-        received_inflow = []
         received_state = []
         
-        def test_behavior(inflow_value, state):
-            received_inflow.append(inflow_value)
+        def test_behavior(state):
             received_state.append(state)
             return []
         
-        test_problem.add_global_event([a], test_behavior, name="test_event")
+        test_problem.add_global_event(behavior=test_behavior, guard=lambda state: True, name="test_event")
         test_problem.fire(test_problem.bindings()[0])
         
-        # verify the behavior function was called with the correct inflow value
-        self.assertEqual(len(received_inflow), 1, "behavior function should be called once")
-        self.assertEqual(received_inflow[0], "test_value", "behavior function should receive the inflow value")
-        # verify the behavior function received a state accessor
+        # verify the behavior function was called and received a state accessor
+        self.assertEqual(len(received_state), 1, "behavior function should be called once")
         self.assertIsNotNone(received_state[0], "behavior function should receive state")
 
     def test_global_event_state_access_all_variables(self):
@@ -605,14 +601,14 @@ class TestGlobalEvent(unittest.TestCase):
         
         accessed_variables = {}
         
-        def test_behavior(inflow_value, state):
+        def test_behavior(state):
             # access all variables through state
             accessed_variables["a"] = state.a
             accessed_variables["b"] = state.b
             accessed_variables["c"] = state.c
             return []
         
-        test_problem.add_global_event([a], test_behavior, name="test_event")
+        test_problem.add_global_event(behavior=test_behavior, guard=lambda state: True, name="test_event")
         test_problem.fire(test_problem.bindings()[0])
         
         # verify all variables were accessible
@@ -633,12 +629,12 @@ class TestGlobalEvent(unittest.TestCase):
         
         accessed_markings = {}
         
-        def test_behavior(inflow_value, state):
+        def test_behavior(state):
             accessed_markings["b"] = list(state.b)
             accessed_markings["c"] = list(state.c)
             return []
         
-        test_problem.add_global_event([a], test_behavior, name="test_event")
+        test_problem.add_global_event(behavior=test_behavior, guard=lambda state: True, name="test_event")
         test_problem.fire(test_problem.bindings()[0])
         
         # verify the markings have the expected values
@@ -655,7 +651,7 @@ class TestGlobalEvent(unittest.TestCase):
         a.put(1)
         
         # test returning a non-list value
-        test_problem.add_global_event([a], lambda x, state: None, name="test_event_none")
+        test_problem.add_global_event(behavior=lambda state: None, guard=lambda state: True, name="test_event_none")
         with self.assertRaises(TypeError) as context:
             test_problem.fire(test_problem.bindings()[0])
         self.assertIn("does not generate a list", str(context.exception))
@@ -666,7 +662,7 @@ class TestGlobalEvent(unittest.TestCase):
         a.put(1)
         
         # test returning a non-empty list
-        test_problem.add_global_event([a], lambda x, state: [SimToken(1)], name="test_event_nonempty")
+        test_problem.add_global_event(behavior=lambda state: [SimToken(1)], guard=lambda state: True, name="test_event_nonempty")
         with self.assertRaises(TypeError) as context:
             test_problem.fire(test_problem.bindings()[0])
         self.assertIn("does not generate as many values as there are output variables", str(context.exception))
@@ -678,12 +674,12 @@ class TestGlobalEvent(unittest.TestCase):
         a.put(1)
         b = test_problem.add_var("b")
         
-        def test_behavior(x, state):
+        def test_behavior(state):
             # try to add a non-SimToken to the marking
             state.b.add("invalid_value")
             return []
         
-        test_problem.add_global_event([a], test_behavior, name="test_event")
+        test_problem.add_global_event(behavior=test_behavior, guard=lambda state: True, name="test_event")
         with self.assertRaises(TypeError) as context:
             test_problem.fire(test_problem.bindings()[0])
         self.assertIn("SimToken", str(context.exception))
@@ -695,12 +691,12 @@ class TestGlobalEvent(unittest.TestCase):
         a.put(1)
         b = test_problem.add_var("b")
         
-        def test_behavior(x, state):
+        def test_behavior(state):
             # try to set a variable to something other than a Marking
             state.b = [SimToken(1)]  # this is a list, not a Marking
             return []
         
-        test_problem.add_global_event([a], test_behavior, name="test_event")
+        test_problem.add_global_event(behavior=test_behavior, guard=lambda state: True, name="test_event")
         with self.assertRaises(TypeError) as context:
             test_problem.fire(test_problem.bindings()[0])
         self.assertIn("Marking", str(context.exception))

@@ -201,3 +201,8 @@ Version 1.8.0 (2026-02-18)
 
 - [Major feature] added SimGlobalEvent (also see sandbox.global_event for an example)
 - [Minor feature] as part of SimGlobalEvent also created a Marking class. This ensures that a Marking is a list of SimToken, which the original SortedList did not.
+
+Version 1.9.0 (2026-02-19)
+--------------------------
+
+- [Major feature] SimGlobalEvent guards now also have access to the state and both guard and behavior only operate on the state.

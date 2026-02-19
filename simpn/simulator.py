@@ -354,22 +354,23 @@ class SimEvent(Describable):
 class SimGlobalEvent(SimEvent):
     """
     A global simulation event is a special kind of SimEvent that has access to the entire state of the simulator.
-    For that reason, its behavior function has all incoming SimVar, but also an additional state variable.
-    Via this additional state variable, it can access the markings of all SimVar in the simulator, using state.simvar_name.
+    For that reason, its guard and behavior function have (only) a state parameter.
+    Via this state parameter, it can access the markings of all SimVar in the simulator, using state.simvar_name.
     Each marking is an ordered list of SimToken.
+    The global event must have a guard function that describes when it is enabled.
+    The behavior function must return the empty list, because the event does not have outgoing SimVar. 
+    The behavior function should perform its changes to the state via the state variable, and not by returning tokens.
     Note that changing the markings should be done with care, as each marking is supposed to stay a sorted list of tokens.
-    The behavior function must return the empty list, because the event does not have outgoing SimVar. The behavior function should perform its changes to the state via the state variable, and not by returning tokens.
 
     :param _id: the identifier of the event.
-    :param incoming: a list of incoming SimVar of the event.
-    :param outgoing: a list of outgoing SimVar of the event
-    :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.
-    :param behavior: a function that takes len(incoming) + 1 parameters. The first len(incoming) parameters are the values of the incoming SimVar. The last parameter is a state accessor that can be used to access the markings of all SimVar in the simulator. When the event happens, the function is performed on the incoming SimVar.
+    :param guard: a function that takes exactly one parameter, the state of the simulator. The function must evaluate to True or False for all possible states of the simulator. The event can only happen for states for which the guard function evaluates to True.
+    :param behavior: a function that takes exactly one parameter, the state of the simulator. When the event happens, the function is performed on the state.
     """
 
-    def __init__(self, _id, guard=None, behavior=None, incoming=None, state_accessor=None):
-        encapsulated_behavior = lambda *args: behavior(*args, state=state_accessor)
-        super().__init__(_id, guard=guard, behavior=encapsulated_behavior, incoming=incoming)
+    def __init__(self, _id, guard=None, behavior=None, state_accessor=None):
+        encapsulated_behavior = lambda: behavior(state=state_accessor)
+        encapsulated_guard = lambda: guard(state=state_accessor)
+        super().__init__(_id, guard=encapsulated_guard, behavior=encapsulated_behavior)
 
 
 class SimTokenValue:
@@ -929,14 +930,14 @@ class SimProblem:
         self = args[0]
         return self.add_event(*(args[1:]), **kwargs)
 
-    def add_global_event(self, inflow, behavior, name=None, guard=None):
+    def add_global_event(self, behavior, guard, name=None):
         """
-        Creates a new SimGlobalEvent with the specified parameters (also see SimGlobalEvent). Adds the SimGlobalEvent to the problem and returns it.
+        Creates a new SimGlobalEvent with the specified parameters (also see SimGlobalEvent). 
+        Adds the SimGlobalEvent to the problem and returns it.
 
-        :param inflow: a list of incoming SimVar of the event.
-        :param behavior: a function that takes a number of parameters len(incoming)+1. The function must return an empty list. When the event happens, the function is performed on the incoming SimVar and the state of the simulator.
+        :param behavior: a function describing the behavior of the global event on the state of the system. The function must return an empty list, because it has 0 outflow variables.
+        :param guard: a function describing in which state of the system the event can happen. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.
         :param name: the identifier of the event.
-        :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.
         :return: a SimGlobalEvent with the specified parameters.
         """
 
@@ -950,13 +951,6 @@ class SimProblem:
         if t_name in self.id2node:
             raise TypeError("Event " + t_name + ": node with the same name already exists. Names must be unique.")
 
-        # Check inflow
-        c = 0
-        for i in inflow:
-            if not isinstance(i, SimVar):
-                raise TypeError("Event " + t_name + ": inflow with index " + str(c) + " is not a SimVar.")
-            c += 1
-
         # Check behavior function
         if not callable(behavior):
             raise TypeError("Event " + t_name + ": the behavior must be a function. (Maybe you made it a function call, exclude the brackets.)")
@@ -965,23 +959,22 @@ class SimProblem:
             1 for p in parameters.values()
             if p.kind not in [inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD] # count all parameters which are not "*args" or "**kwargs"
         )
-        if num_mandatory_params != len(inflow) + 1:
-            raise TypeError("Event " + t_name + ": the behavior function must take one parameter for each input variable plus one parameter for the state.")
+        if num_mandatory_params != 1:
+            raise TypeError("Event " + t_name + ": the behavior function must have exactly one parameter; the state parameter.")
 
         # Check constraint
-        if guard is not None:
-            if not callable(guard):
-                raise TypeError("Event " + t_name + ": the constraint must be a function. (Maybe you made it a function call, exclude the brackets.)")
-            parameters = inspect.signature(guard).parameters
-            num_mandatory_params = sum(
-                1 for p in parameters.values()
-                if p.kind not in [inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD] # count all parameters which are not "*args" or "**kwargs"
-            )
-            if num_mandatory_params > len(inflow):
-                raise TypeError("Event " + t_name + ": the constraint function must take as many parameters as there are input variables.")
+        if not callable(guard):
+            raise TypeError("Event " + t_name + ": the constraint must be a function. (Maybe you made it a function call, exclude the brackets.)")
+        parameters = inspect.signature(guard).parameters
+        num_mandatory_params = sum(
+            1 for p in parameters.values()
+            if p.kind not in [inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD] # count all parameters which are not "*args" or "**kwargs"
+        )
+        if num_mandatory_params != 1:
+            raise TypeError("Event " + t_name + ": the constraint function must have exactly one parameter; the state parameter.")
 
         # Generate and add SimGlobalEvent
-        result = SimGlobalEvent(t_name, guard=guard, behavior=behavior, incoming=inflow, state_accessor=self.state_accessor)
+        result = SimGlobalEvent(t_name, guard=guard, behavior=behavior, state_accessor=self.state_accessor)
         self.events.append(result)
         self.id2node[t_name] = result
 
@@ -1083,7 +1076,7 @@ class SimProblem:
         :return: a tuple ([(place, token), (place, token), ...], time)
         """
         incoming = event.incoming
-        if len(incoming) == 0:
+        if len(incoming) == 0 and not isinstance(event, SimGlobalEvent):
             raise Exception("Though it is strictly speaking possible, we do not allow events like '" + str(self) + "' without incoming arcs.")        
         for place in incoming: # if any of the incoming places is empty, there is no binding
             if len(place.marking) == 0:
