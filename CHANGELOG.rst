@@ -207,8 +207,11 @@ Version 1.9.0 (2026-02-19)
 
 - [Major feature] SimGlobalEvent guards now also have access to the state and both guard and behavior only operate on the state.
 
-Version 1.9.1 (2026-02-19)
+Version 1.9.1 (2026-02-21)
 --------------------------
 
 - [Minor feature] created BPMNLane prototype and visualization.
 - [Minor feature] created planning example.
+- [Bugfix] progress dialog now shows immediately on running replications instead of after the first replication
+- [Bugfix] cancelling replications on first replication caused an exception
+- [Minor feature] layout information is now loaded from BPMN file.

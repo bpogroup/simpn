@@ -31,6 +31,7 @@ class BPMNNode:
         self.properties = {}
         self.incoming = []  # list of BPMNArc
         self.outgoing = []  # list of BPMNArc
+        self.coordinates = None  # (x, y) tuple from bpmndi:BPMNShape
 
     def add_incoming(self, arc):
         self.incoming.append(arc)
@@ -56,6 +57,7 @@ class BPMNArc:
         self.probability = probability
         self.source = None
         self.target = None
+        self.waypoints = []  # list of (x, y) tuples from bpmndi:BPMNEdge
 
     def set_source(self, node: BPMNNode):
         self.source = node
@@ -69,6 +71,7 @@ class BPMNRole:
         self.name = name
         self.nr_resources = nr_resources
         self.contained_nodes = []
+        self.coordinates = None  # (x, y) tuple from bpmndi:BPMNShape
 
     def set_nr_resources(self, nr: int):
         self.nr_resources = nr
@@ -140,6 +143,8 @@ class BPMNParser:
         self.errors = []
         self.has_pool = False
         self.id2node = {}
+        self.id2role = {}
+        self.id2arc = {}
         self.role2contained_ids = {}
         self.arc2source_id = {}
         self.arc2target_id = {}
@@ -181,6 +186,7 @@ class BPMNParser:
                 
         elif tag == "lane":
             name = elem.get("name", "")
+            id_ = elem.get("id")
             nr_resources = 0
             if not name:
                 self.errors.append("The model contains a lane that has no name.")
@@ -198,6 +204,8 @@ class BPMNParser:
             role = BPMNRole(name, nr_resources)
             self.result.add_role(role)
             self.role2contained_ids[role] = []
+            if id_:
+                self.id2role[id_] = role
             
             # Parse flowNodeRef children
             for child in elem:
@@ -337,6 +345,7 @@ class BPMNParser:
             
         elif tag == "sequenceFlow":
             name = elem.get("name")
+            id_ = elem.get("id")
             probability = None
             if name is not None and len(name) > 0:
                 # The name should be of the form "number%"
@@ -354,6 +363,8 @@ class BPMNParser:
                 self.errors.append("The model contains an arc that is not connected at the beginning or at the end.")
             self.arc2source_id[arc] = source_ref
             self.arc2target_id[arc] = target_ref
+            if id_:
+                self.id2arc[id_] = arc
         else:
             # Report error for unrecognized/illegal elements
             self.errors.append(f"The model contains an illegal model element: {tag}.")
@@ -363,6 +374,63 @@ class BPMNParser:
         self._parse_element(elem)
         for child in elem:
             self._traverse_tree(child)
+
+    def _parse_diagram_element(self, elem):
+        """Parse BPMN diagram elements to extract coordinates and waypoints."""
+        tag = elem.tag
+        
+        if tag == "BPMNShape":
+            # Extract the bpmnElement attribute to find which node/role this shape represents
+            bpmn_element_id = elem.get("bpmnElement")
+            if not bpmn_element_id:
+                return
+            
+            # Look for omgdc:Bounds child element
+            for child in elem:
+                if child.tag == "Bounds":
+                    x = child.get("x")
+                    y = child.get("y")
+                    width = child.get("width")
+                    height = child.get("height")
+                    if x is not None and y is not None and width is not None and height is not None:
+                        try:
+                            # Calculate center coordinates by adding 0.5*width and 0.5*height
+                            # Try to find the corresponding node or role
+                            if bpmn_element_id in self.id2node:
+                                self.id2node[bpmn_element_id].coordinates = (float(x) + 0.5 * float(width), float(y) + 0.5 * float(height))
+                            elif bpmn_element_id in self.id2role:
+                                self.id2role[bpmn_element_id].coordinates = (float(x), float(y) + 0.5 * float(height))
+                        except ValueError:
+                            pass  # Skip invalid coordinates
+                    break
+        
+        elif tag == "BPMNEdge":
+            # Extract the bpmnElement attribute to find which arc this edge represents
+            bpmn_element_id = elem.get("bpmnElement")
+            if not bpmn_element_id:
+                return
+            
+            # Look for omgdi:waypoint child elements
+            if bpmn_element_id in self.id2arc:
+                arc = self.id2arc[bpmn_element_id]
+                waypoints = []
+                for child in elem:
+                    if child.tag == "waypoint":
+                        x = child.get("x")
+                        y = child.get("y")
+                        if x is not None and y is not None:
+                            try:
+                                waypoints.append((float(x), float(y)))
+                            except ValueError:
+                                pass  # Skip invalid coordinates
+                if waypoints:
+                    arc.waypoints = waypoints
+
+    def _traverse_diagram_tree(self, elem):
+        """Recursively traverse the XML tree to extract diagram information."""
+        self._parse_diagram_element(elem)
+        for child in elem:
+            self._traverse_diagram_tree(child)
 
     def _connect_elements(self):
         # connect nodes to roles
@@ -498,6 +566,8 @@ class BPMNParser:
         self.result = BPMNModel()
         self.errors = []
         self.id2node = {}
+        self.id2role = {}
+        self.id2arc = {}
         self.role2contained_ids = {}
         self.arc2source_id = {}
         self.arc2target_id = {}
@@ -513,8 +583,11 @@ class BPMNParser:
             self.result = None
             raise BPMNParseException(f"An unexpected error occurred while reading the BPMN XML: {str(e)}") from e
 
-        # Traverse the XML tree
+        # Traverse the XML tree to parse BPMN elements
         self._traverse_tree(root)
+        
+        # Traverse the XML tree again to parse diagram information (coordinates and waypoints)
+        self._traverse_diagram_tree(root)
 
         # Connect and check
         self._connect_elements()
@@ -541,7 +614,7 @@ class BPMNParser:
         # Create resources for each role (lane)
         role_resources = {}
         for role in self.result.get_roles():
-            resource = sim_problem.add_var(role.name)
+            resource = prototype.BPMNLane(sim_problem, role.name)
             # Add resource tokens based on nr_resources (default to 1 if not set)
             nr_resources = role.nr_resources if role.nr_resources > 0 else 1
             for i in range(1, nr_resources + 1):
@@ -664,3 +737,56 @@ class BPMNParser:
                 raise BPMNParseException("Event-based gateways are not yet supported in the transformation.")
         
         return sim_problem
+
+    def get_layout(self):
+        """
+        Extract layout information from the parsed BPMN model.
+        
+        Returns a dictionary mapping node IDs to (x, y) coordinate tuples.
+        This includes nodes, lanes, and arcs (using middle waypoint for arcs).
+        
+        :return: Dictionary with element IDs as keys and (x, y) tuples as values
+        :raises BPMNParseException: If no BPMN model has been parsed yet
+        """
+        if self.result is None:
+            raise BPMNParseException("No BPMN model has been parsed yet. Call parse() or parse_file() first.")
+        
+        layout_dict = {}
+        
+        # Add coordinates for all nodes that have them
+        for node in self.result.get_nodes():
+            if node.coordinates is not None:
+                layout_dict[node.name] = node.coordinates
+        
+        # Add coordinates for all roles/lanes that have them
+        for role in self.result.get_roles():
+            if role.coordinates is not None:
+                layout_dict[role.name] = role.coordinates
+        
+        # Add coordinates for arcs using the middle waypoint
+        # Generate the same flow names as in transform()
+        arc_counter = 0
+        for arc in self.result.arcs:
+            # Generate the same flow name as in transform()
+            source_name = arc.source.name if arc.source and arc.source.name else "unknown"
+            target_name = arc.target.name if arc.target and arc.target.name else "unknown"
+            flow_name = f"{source_name}_to_{target_name}_{arc_counter}"
+            
+            if arc.waypoints and len(arc.waypoints) == 2:
+                # If there are exactly 2 waypoints, use the midpoint of the two waypoints
+                x1, y1 = arc.waypoints[0]
+                x2, y2 = arc.waypoints[1]
+                midpoint = ((x1 + x2) / 2, (y1 + y2) / 2)
+                layout_dict[flow_name] = midpoint
+            elif arc.waypoints and len(arc.waypoints) > 2:
+                # Use the middle waypoint
+                middle_index = len(arc.waypoints) // 2
+                middle_waypoint = arc.waypoints[middle_index]
+                layout_dict[flow_name] = middle_waypoint
+            
+            arc_counter += 1
+        
+        # Note: We use node.name instead of the internal XML ID because
+        # the visualization uses the node name as the identifier
+        
+        return layout_dict

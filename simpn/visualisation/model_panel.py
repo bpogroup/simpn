@@ -469,6 +469,7 @@ class ModelPanel:
         self,
         sim_problem,
         layout_file=None,
+        layout=None,
         grid_spacing=50,
         node_spacing=100,
         layout_algorithm: Union[
@@ -480,6 +481,7 @@ class ModelPanel:
 
         :param sim_problem: The simulation problem to visualize
         :param layout_file: Optional file path to load layout from
+        :param layout: Optional dictionary mapping node IDs to (x, y) coordinates
         :param grid_spacing: Spacing between grid lines
         :param node_spacing: Spacing between nodes in layout
         :param layout_algorithm: Algorithm to use for layout (sugiyama, davidson_harel, grid, auto, or None)
@@ -498,6 +500,7 @@ class ModelPanel:
         self._size = MAX_SIZE
         self._surface = pygame.Surface((640, 480))
         self._mods = []
+        self._main_window = None  # Reference to main window for accessing settings
 
         # Add visualizations for prototypes, places, and transitions,
         # but not for places and transitions that are part of prototypes.
@@ -575,6 +578,15 @@ class ModelPanel:
             except FileNotFoundError as e:
                 print(
                     "WARNING: could not load the layout because of the exception below.\nauto-layout will be used.\n",
+                    e,
+                )
+        elif layout is not None:
+            try:
+                self.__load_layout_from_dict(layout)
+                layout_loaded = True
+            except Exception as e:
+                print(
+                    "WARNING: could not load the layout from dictionary because of the exception below.\nauto-layout will be used.\n",
                     e,
                 )
         if not layout_loaded:
@@ -711,6 +723,17 @@ class ModelPanel:
                 id, x, y = line.strip().split(",")
                 if id in self._nodes:
                     self._nodes[id].set_pos((int(x), int(y)))
+
+    def __load_layout_from_dict(self, layout_dict):
+        """
+        Load layout from a dictionary mapping element IDs to (x, y) tuples.
+        Handles nodes, lanes, and arcs (flows) since they all appear as visualization nodes.
+        
+        :param layout_dict: Dictionary with element IDs as keys and (x, y) tuples as values
+        """
+        for node_id, (x, y) in layout_dict.items():
+            if node_id in self._nodes:
+                self._nodes[node_id].set_pos((int(x), int(y)))
 
     def _ev_zoom(self, event: Event) -> bool:
         """
@@ -855,7 +878,11 @@ class ModelPanel:
         pos: Tuple[int, int] = event.pos
         button: Qt.MouseButton = event.button
         if button == Qt.MouseButton.LeftButton and self._selected_nodes is not None:
-            self._drag_nodes(snap=True, pos=pos)
+            # Check if snap to grid is enabled in the main window
+            snap = False
+            if self._main_window is not None and hasattr(self._main_window, 'snap_to_grid_action'):
+                snap = self._main_window.snap_to_grid_action.isChecked()
+            self._drag_nodes(snap=snap, pos=pos)
             self._selected_nodes = None
         return True
 

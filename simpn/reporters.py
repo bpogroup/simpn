@@ -318,9 +318,12 @@ class ProcessReporter(Reporter):
                 stddev = variance ** 0.5
                 aggregated_section[key] = (avg, stddev)
             return aggregated_section
+        
+        # account for the fact that there may not be any result (because the operation was cancelled before any result could be produced)
+        if results_list is None or len(results_list) == 0:
+            return {}
 
         aggregated_results = {}
-
         first_result = results_list[0]
         for section in first_result.keys():
             # check if the section contains items that are dictionaries themselves

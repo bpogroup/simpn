@@ -900,6 +900,8 @@ class ExplorerPanel(QWidget):
                     return False  # Stop replications
                 return True  # Continue replications
             
+            update_progress(0)  # Initialize progress to 0
+
             # Run replications with callback
             replicator = Replicator(sim_problem, duration=duration, warmup=warmup, nr_replications=nr_replications, callback=update_progress)
             results = replicator.run()
@@ -1483,6 +1485,7 @@ class MainWindow(QMainWindow):
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("windowState", self.saveState())
         self.settings.setValue("lastDir", self.last_dir)
+        self.settings.setValue("snapToGrid", self.snap_to_grid_action.isChecked())
     
     def restoreSettings(self):
         """
@@ -1495,6 +1498,8 @@ class MainWindow(QMainWindow):
         if window_state:
             self.restoreState(window_state)
         self.last_dir = self.settings.value("lastDir", os.path.expanduser("~"))
+        snap_to_grid = self.settings.value("snapToGrid", False, type=bool)
+        self.snap_to_grid_action.setChecked(snap_to_grid)
 
     def create_menus(self):
         """
@@ -1545,6 +1550,12 @@ class MainWindow(QMainWindow):
         )
 
         # Add a separator
+        window_menu.addSeparator()
+
+        # Attribute View action
+        self.snap_to_grid_action = window_menu.addAction("Snap to Grid")
+        self.snap_to_grid_action.setCheckable(True)
+
         window_menu.addSeparator()
 
         # Layout action
@@ -1647,8 +1658,10 @@ class MainWindow(QMainWindow):
                     parser = BPMNParser()
                     parser.parse_file(bpmn_file)
                     simproblem = parser.transform()
-                    layout_file = self.get_layout(os.path.basename(bpmn_file))
-                    model_panel = ModelPanel(simproblem, layout_file=layout_file)
+                    
+                    # Get layout from saved file (if exists) or from BPMN coordinates
+                    layout_dict = parser.get_layout()
+                    model_panel = ModelPanel(simproblem, layout=layout_dict)
                     model_panel.add_mod(ClockModule())
                     model_panel.add_mod(NodeHighlightingModule())
                     self.set_simulation(model_panel)
@@ -1691,6 +1704,9 @@ class MainWindow(QMainWindow):
 
         # Store the initial state of the simulator
         model_panel._problem.store_checkpoint("INITIAL_STATE")
+
+        # Store reference to main window for accessing settings
+        model_panel._main_window = self
 
         # Attach event handlers
         register_handler(model_panel)
