@@ -215,3 +215,8 @@ Version 1.9.1 (2026-02-21)
 - [Bugfix] progress dialog now shows immediately on running replications instead of after the first replication
 - [Bugfix] cancelling replications on first replication caused an exception
 - [Minor feature] layout information is now loaded from BPMN file.
+
+Version 1.9.2 (2026-02-23)
+--------------------------
+
+- [Bugfix] removed warning caused by PyGame
