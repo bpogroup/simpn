@@ -230,3 +230,8 @@ Version 1.9.4 (2026-03-02)
 --------------------------
 
 - [Bugfix] also improved compatibility for Qt, igraph, and matplotlib.
+
+Version 1.9.5 (2026-03-02)
+--------------------------
+
+- [Bugfix] pygame, and therefore simpn, actually does not work for Python 3.14 yet.
