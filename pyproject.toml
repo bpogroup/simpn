@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "simpn"
-version = "1.9.2"
+version = "1.9.4"
 authors = [
   { name="Remco Dijkman", email="r.m.dijkman@tue.nl" },
 ]
@@ -19,12 +19,11 @@ classifiers = [
 ]
 dependencies = [
     "sortedcontainers>=2.4.0",
-    "pygame>=2.6.1",
+    "pygame>=2.1.0",
     "python-igraph>=1.0.0",
-    "igraph>=1.0.0",
-    "pyqt6>=6.9.1",
-    "matplotlib>=3.9.3",
-    "ImageIO>=2.7"
+    "pyqt6>=6.4.0",
+    "matplotlib>=3.7.0",
+    "imageio>=2.7"
 ]
 
 [project.optional-dependencies]

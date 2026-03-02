@@ -220,3 +220,13 @@ Version 1.9.2 (2026-02-23)
 --------------------------
 
 - [Bugfix] removed warning caused by PyGame
+
+Version 1.9.3 (2026-03-02)
+--------------------------
+
+- [Bugfix] pygame wheel 2.6.1 not available for some Windows release.
+
+Version 1.9.4 (2026-03-02)
+--------------------------
+
+- [Bugfix] also improved compatibility for Qt, igraph, and matplotlib.
