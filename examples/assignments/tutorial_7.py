@@ -9,14 +9,14 @@ import simpn.prototypes as prototype
 agency = SimProblem()
 
 # Define queues and other 'places' in the process.
-to_deferred_choice = agency.add_var("to deferred choice")
-waiting = agency.add_var("waiting")
-to_leave = agency.add_var("to leave")
-done = agency.add_var("done")
-to_left = agency.add_var("to left")
+to_deferred_choice = prototype.BPMNFlow(agency, "to deferred choice")
+waiting = prototype.BPMNFlow(agency, "waiting")
+to_leave = prototype.BPMNFlow(agency, "to leave")
+done = prototype.BPMNFlow(agency, "done")
+to_left = prototype.BPMNFlow(agency, "to left")
 
 # Define resources.
-employee = agency.add_var("employee")
+employee = prototype.BPMNLane(agency, "employee")
 employee.put("e1")
 employee.put("e2")
 

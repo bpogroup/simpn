@@ -8,16 +8,16 @@ import simpn.prototypes as prototype
 agency = SimProblem()
 
 # Define queues and other 'places' in the process.
-to_choose = agency.add_var("to_choose")
-waiting_europe = agency.add_var("waiting_europe")
-waiting_international = agency.add_var("waiting_international")
-done_europe = agency.add_var("done_europe")
-done_international = agency.add_var("done_international")
+to_choose = prototype.BPMNFlow(agency, "to_choose")
+waiting_europe = prototype.BPMNFlow(agency, "waiting_europe")
+waiting_international = prototype.BPMNFlow(agency, "waiting_international")
+done_europe = prototype.BPMNFlow(agency, "done_europe")
+done_international = prototype.BPMNFlow(agency, "done_international")
 
 # Define resources.
-employee_europe = agency.add_var("employee_europe")
+employee_europe = prototype.BPMNLane(agency, "employee_europe")
 employee_europe.put("ee")
-employee_international = agency.add_var("employee_international")
+employee_international = prototype.BPMNLane(agency, "employee_international")
 employee_international.put("ei")
 
 # Define events.

@@ -9,13 +9,13 @@ from simpn.visualisation import Visualisation
 agency = SimProblem()
 
 # Define queues and other 'places' in the process.
-waiting = agency.add_var("waiting")
-call_terminated = agency.add_var("call_terminated")
-accepted_offer = agency.add_var("accepted")
-rejected_offer = agency.add_var("rejected")
+waiting = prototype.BPMNFlow(agency, "waiting")
+call_terminated = prototype.BPMNFlow(agency, "call_terminated")
+accepted_offer = prototype.BPMNFlow(agency, "accepted_offer")
+rejected_offer = prototype.BPMNFlow(agency, "rejected_offer")
 
 # Define resources.
-employee = agency.add_var("employee")
+employee = prototype.BPMNLane(agency, "employee")
 employee.put("e1")
 employee.put("e2")
 
