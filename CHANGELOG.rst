@@ -235,3 +235,8 @@ Version 1.9.5 (2026-03-02)
 --------------------------
 
 - [Bugfix] pygame, and therefore simpn, actually does not work for Python 3.14 yet.
+
+Version 1.9.8 (2026-03-02)
+--------------------------
+
+- [Bugfix] simpn now installs on Python 3.14, but warns that visualization capabilities are not available.

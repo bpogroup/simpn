@@ -1,4 +1,15 @@
+import sys
+import warnings
 import os
+
+# Check for Python 3.14+ and warn about limited functionality
+if sys.version_info >= (3, 14):
+    print(
+        f"simpn is running on Python {sys.version_info.major}.{sys.version_info.minor}.\n"
+        "Visualization features are not available on Python 3.14+ because pygame and PyQt6 are not yet compatible.\n"
+        "Core simulation functionality will work, but any code that uses visualization will fail.",
+        file=sys.stderr
+    )
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 

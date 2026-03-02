@@ -1,7 +1,10 @@
 import inspect
 import traceback
 from sortedcontainers import SortedKeyList
-import simpn.visualisation as vis
+try:
+    import simpn.visualisation as vis
+except ImportError:
+    pass
 
 from random import choice
 from typing import List, Dict 

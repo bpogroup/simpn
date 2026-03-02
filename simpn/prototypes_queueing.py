@@ -1,9 +1,13 @@
 import inspect
-import pygame
+try:
+    import pygame
+    import simpn.visualisation as vis
+    VISUALIZATION_AVAILABLE = True
+except ImportError:
+    VISUALIZATION_AVAILABLE = False
 from simpn.simulator import SimToken, SimVar, SimProblem
 import random
 import simpn.prototypes as prototypes
-import simpn.visualisation as vis
 
 class QueueingGenerator(prototypes.Prototype):
 
@@ -51,25 +55,26 @@ class QueueingGenerator(prototypes.Prototype):
 
         model.add_prototype(self)
 
-    class QueueingGeneratorViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-        
-        def draw(self, screen):
-            x, y = self._pos
-            hw, hh = self._half_width, self._half_height
-            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x-hw, y-hh), (x+hw, y), (x-hw, y+hh), (x-hw, y-hh)])
-            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x-hw, y-hh), (x+hw, y), (x-hw, y+hh), (x-hw, y-hh)], vis.LINE_WIDTH)
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+    if VISUALIZATION_AVAILABLE:
+        class QueueingGeneratorViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
+            
+            def draw(self, screen):
+                x, y = self._pos
+                hw, hh = self._half_width, self._half_height
+                pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x-hw, y-hh), (x+hw, y), (x-hw, y+hh), (x-hw, y-hh)])
+                pygame.draw.polygon(screen, vis.TUE_BLUE, [(x-hw, y-hh), (x+hw, y), (x-hw, y+hh), (x-hw, y-hh)], vis.LINE_WIDTH)
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
 
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
 
-    def get_visualisation(self):
-        return self.QueueingGeneratorViz(self)
+        def get_visualisation(self):
+            return self.QueueingGeneratorViz(self)
 
 
 class QueueingQueue(SimVar):
@@ -83,47 +88,48 @@ class QueueingQueue(SimVar):
 
         model.add_prototype_var(self)
 
-    class QueueingQueueViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)            
-        
-        def draw(self, screen):
-            x, y = self._pos
-            hw, hh = self._half_width, self._half_height
-            pygame.draw.rect(screen, vis.TUE_LIGHTBLUE, pygame.Rect(x-hw, y-hh, self._width, self._height))
-            pygame.draw.line(screen, vis.TUE_BLUE, (x-hw, y-hh), (x+hw, y-hh), vis.LINE_WIDTH)
-            pygame.draw.line(screen, vis.TUE_BLUE, (x+hw, y-hh), (x+hw, y+hh), vis.LINE_WIDTH)
-            pygame.draw.line(screen, vis.TUE_BLUE, (x+hw, y+hh), (x-hw, y+hh), vis.LINE_WIDTH)
-
-            pygame.draw.line(screen, vis.TUE_BLUE, (x-int(hw/2), y-hw), (x-int(hw/2), y+hw), vis.LINE_WIDTH)
-            pygame.draw.line(screen, vis.TUE_BLUE, (x, y-hw), (x, y+hw), vis.LINE_WIDTH)
-            pygame.draw.line(screen, vis.TUE_BLUE, (x+int(hw/2), y-hw), (x+int(hw/2), y+hw), vis.LINE_WIDTH)
-
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
-            bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
+    if VISUALIZATION_AVAILABLE:
+        class QueueingQueueViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)            
             
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+            def draw(self, screen):
+                x, y = self._pos
+                hw, hh = self._half_width, self._half_height
+                pygame.draw.rect(screen, vis.TUE_LIGHTBLUE, pygame.Rect(x-hw, y-hh, self._width, self._height))
+                pygame.draw.line(screen, vis.TUE_BLUE, (x-hw, y-hh), (x+hw, y-hh), vis.LINE_WIDTH)
+                pygame.draw.line(screen, vis.TUE_BLUE, (x+hw, y-hh), (x+hw, y+hh), vis.LINE_WIDTH)
+                pygame.draw.line(screen, vis.TUE_BLUE, (x+hw, y+hh), (x-hw, y+hh), vis.LINE_WIDTH)
 
-            # draw marking
-            mstr = "["
-            ti = 0
-            for token in self._model_node.marking:
-                mstr += str(token.value) + "@" + str(round(token.time, 2))
-                if ti < len(self._model_node.marking) - 1:
-                    mstr += ", "
-                ti += 1
-            mstr += "]"
-            label = bold_font.render(mstr, True, vis.TUE_RED)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
-            screen.blit(label, (text_x_pos, text_y_pos))        
+                pygame.draw.line(screen, vis.TUE_BLUE, (x-int(hw/2), y-hw), (x-int(hw/2), y+hw), vis.LINE_WIDTH)
+                pygame.draw.line(screen, vis.TUE_BLUE, (x, y-hw), (x, y+hw), vis.LINE_WIDTH)
+                pygame.draw.line(screen, vis.TUE_BLUE, (x+int(hw/2), y-hw), (x+int(hw/2), y+hw), vis.LINE_WIDTH)
 
-    def get_visualisation(self):
-        return self.QueueingQueueViz(self)
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+                bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
+                
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
+
+                # draw marking
+                mstr = "["
+                ti = 0
+                for token in self._model_node.marking:
+                    mstr += str(token.value) + "@" + str(round(token.time, 2))
+                    if ti < len(self._model_node.marking) - 1:
+                        mstr += ", "
+                    ti += 1
+                mstr += "]"
+                label = bold_font.render(mstr, True, vis.TUE_RED)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
+                screen.blit(label, (text_x_pos, text_y_pos))        
+
+        def get_visualisation(self):
+            return self.QueueingQueueViz(self)
 
 
 class QueueingServer(prototypes.Prototype):
@@ -180,44 +186,45 @@ class QueueingServer(prototypes.Prototype):
 
         model.add_prototype(self)
 
-    class QueueingServerViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-        
-        def draw(self, screen):
-            pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._half_height)
-            pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._half_height, vis.LINE_WIDTH)    
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
-            bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
+    if VISUALIZATION_AVAILABLE:
+        class QueueingServerViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
+            
+            def draw(self, screen):
+                pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._half_height)
+                pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._half_height, vis.LINE_WIDTH)    
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+                bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
 
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
 
-            # draw marking
-            mstr = "["
-            ti = 0
-            for token in self._model_node._busyvar.marking:
-                mstr += str(token.value) + "@" + str(round(token.time, 2))
-                if ti < len(self._model_node._busyvar.marking) - 1:
-                    mstr += ", "
-                ti += 1
-            mstr += "]"
-            label = bold_font.render(mstr, True, vis.TUE_RED)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
-            screen.blit(label, (text_x_pos, text_y_pos))        
+                # draw marking
+                mstr = "["
+                ti = 0
+                for token in self._model_node._busyvar.marking:
+                    mstr += str(token.value) + "@" + str(round(token.time, 2))
+                    if ti < len(self._model_node._busyvar.marking) - 1:
+                        mstr += ", "
+                    ti += 1
+                mstr += "]"
+                label = bold_font.render(mstr, True, vis.TUE_RED)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
+                screen.blit(label, (text_x_pos, text_y_pos))        
 
-            # draw free servers
-            label = bold_font.render("free: " + str(len(self._model_node._resourcevar.marking)), True, vis.TUE_RED)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] - self._half_height - vis.LINE_WIDTH - int(label.get_height())
-            screen.blit(label, (text_x_pos, text_y_pos))        
+                # draw free servers
+                label = bold_font.render("free: " + str(len(self._model_node._resourcevar.marking)), True, vis.TUE_RED)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] - self._half_height - vis.LINE_WIDTH - int(label.get_height())
+                screen.blit(label, (text_x_pos, text_y_pos))        
 
-    def get_visualisation(self):
-        return self.QueueingServerViz(self)
+        def get_visualisation(self):
+            return self.QueueingServerViz(self)
 
 
 class QueueingSink(SimVar):
@@ -230,33 +237,34 @@ class QueueingSink(SimVar):
 
         model.add_prototype_var(self)
 
-    class QueueingSinkViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-        
-        def draw(self, screen):
-            x, y = self._pos
-            hw, hh = self._half_width, self._half_height
-            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x-hw, y), (x+hw, y-hw), (x+hw, y+hh), (x-hw, y)])
-            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x-hw, y), (x+hw, y-hw), (x+hw, y+hh), (x-hw, y)], vis.LINE_WIDTH)
-
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
-            bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
+    if VISUALIZATION_AVAILABLE:
+        class QueueingSinkViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
             
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+            def draw(self, screen):
+                x, y = self._pos
+                hw, hh = self._half_width, self._half_height
+                pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x-hw, y), (x+hw, y-hw), (x+hw, y+hh), (x-hw, y)])
+                pygame.draw.polygon(screen, vis.TUE_BLUE, [(x-hw, y), (x+hw, y-hw), (x+hw, y+hh), (x-hw, y)], vis.LINE_WIDTH)
 
-            # draw marking
-            label = bold_font.render(str(len(self._model_node.marking)), True, vis.TUE_RED)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
-            screen.blit(label, (text_x_pos, text_y_pos))        
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+                bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
+                
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
 
-    def get_visualisation(self):
-        return self.QueueingSinkViz(self)
+                # draw marking
+                label = bold_font.render(str(len(self._model_node.marking)), True, vis.TUE_RED)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
+                screen.blit(label, (text_x_pos, text_y_pos))        
+
+        def get_visualisation(self):
+            return self.QueueingSinkViz(self)
 
 
 class QueueingChoice(prototypes.Prototype):
@@ -295,22 +303,23 @@ class QueueingChoice(prototypes.Prototype):
 
         model.add_prototype(self)
 
-    class QueueingChoiceViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-        
-        def draw(self, screen):
-            x, y = self._pos
-            hw, hh = self._half_width, self._half_height
-            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x-hw, y), (x, y-hw), (x+hw, y), (x, y+hh), (x-hw, y)])
-            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x-hw, y), (x, y-hw), (x+hw, y), (x, y+hh), (x-hw, y)], vis.LINE_WIDTH)
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+    if VISUALIZATION_AVAILABLE:
+        class QueueingChoiceViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
+            
+            def draw(self, screen):
+                x, y = self._pos
+                hw, hh = self._half_width, self._half_height
+                pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x-hw, y), (x, y-hw), (x+hw, y), (x, y+hh), (x-hw, y)])
+                pygame.draw.polygon(screen, vis.TUE_BLUE, [(x-hw, y), (x, y-hw), (x+hw, y), (x, y+hh), (x-hw, y)], vis.LINE_WIDTH)
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
 
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
 
-    def get_visualisation(self):
-        return self.QueueingChoiceViz(self)
+        def get_visualisation(self):
+            return self.QueueingChoiceViz(self)

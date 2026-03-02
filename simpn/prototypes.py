@@ -1,23 +1,29 @@
 import inspect
-import pygame
+try:
+    import pygame
+    import simpn.visualisation as vis
+    VISUALIZATION_AVAILABLE = True
+except ImportError:
+    VISUALIZATION_AVAILABLE = False
 from simpn.simulator import SimToken, SimVar, SimEvent, SimProblem, Describable
 from simpn.simulator import SimTokenValue
-import simpn.visualisation as vis
 import math
 import re
 
-# matplotlib set1 colormap
-TASK_TOKEN_SHOW_COLOURS = [
-    pygame.Color("#E41A1C"),
-    pygame.Color("#377EB8"),
-    pygame.Color("#4DAF4A"),
-    pygame.Color("#984EA3"),
-    pygame.Color("#FF7F00"),
-    pygame.Color("#FFFF33"),
-    pygame.Color("#A65628"),
-    pygame.Color("#F781BF"),
-    pygame.Color("#999999"),
-]
+if VISUALIZATION_AVAILABLE:
+    TASK_TOKEN_SHOW_COLOURS = [
+        pygame.Color("#E41A1C"),
+        pygame.Color("#377EB8"),
+        pygame.Color("#4DAF4A"),
+        pygame.Color("#984EA3"),
+        pygame.Color("#FF7F00"),
+        pygame.Color("#FFFF33"),
+        pygame.Color("#A65628"),
+        pygame.Color("#F781BF"),
+        pygame.Color("#999999"),
+    ]
+else:
+    TASK_TOKEN_SHOW_COLOURS = []
 
 class Prototype(Describable):
     """
@@ -72,128 +78,128 @@ class Prototype(Describable):
 
         self.visualization_of_edges = edges
 
-
-class TaskTokenShower(vis.Node):
-    """
-    A helper drawer that captures the in-flights tokens that are being 
-    processed by a BPMN prototype. The shower creates a group of tokens 
-    above the task, colouring them by the prefix of the tokens to highlight
-    what tokens are being processed in the groups.
-    """
-
-    def __init__(self, model_node):
-        super().__init__(model_node)
-        self._task = None 
-        self._token_radius = 3
-        self._token_dia = self._token_radius * 2
-        self._seen_token_types = {}
-        self._next_tok_colour = 0
-        self._max_rows = 3
-
-    def set_task(self, task) -> 'TaskTokenShower':
-        self._task = task 
-        return self 
-    
-    def set_pos(self, pos) -> 'TaskTokenShower':
-        self._pos = pos 
-        return self 
-    
-    def set_rows(self, rows:int) -> 'TaskTokenShower':
-        self._max_rows = rows 
-        return self
-    
-    def set_time(self, clock:float) -> 'TaskTokenShower':
-        self._curr_time = clock
-        return self 
-    
-    def get_token_colour(self, token):
-        # handle the token
-        if isinstance(token, tuple):
-            name = token[0]
-        else:
-            if not isinstance(token, str):
-                name = str(token)
-            else:
-                name = token
-        # it would be nice if we did not have to do this to find the general
-        # family that the token comes from
-        try:
-            cut = re.compile("[0-9]").search(name).span()[0]
-            name = name[:cut]
-            # find a colour
-            if name not in self._seen_token_types:
-                colour = TASK_TOKEN_SHOW_COLOURS[self._next_tok_colour]
-                self._next_tok_colour += 1 
-                if (self._next_tok_colour >= len(TASK_TOKEN_SHOW_COLOURS)):
-                    self._next_tok_colour = 0 
-                self._seen_token_types[name] = colour 
-            else:
-                colour = self._seen_token_types[name]
-            return colour
-        except:
-            return vis.TUE_RED # if we cannot find the color
-    
-    def draw(self, screen:pygame.Surface):
+if VISUALIZATION_AVAILABLE:
+    class TaskTokenShower(vis.Node):
         """
-        Draws the groups of tokens being processed above the current task
+        A helper drawer that captures the in-flights tokens that are being 
+        processed by a BPMN prototype. The shower creates a group of tokens 
+        above the task, colouring them by the prefix of the tokens to highlight
+        what tokens are being processed in the groups.
         """
-        if (self._task is not None):
-            tokens = []
-            node = self._task._model_node
-            if hasattr(node, '_busyvar'):
-                tokens = node._busyvar.marking
-            elif hasattr(node, '_marking'):
-                tokens = node._marking
+
+        def __init__(self, model_node):
+            super().__init__(model_node)
+            self._task = None 
+            self._token_radius = 3
+            self._token_dia = self._token_radius * 2
+            self._seen_token_types = {}
+            self._next_tok_colour = 0
+            self._max_rows = 3
+
+        def set_task(self, task) -> 'TaskTokenShower':
+            self._task = task 
+            return self 
+        
+        def set_pos(self, pos) -> 'TaskTokenShower':
+            self._pos = pos 
+            return self 
+        
+        def set_rows(self, rows:int) -> 'TaskTokenShower':
+            self._max_rows = rows 
+            return self
+        
+        def set_time(self, clock:float) -> 'TaskTokenShower':
+            self._curr_time = clock
+            return self 
+        
+        def get_token_colour(self, token):
+            # handle the token
+            if isinstance(token, tuple):
+                name = token[0]
             else:
-                raise ValueError(f"Could not identify the in-flight tokens for the given task :: {self._task=}")
+                if not isinstance(token, str):
+                    name = str(token)
+                else:
+                    name = token
+            # it would be nice if we did not have to do this to find the general
+            # family that the token comes from
+            try:
+                cut = re.compile("[0-9]").search(name).span()[0]
+                name = name[:cut]
+                # find a colour
+                if name not in self._seen_token_types:
+                    colour = TASK_TOKEN_SHOW_COLOURS[self._next_tok_colour]
+                    self._next_tok_colour += 1 
+                    if (self._next_tok_colour >= len(TASK_TOKEN_SHOW_COLOURS)):
+                        self._next_tok_colour = 0 
+                    self._seen_token_types[name] = colour 
+                else:
+                    colour = self._seen_token_types[name]
+                return colour
+            except:
+                return vis.TUE_RED # if we cannot find the color
+        
+        def draw(self, screen:pygame.Surface):
+            """
+            Draws the groups of tokens being processed above the current task
+            """
+            if (self._task is not None):
+                tokens = []
+                node = self._task._model_node
+                if hasattr(node, '_busyvar'):
+                    tokens = node._busyvar.marking
+                elif hasattr(node, '_marking'):
+                    tokens = node._marking
+                else:
+                    raise ValueError(f"Could not identify the in-flight tokens for the given task :: {self._task=}")
 
-            # start from the top left of the node
-            group_height = self._token_dia * 2
-            curr_x = self._pos[0] - self._task._half_width 
-            padding_x = self._token_radius
-            curr_y = self._pos[1] \
-                - self._task._half_height - group_height - self._token_radius
-            padding_y = self._token_radius
-            start_x = curr_x
-            row_end_x = start_x + self._task._width 
-            rows = 1
+                # start from the top left of the node
+                group_height = self._token_dia * 2
+                curr_x = self._pos[0] - self._task._half_width 
+                padding_x = self._token_radius
+                curr_y = self._pos[1] \
+                    - self._task._half_height - group_height - self._token_radius
+                padding_y = self._token_radius
+                start_x = curr_x
+                row_end_x = start_x + self._task._width 
+                rows = 1
 
-            # loop through token groups
-            for group in tokens:
-                group_width = self._token_dia * (len(group.value) + 1)
-                
-                group_rect = pygame.Rect(
-                    curr_x, curr_y,
-                    group_width, group_height
-                )
-
-                pygame.draw.rect(
-                    screen, vis.TUE_LIGHTBLUE, group_rect, vis.LINE_WIDTH,
-                    int(group_width * 0.25)
-                )
-
-                tok_x = curr_x + self._token_radius
-                tok_y = curr_y + self._token_radius
-                # loop through values of the group
-                for tok in group.value:
-                    tok_circle = pygame.draw.circle(
-                        screen, self.get_token_colour(tok),
-                        (tok_x + self._token_radius, 
-                         tok_y + self._token_radius),
-                        self._token_radius,
+                # loop through token groups
+                for group in tokens:
+                    group_width = self._token_dia * (len(group.value) + 1)
+                    
+                    group_rect = pygame.Rect(
+                        curr_x, curr_y,
+                        group_width, group_height
                     )
-                    tok_x += self._token_dia
 
-                # handle moving to a new row
-                curr_x += padding_x + group_width
-                if (curr_x >= row_end_x):
-                    curr_x = start_x
-                    curr_y -= padding_y + group_height
-                    rows += 1 
-                
-                # to prevent drawing a million groups
-                if (rows >= self._max_rows):
-                    break
+                    pygame.draw.rect(
+                        screen, vis.TUE_LIGHTBLUE, group_rect, vis.LINE_WIDTH,
+                        int(group_width * 0.25)
+                    )
+
+                    tok_x = curr_x + self._token_radius
+                    tok_y = curr_y + self._token_radius
+                    # loop through values of the group
+                    for tok in group.value:
+                        tok_circle = pygame.draw.circle(
+                            screen, self.get_token_colour(tok),
+                            (tok_x + self._token_radius, 
+                            tok_y + self._token_radius),
+                            self._token_radius,
+                        )
+                        tok_x += self._token_dia
+
+                    # handle moving to a new row
+                    curr_x += padding_x + group_width
+                    if (curr_x >= row_end_x):
+                        curr_x = start_x
+                        curr_y -= padding_y + group_height
+                        rows += 1 
+                    
+                    # to prevent drawing a million groups
+                    if (rows >= self._max_rows):
+                        break
 
 
 class BPMNStartEvent(Prototype):  
@@ -248,23 +254,24 @@ class BPMNStartEvent(Prototype):
         description = [(super().get_id() + ": BPMNStartEvent", Describable.Style.HEADING)]
         return description
 
-    class BPMNStartEventViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-        
-        def draw(self, screen):
-            pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._width/2)
-            pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2, vis.LINE_WIDTH)    
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+    if VISUALIZATION_AVAILABLE:
+        class BPMNStartEventViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
             
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+            def draw(self, screen):
+                pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._width/2)
+                pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2, vis.LINE_WIDTH)    
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+                
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
 
-    def get_visualisation(self):
-        return self.BPMNStartEventViz(self)
+        def get_visualisation(self):
+            return self.BPMNStartEventViz(self)
     
 
 class BPMNTask(Prototype):
@@ -331,36 +338,37 @@ class BPMNTask(Prototype):
             description.append( (str(token), Describable.Style.BOXED) )
         return description
 
-    class BPMNTaskViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-            self._width = 100
-            self._height = vis.STANDARD_NODE_HEIGHT
-            self._half_width =  self._width / 2
-            self._half_height = self._height / 2
-            self._token_shower = TaskTokenShower(None)
+    if VISUALIZATION_AVAILABLE:
+        class BPMNTaskViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
+                self._width = 100
+                self._height = vis.STANDARD_NODE_HEIGHT
+                self._half_width =  self._width / 2
+                self._half_height = self._height / 2
+                self._token_shower = TaskTokenShower(None)
 
-        def draw(self, screen):
-            x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
-            pygame.draw.rect(screen, vis.TUE_LIGHTBLUE, pygame.Rect(x_pos, y_pos, self._width, self._height), border_radius=int(0.075*self._width))
-            pygame.draw.rect(screen, vis.TUE_BLUE, pygame.Rect(x_pos, y_pos, self._width, self._height),  vis.LINE_WIDTH, int(0.075*self._width))
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
-            bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
+            def draw(self, screen):
+                x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
+                pygame.draw.rect(screen, vis.TUE_LIGHTBLUE, pygame.Rect(x_pos, y_pos, self._width, self._height), border_radius=int(0.075*self._width))
+                pygame.draw.rect(screen, vis.TUE_BLUE, pygame.Rect(x_pos, y_pos, self._width, self._height),  vis.LINE_WIDTH, int(0.075*self._width))
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+                bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
 
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = int((self._width - label.get_width())/2) + x_pos
-            text_y_pos = int((self._height - label.get_height())/2) + y_pos
-            screen.blit(label, (text_x_pos, text_y_pos))
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = int((self._width - label.get_width())/2) + x_pos
+                text_y_pos = int((self._height - label.get_height())/2) + y_pos
+                screen.blit(label, (text_x_pos, text_y_pos))
 
-            # draw tokens above the task being processed
-            self._token_shower \
-                .set_task(self) \
-                .set_pos(self.get_pos()) \
-                .draw(screen)
+                # draw tokens above the task being processed
+                self._token_shower \
+                    .set_task(self) \
+                    .set_pos(self.get_pos()) \
+                    .draw(screen)
 
-    def get_visualisation(self):
-        return self.BPMNTaskViz(self)
+        def get_visualisation(self):
+            return self.BPMNTaskViz(self)
 
 
 class BPMNIntermediateEvent(Prototype):
@@ -402,24 +410,25 @@ class BPMNIntermediateEvent(Prototype):
         description = [(super().get_id() + ": BPMNIntermediateEvent", Describable.Style.HEADING)]
         return description
 
-    class BPMNIntermediateEventViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-        
-        def draw(self, screen):
-            pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._width/2)
-            pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2, vis.LINE_WIDTH)   
-            pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2-3, vis.LINE_WIDTH)   
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+    if VISUALIZATION_AVAILABLE:
+        class BPMNIntermediateEventViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
+            
+            def draw(self, screen):
+                pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._width/2)
+                pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2, vis.LINE_WIDTH)   
+                pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2-3, vis.LINE_WIDTH)   
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
 
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
 
-    def get_visualisation(self):
-        return self.BPMNIntermediateEventViz(self)
+        def get_visualisation(self):
+            return self.BPMNIntermediateEventViz(self)
 
 
 class BPMNEndEvent(Prototype):
@@ -457,30 +466,31 @@ class BPMNEndEvent(Prototype):
             description.append( (str(token), Describable.Style.BOXED) )
         return description
     
-    class BPMNEndEventViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-        
-        def draw(self, screen):
-            pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._width/2)
-            pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2, vis.LINE_WIDTH*2)
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+    if VISUALIZATION_AVAILABLE:
+        class BPMNEndEventViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
+            
+            def draw(self, screen):
+                pygame.draw.circle(screen, vis.TUE_LIGHTBLUE, (self._pos[0], self._pos[1]), self._width/2)
+                pygame.draw.circle(screen, vis.TUE_BLUE, (self._pos[0], self._pos[1]), self._width/2, vis.LINE_WIDTH*2)
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
 
-            # draw tokens
-            vis.TokenShower(self._model_node._completed_var.marking) \
-                .set_pos(self._pos) \
-                .show_token_count(True) \
-                .set_time(self._curr_time) \
-                .draw(screen)
+                # draw tokens
+                vis.TokenShower(self._model_node._completed_var.marking) \
+                    .set_pos(self._pos) \
+                    .show_token_count(True) \
+                    .set_time(self._curr_time) \
+                    .draw(screen)
 
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
 
-    def get_visualisation(self):
-        return self.BPMNEndEventViz(self)
+        def get_visualisation(self):
+            return self.BPMNEndEventViz(self)
 
 
 class BPMNFlow(SimVar):
@@ -500,28 +510,29 @@ class BPMNFlow(SimVar):
 
         model.add_prototype_var(self)
 
-    class BPMNFlowViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-            self._width = 3
-            self._height = 3
-            self._half_width =  self._width / 2
-            self._half_height = self._height / 2
-            self._show_arrowheads = False
-        
-        def draw(self, screen):
-            x, y = self._pos
-            pygame.draw.circle(screen, vis.TUE_BLUE, (x, y), self._width)
+    if VISUALIZATION_AVAILABLE:
+        class BPMNFlowViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
+                self._width = 3
+                self._height = 3
+                self._half_width =  self._width / 2
+                self._half_height = self._height / 2
+                self._show_arrowheads = False
+            
+            def draw(self, screen):
+                x, y = self._pos
+                pygame.draw.circle(screen, vis.TUE_BLUE, (x, y), self._width)
 
-            # draw tokens 
-            vis.TokenShower(self._model_node.marking) \
-                .show_token_count() \
-                .set_pos(self._pos) \
-                .set_time(self._curr_time) \
-                .draw(screen)    
+                # draw tokens 
+                vis.TokenShower(self._model_node.marking) \
+                    .show_token_count() \
+                    .set_pos(self._pos) \
+                    .set_time(self._curr_time) \
+                    .draw(screen)    
 
-    def get_visualisation(self):
-        return self.BPMNFlowViz(self)
+        def get_visualisation(self):
+            return self.BPMNFlowViz(self)
 
 
 class BPMNExclusiveSplitGateway(Prototype):
@@ -575,29 +586,30 @@ class BPMNExclusiveSplitGateway(Prototype):
         description = [(super().get_id() + ": BPMNExclusiveSplitGateway", Describable.Style.HEADING)]
         return description
 
-    class BPMNExclusiveSplitGatewayViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-        
-        def draw(self, screen):
-            # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
-            x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
-            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
-            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+    if VISUALIZATION_AVAILABLE:
+        class BPMNExclusiveSplitGatewayViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
+            
+            def draw(self, screen):
+                # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
+                x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
+                pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
+                pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
 
-            # # draw a big X inside the diamond
-            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.3*self._height), (x_pos + 0.65*self._width, y_pos + 0.7*self._height), 4*vis.LINE_WIDTH)
-            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.7*self._height), (x_pos + 0.65*self._width, y_pos + 0.3*self._height), 4*vis.LINE_WIDTH)
+                # # draw a big X inside the diamond
+                pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.3*self._height), (x_pos + 0.65*self._width, y_pos + 0.7*self._height), 4*vis.LINE_WIDTH)
+                pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.7*self._height), (x_pos + 0.65*self._width, y_pos + 0.3*self._height), 4*vis.LINE_WIDTH)
 
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
 
-    def get_visualisation(self):
-        return self.BPMNExclusiveSplitGatewayViz(self)
+        def get_visualisation(self):
+            return self.BPMNExclusiveSplitGatewayViz(self)
 
 
 class BPMNExclusiveJoinGateway(Prototype):
@@ -636,44 +648,45 @@ class BPMNExclusiveJoinGateway(Prototype):
         description = [(super().get_id() + ": BPMNExclusiveJoinGateway", Describable.Style.HEADING)]
         return description
     
-    class BPMNExclusiveJoinGatewayViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-        
-        def draw(self, screen):
-            # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
-            x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
-            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
-            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
-            bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
-
-            # # draw a big X inside the diamond
-            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.3*self._height), (x_pos + 0.65*self._width, y_pos + 0.7*self._height), 4*vis.LINE_WIDTH)
-            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.7*self._height), (x_pos + 0.65*self._width, y_pos + 0.3*self._height), 4*vis.LINE_WIDTH)
-
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+    if VISUALIZATION_AVAILABLE:
+        class BPMNExclusiveJoinGatewayViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
             
-            # draw marking
-            mstr = "["
-            ti = 0
-            for token in self._model_node._joiner.marking:
-                mstr += str(token.value) + "@" + str(round(token.time, 2))
-                if ti < len(self._model_node._joiner.marking) - 1:
-                    mstr += ", "
-                ti += 1
-            mstr += "]"
-            label = bold_font.render(mstr, True, vis.TUE_RED)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
-            screen.blit(label, (text_x_pos, text_y_pos))        
+            def draw(self, screen):
+                # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
+                x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
+                pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
+                pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+                bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
 
-    def get_visualisation(self):
-        return self.BPMNExclusiveJoinGatewayViz(self)
+                # # draw a big X inside the diamond
+                pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.3*self._height), (x_pos + 0.65*self._width, y_pos + 0.7*self._height), 4*vis.LINE_WIDTH)
+                pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.35*self._width, y_pos + 0.7*self._height), (x_pos + 0.65*self._width, y_pos + 0.3*self._height), 4*vis.LINE_WIDTH)
+
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
+                
+                # draw marking
+                mstr = "["
+                ti = 0
+                for token in self._model_node._joiner.marking:
+                    mstr += str(token.value) + "@" + str(round(token.time, 2))
+                    if ti < len(self._model_node._joiner.marking) - 1:
+                        mstr += ", "
+                    ti += 1
+                mstr += "]"
+                label = bold_font.render(mstr, True, vis.TUE_RED)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH + int(label.get_height())
+                screen.blit(label, (text_x_pos, text_y_pos))        
+
+        def get_visualisation(self):
+            return self.BPMNExclusiveJoinGatewayViz(self)
 
 
 class BPMNParallelSplitGateway(SimEvent):
@@ -703,29 +716,30 @@ class BPMNParallelSplitGateway(SimEvent):
         description = [(super().get_id() + ": BPMNParallelSplitGateway", Describable.Style.HEADING)]
         return description
 
-    class BPMNParallelSplitGatewayViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-        
-        def draw(self, screen):
-            # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
-            x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
-            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
-            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
-
-            # # draw a big + inside the diamond
-            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + self._half_width, y_pos + 0.2*self._height), (x_pos + self._half_width, y_pos + 0.8*self._height), 4*vis.LINE_WIDTH)
-            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.2*self._width, y_pos + self._half_height), (x_pos + 0.8*self._width, y_pos + self._half_height), 4*vis.LINE_WIDTH)
-
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+    if VISUALIZATION_AVAILABLE:
+        class BPMNParallelSplitGatewayViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
             
-    def get_visualisation(self):
-        return self.BPMNParallelSplitGatewayViz(self)
+            def draw(self, screen):
+                # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
+                x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
+                pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
+                pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+
+                # # draw a big + inside the diamond
+                pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + self._half_width, y_pos + 0.2*self._height), (x_pos + self._half_width, y_pos + 0.8*self._height), 4*vis.LINE_WIDTH)
+                pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.2*self._width, y_pos + self._half_height), (x_pos + 0.8*self._width, y_pos + self._half_height), 4*vis.LINE_WIDTH)
+
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
+                
+        def get_visualisation(self):
+            return self.BPMNParallelSplitGatewayViz(self)
     
 
 class BPMNParallelJoinGateway(SimEvent):
@@ -761,29 +775,30 @@ class BPMNParallelJoinGateway(SimEvent):
         description = [(super().get_id() + ": BPMNParallelJoinGateway", Describable.Style.HEADING)]
         return description
 
-    class BPMNParallelJoinGatewayViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-        
-        def draw(self, screen):
-            # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
-            x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
-            pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
-            pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
-
-            # # draw a big + inside the diamond
-            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + self._half_width, y_pos + 0.2*self._height), (x_pos + self._half_width, y_pos + 0.8*self._height), 4*vis.LINE_WIDTH)
-            pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.2*self._width, y_pos + self._half_height), (x_pos + 0.8*self._width, y_pos + self._half_height), 4*vis.LINE_WIDTH)
-
-            # draw label
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            text_x_pos = self._pos[0] - int(label.get_width()/2)
-            text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
-            screen.blit(label, (text_x_pos, text_y_pos))
+    if VISUALIZATION_AVAILABLE:
+        class BPMNParallelJoinGatewayViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
             
-    def get_visualisation(self):
-        return self.BPMNParallelJoinGatewayViz(self)
+            def draw(self, screen):
+                # draw a pygame diamond shape with TUE_BLUE outline and TUE_LIGHTBLUE fill
+                x_pos, y_pos = int(self._pos[0] - self._width/2), int(self._pos[1] - self._height/2)
+                pygame.draw.polygon(screen, vis.TUE_LIGHTBLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)])
+                pygame.draw.polygon(screen, vis.TUE_BLUE, [(x_pos, y_pos + self._half_height), (x_pos + self._half_width, y_pos), (x_pos + self._width, y_pos + self._half_height), (x_pos + self._half_width, y_pos + self._height)], vis.LINE_WIDTH)
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+
+                # # draw a big + inside the diamond
+                pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + self._half_width, y_pos + 0.2*self._height), (x_pos + self._half_width, y_pos + 0.8*self._height), 4*vis.LINE_WIDTH)
+                pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + 0.2*self._width, y_pos + self._half_height), (x_pos + 0.8*self._width, y_pos + self._half_height), 4*vis.LINE_WIDTH)
+
+                # draw label
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = self._pos[0] - int(label.get_width()/2)
+                text_y_pos = self._pos[1] + self._half_height + vis.LINE_WIDTH
+                screen.blit(label, (text_x_pos, text_y_pos))
+                
+        def get_visualisation(self):
+            return self.BPMNParallelJoinGatewayViz(self)
     
 
 class BPMNLane(SimVar):
@@ -807,43 +822,44 @@ class BPMNLane(SimVar):
             description.append( (str(token), Describable.Style.BOXED) )
         return description
     
-    class BPMNLaneViz(vis.Node):
-        def __init__(self, model_node):
-            super().__init__(model_node)
-            self._height = 150
-            self._width = self._height / 4
-            self._half_width = self._width / 2
-            self._half_height = self._height / 2
-        
-        def draw(self, screen):
-            # Calculate rectangle position (centered at self._pos)
-            x_pos = int(self._pos[0] - self._half_width)
-            y_pos = int(self._pos[1] - self._half_height)
+    if VISUALIZATION_AVAILABLE:
+        class BPMNLaneViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
+                self._height = 150
+                self._width = self._height / 4
+                self._half_width = self._width / 2
+                self._half_height = self._height / 2
             
-            pygame.draw.rect(screen, vis.TUE_LIGHTBLUE, pygame.Rect(x_pos, y_pos, self._width, self._height))
-            pygame.draw.rect(screen, vis.TUE_BLUE, pygame.Rect(x_pos, y_pos, self._width, self._height), vis.LINE_WIDTH)
-            
-            # Draw two horizontal lines to the right of the rectangle
-            line_start_x = int(self._pos[0] + self._half_width)
-            line_end_x = int(line_start_x + self._width)
-            pygame.draw.line(screen, vis.TUE_BLUE, (line_start_x, y_pos), (line_end_x, y_pos), vis.LINE_WIDTH)
-            pygame.draw.line(screen, vis.TUE_BLUE, (line_start_x, y_pos + self._height - vis.LINE_WIDTH), (line_end_x, y_pos + self._height - vis.LINE_WIDTH), vis.LINE_WIDTH)
-            
-            # Draw label rotated 90 degrees anti-clockwise inside the rectangle
-            font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
-            label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-            rotated_label = pygame.transform.rotate(label, 90)
-            label_x_pos = int(self._pos[0] - rotated_label.get_width() / 2)
-            label_y_pos = int(self._pos[1] - rotated_label.get_height() / 2)
-            screen.blit(rotated_label, (label_x_pos, label_y_pos))
+            def draw(self, screen):
+                # Calculate rectangle position (centered at self._pos)
+                x_pos = int(self._pos[0] - self._half_width)
+                y_pos = int(self._pos[1] - self._half_height)
+                
+                pygame.draw.rect(screen, vis.TUE_LIGHTBLUE, pygame.Rect(x_pos, y_pos, self._width, self._height))
+                pygame.draw.rect(screen, vis.TUE_BLUE, pygame.Rect(x_pos, y_pos, self._width, self._height), vis.LINE_WIDTH)
+                
+                # Draw two horizontal lines to the right of the rectangle
+                line_start_x = int(self._pos[0] + self._half_width)
+                line_end_x = int(line_start_x + self._width)
+                pygame.draw.line(screen, vis.TUE_BLUE, (line_start_x, y_pos), (line_end_x, y_pos), vis.LINE_WIDTH)
+                pygame.draw.line(screen, vis.TUE_BLUE, (line_start_x, y_pos + self._height - vis.LINE_WIDTH), (line_end_x, y_pos + self._height - vis.LINE_WIDTH), vis.LINE_WIDTH)
+                
+                # Draw label rotated 90 degrees anti-clockwise inside the rectangle
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                rotated_label = pygame.transform.rotate(label, 90)
+                label_x_pos = int(self._pos[0] - rotated_label.get_width() / 2)
+                label_y_pos = int(self._pos[1] - rotated_label.get_height() / 2)
+                screen.blit(rotated_label, (label_x_pos, label_y_pos))
 
-            # draw tokens over the rectangle
-            shower_pos = (self._pos[0], self._pos[1] - self._half_height + vis.STANDARD_NODE_HEIGHT/2)
-            vis.TokenShower(self._model_node.marking) \
-                .set_pos(shower_pos) \
-                .show_token_count(True) \
-                .set_time(self._curr_time) \
-                .draw(screen)
+                # draw tokens over the rectangle
+                shower_pos = (self._pos[0], self._pos[1] - self._half_height + vis.STANDARD_NODE_HEIGHT/2)
+                vis.TokenShower(self._model_node.marking) \
+                    .set_pos(shower_pos) \
+                    .show_token_count(True) \
+                    .set_time(self._curr_time) \
+                    .draw(screen)
 
-    def get_visualisation(self):
-        return self.BPMNLaneViz(self)
+        def get_visualisation(self):
+            return self.BPMNLaneViz(self)
