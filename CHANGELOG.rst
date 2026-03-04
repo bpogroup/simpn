@@ -240,3 +240,9 @@ Version 1.9.8 (2026-03-02)
 --------------------------
 
 - [Bugfix] simpn now installs on Python 3.14, but warns that visualization capabilities are not available.
+
+Version 1.9.9 (2026-03-04)
+--------------------------
+
+- [Minor feature] we can now reference dictionary fields <name> in the value of a token <t> using <t>.<name>
+- [Minor feature] regular events can now also have access to the global state

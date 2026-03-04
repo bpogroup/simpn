@@ -260,16 +260,23 @@ class SimEvent(Describable):
     [3@+1, 1@+2] according to its behavior. Therefore, after the event has happened, c and d
     will have the tokens 3@2 and 1@3.
 
+    If the state_accessor is set, the guard and behavior functions will also have access to the entire state of the simulator via a state parameter.
+    This parameter will be passed as the first parameter to the guard and behavior functions, and can be used to access the markings of all SimVar in the simulator via state.simvar_name, where simvar_name is the _id of the SimVar.
+
     :param _id: the identifier of the event.
     :param incoming: a list of incoming SimVar of the event.
     :param outgoing: a list of outgoing SimVar of the event
     :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.
     :param behavior: a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. The elements must be tokens that carry the resulting values and the delay with which these values become available. When the event happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar with the corresponding delays.
+    :param state_accessor: a function that takes no parameters and returns the state of the simulator.
     """
 
-    def __init__(self, _id, guard=None, behavior=None, incoming=None, outgoing=None):
+    def __init__(self, _id, guard=None, behavior=None, incoming=None, outgoing=None, state_accessor=None):
         self._id = _id
         self.guard = guard
+        if state_accessor is not None and guard is not None:
+            encapsulated_guard = lambda *args, **kwargs: guard(state_accessor, *args, **kwargs)
+            self.guard = encapsulated_guard
         if incoming is None:
             self.incoming = []
         else:
@@ -279,6 +286,9 @@ class SimEvent(Describable):
         else:
             self.outgoing = outgoing
         self.behavior = behavior
+        if state_accessor is not None:
+            encapsulated_behavior = lambda *args, **kwargs: behavior(state_accessor, *args, **kwargs)
+            self.behavior = encapsulated_behavior
         self.visualize = True
         self.visualize_edges = True
         self.visualization_of_edges = None
@@ -591,6 +601,49 @@ class SimToken:
     
     def copy(self):
         return SimToken(self.value, self.time)
+    
+    def __getattr__(self, name):
+        """
+        Enable accessing dictionary keys as attributes when value is a dict,
+        or forwarding attribute access to value when it's an object with that attribute.
+        Only called when the attribute is not found through normal means.
+        """        
+        try:
+            value = object.__getattribute__(self, 'value')
+            # First check if value is a dict and has the key
+            if isinstance(value, dict) and name in value:
+                return value[name]
+            # Otherwise, try to get the attribute from value (for objects like SimTokenValue)
+            if hasattr(value, name):
+                return getattr(value, name)
+        except AttributeError:
+            pass
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+    
+    def __setattr__(self, name, val):
+        """
+        Enable setting dictionary keys as attributes when value is a dict,
+        or forwarding attribute setting to value when it's an object with that attribute.
+        Reserved attributes (value, time, delay) and private attributes are always set normally.
+        """
+        # Reserved attributes and private attributes should always be set normally
+        if name in ('value', 'time', 'delay') or name.startswith('_'):
+            object.__setattr__(self, name, val)
+        else:
+            # Check if value has been set
+            try:
+                value = object.__getattribute__(self, 'value')
+                # If value is a dict, set the key
+                if isinstance(value, dict):
+                    value[name] = val
+                # If value has the attribute, set it on value
+                elif hasattr(value, name):
+                    setattr(value, name, val)
+                else:
+                    object.__setattr__(self, name, val)
+            except AttributeError:
+                # value hasn't been set yet, so set as normal attribute
+                object.__setattr__(self, name, val)
 
 
 class SimTokenTime(SimToken):
@@ -855,7 +908,7 @@ class SimProblem:
             p.restore_checkpoint(name)
         self.clock = self.clock_checkpoints[name]
 
-    def add_event(self, inflow, outflow, behavior, name=None, guard=None):
+    def add_event(self, inflow, outflow, behavior, name=None, guard=None, state_access=False):
         """
         Creates a new SimEvent with the specified parameters (also see SimEvent). Adds the SimEvent to the problem and returns it.
 
@@ -864,6 +917,7 @@ class SimProblem:
         :param behavior: a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. When the event happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar.
         :param name: the identifier of the event.
         :param guard: a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.
+        :param state_access: if True, the behavior and guard functions will be passed a state parameter that contains the entire state of the simulator. This allows the behavior and guard functions to have access to the markings of all SimVar in the simulator, via state.simvar_name, where simvar_name is the _id of the SimVar.
         :return: a SimEvent with the specified parameters.
         """
 
@@ -899,7 +953,10 @@ class SimProblem:
             1 for p in parameters.values()
             if p.kind not in [inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD] # count all parameters which are not "*args" or "**kwargs"
         )
-        if num_mandatory_params > len(inflow):
+        expected_num_params = len(inflow) + (1 if state_access else 0)
+        if state_access and num_mandatory_params != expected_num_params:
+            raise TypeError("Event " + t_name + ": the behavior function must have exactly " + str(expected_num_params) + " parameters (state + " + str(len(inflow)) + " inflow variables), but has " + str(num_mandatory_params) + ".")
+        elif not state_access and num_mandatory_params > expected_num_params:
             raise TypeError("Event " + t_name + ": the behavior function must take as many parameters as there are input variables.")
 
         # Check constraint
@@ -911,7 +968,9 @@ class SimProblem:
                 1 for p in parameters.values()
                 if p.kind not in [inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD] # count all parameters which are not "*args" or "**kwargs"
             )
-            if num_mandatory_params > len(inflow):
+            if state_access and num_mandatory_params != expected_num_params:
+                raise TypeError("Event " + t_name + ": the guard function must have exactly " + str(expected_num_params) + " parameters (state + " + str(len(inflow)) + " inflow variables), but has " + str(num_mandatory_params) + ".")
+            elif not state_access and num_mandatory_params > expected_num_params:
                 raise TypeError("Event " + t_name + ": the constraint function must take as many parameters as there are input variables.")
 
         # Check queue operations: if the inflow is only queue vars, but the outflow is not, we post a warning.
@@ -921,7 +980,7 @@ class SimProblem:
             print("WARNING: Event " + t_name + ": has only queue variables in the inflow, but not in the outflow. This may lead to unexpected behavior, because queues do not have time, so the outflow tokens are produced at time=0.")
 
         # Generate and add SimEvent
-        result = SimEvent(t_name, guard=guard, behavior=behavior, incoming=inflow, outgoing=outflow)
+        result = SimEvent(t_name, guard=guard, behavior=behavior, incoming=inflow, outgoing=outflow, state_accessor=self.state_accessor if state_access else None)
         self.events.append(result)
         self.id2node[t_name] = result
 

@@ -702,6 +702,203 @@ class TestGlobalEvent(unittest.TestCase):
         self.assertIn("Marking", str(context.exception))
 
 
+class TestStateAccess(unittest.TestCase):
+
+    def test_access_state_behavior_too_few_parameters(self):
+        # when state_access=True, behavior function must have 1 more parameter than the number of inflow variables
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        b = test_problem.add_var("b")
+        b.put(2)
+        c = test_problem.add_var("c")
+        
+        # with 2 inflow variables and state_access=True, behavior must take 3 parameters (state, a, b)
+        # here we provide only 2 parameters
+        with self.assertRaises(TypeError) as context:
+            test_problem.add_event([a, b], [c], lambda state, x: [SimToken(x)], name="test_event", state_access=True)
+        self.assertIn("behavior function must have exactly", str(context.exception))
+        self.assertIn("but has 2", str(context.exception))
+
+    def test_access_state_behavior_too_many_parameters(self):
+        # when state_access=True, behavior function must have 1 more parameter than the number of inflow variables
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        b = test_problem.add_var("b")
+        b.put(2)
+        c = test_problem.add_var("c")
+        
+        # with 2 inflow variables and state_access=True, behavior must take 3 parameters (state, a, b)
+        # here we provide 4 parameters
+        with self.assertRaises(TypeError) as context:
+            test_problem.add_event([a, b], [c], lambda state, x, y, z: [SimToken(x)], name="test_event", state_access=True)
+        self.assertIn("behavior function must have exactly", str(context.exception))
+        self.assertIn("but has 4", str(context.exception))
+
+    def test_access_state_guard_too_few_parameters(self):
+        # when state_access=True, guard function must have 1 more parameter than the number of inflow variables
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        b = test_problem.add_var("b")
+        b.put(2)
+        c = test_problem.add_var("c")
+        
+        # with 2 inflow variables and state_access=True, guard must take 3 parameters (state, a, b)
+        # here we provide only 2 parameters
+        with self.assertRaises(TypeError) as context:
+            test_problem.add_event([a, b], [c], lambda state, x, y: [SimToken(x + y)], 
+                                 guard=lambda state, x: x > 0, name="test_event", state_access=True)
+        self.assertIn("guard function must have exactly", str(context.exception))
+        self.assertIn("but has 2", str(context.exception))
+
+    def test_access_state_guard_too_many_parameters(self):
+        # when state_access=True, guard function must have 1 more parameter than the number of inflow variables
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(1)
+        b = test_problem.add_var("b")
+        b.put(2)
+        c = test_problem.add_var("c")
+        
+        # with 2 inflow variables and state_access=True, guard must take 3 parameters (state, a, b)
+        # here we provide 4 parameters
+        with self.assertRaises(TypeError) as context:
+            test_problem.add_event([a, b], [c], lambda state, x, y: [SimToken(x + y)], 
+                                 guard=lambda state, x, y, z: x > 0, name="test_event", state_access=True)
+        self.assertIn("guard function must have exactly", str(context.exception))
+        self.assertIn("but has 4", str(context.exception))
+
+    def test_access_state_behavior_has_state_access(self):
+        # the behavior function should receive state as the first parameter
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(10)
+        b = test_problem.add_var("b")
+        b.put(20)
+        c = test_problem.add_var("c")
+        c.put(5)
+        result = test_problem.add_var("result")
+        
+        # track what the behavior function received
+        received_state = []
+        
+        def test_behavior(state, x, y):
+            # access state and store information
+            received_state.append({
+                'state': state,
+                'c_marking': list(state.c),
+                'x': x,
+                'y': y
+            })
+            # use state to access variable c
+            c_value = list(state.c)[0].value
+            return [SimToken(x + y + c_value)]
+        
+        test_problem.add_event([a, b], [result], test_behavior, name="test_event", state_access=True)
+        test_problem.fire(test_problem.bindings()[0])
+        
+        # verify the behavior function was called with state
+        self.assertEqual(len(received_state), 1, "behavior function should be called once")
+        self.assertIsNotNone(received_state[0]['state'], "behavior function should receive state")
+        self.assertEqual(received_state[0]['x'], 10, "second parameter should be value from a")
+        self.assertEqual(received_state[0]['y'], 20, "third parameter should be value from b")
+        self.assertEqual(received_state[0]['c_marking'][0].value, 5, "state should allow access to other variables")
+        # verify the result uses state
+        self.assertEqual(result.marking[0].value, 35, "result should be 10 + 20 + 5")
+
+    def test_access_state_guard_has_state_access(self):
+        # the guard function should receive state as the first parameter
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(10)
+        a.put(5)
+        b = test_problem.add_var("b")
+        b.put(3)
+        c = test_problem.add_var("c")
+        c.put(100)
+        result = test_problem.add_var("result")
+        
+        # track what the guard function received
+        guard_calls = []
+        
+        def test_guard(state, x, y):
+            # access state to get threshold from variable c
+            threshold = list(state.c)[0].value
+            guard_calls.append({
+                'x': x,
+                'y': y,
+                'threshold': threshold,
+                'result': x * y < threshold
+            })
+            return x * y < threshold
+        
+        def test_behavior(state, x, y):
+            return [SimToken(x * y)]
+        
+        test_problem.add_event([a, b], [result], test_behavior, guard=test_guard, name="test_event", state_access=True)
+        bindings = test_problem.bindings()
+        
+        # with threshold of 100, only 10*3=30 and 5*3=15 should pass (both pass)
+        # but only the first binding should be returned
+        self.assertEqual(len(bindings), 1, "only one binding should be enabled")
+        
+        test_problem.fire(bindings[0])
+        
+        # verify the guard was called and had access to state
+        self.assertGreater(len(guard_calls), 0, "guard should be called at least once")
+        self.assertEqual(guard_calls[0]['threshold'], 100, "guard should access threshold from state")
+        self.assertTrue(guard_calls[0]['result'], "guard should return True for valid binding")
+
+    def test_access_state_behavior_without_guard(self):
+        # behavior should work with access_state=True even when there's no guard
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(7)
+        b = test_problem.add_var("b")
+        b.put(3)
+        multiplier = test_problem.add_var("multiplier")
+        multiplier.put(10)
+        result = test_problem.add_var("result")
+        
+        def test_behavior(state, x, y):
+            # access multiplier from state
+            mult = list(state.multiplier)[0].value
+            return [SimToken(x * y * mult)]
+        
+        # no guard provided
+        test_problem.add_event([a, b], [result], test_behavior, name="test_event", state_access=True)
+        bindings = test_problem.bindings()
+        
+        self.assertEqual(len(bindings), 1, "one binding should be enabled")
+        
+        test_problem.fire(bindings[0])
+        
+        # verify the result
+        self.assertEqual(len(result.marking), 1, "result should have one token")
+        self.assertEqual(result.marking[0].value, 210, "result should be 7 * 3 * 10")
+
+    def test_access_state_single_inflow(self):
+        # test with a single inflow variable
+        test_problem = SimProblem()
+        a = test_problem.add_var("a")
+        a.put(5)
+        offset = test_problem.add_var("offset")
+        offset.put(100)
+        result = test_problem.add_var("result")
+        
+        def test_behavior(state, x):
+            # with state_access=True and 1 inflow, behavior takes 2 parameters
+            off = list(state.offset)[0].value
+            return [SimToken(x + off)]
+        
+        test_problem.add_event([a], [result], test_behavior, name="test_event", state_access=True)
+        test_problem.fire(test_problem.bindings()[0])
+        
+        self.assertEqual(result.marking[0].value, 105, "result should be 5 + 100")
+
+
 class TestTimeVariable(unittest.TestCase):
 
     def test_available(self):
