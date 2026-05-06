@@ -47,8 +47,8 @@ def arrival_behavior(id):
 
 prototype.BPMNStartEvent(hospital, [], [waiting], "arrival", arrival_time, arrival_behavior)
 
-def start(patient, doctor):
-  patient_type = patient_data.get_data(patient)[1]
+def treat_behavior(patient, doctor):
+  patient_type = patient_data.read_data(patient)[1]
   if (doctor, patient_type) == ("D1", "T1"):
     return [SimToken((patient, doctor), delay=uniform(4, 8))]
   elif (doctor, patient_type) == ("D1", "T2"):
@@ -59,7 +59,7 @@ def start(patient, doctor):
     return [SimToken((patient, doctor), delay=uniform(5, 9))]
   raise ValueError("Invalid doctor/ patient type combination. This should not happen if the model is correct.")
 
-prototype.BPMNTask(hospital, [waiting, doctors], [done, doctors], "answer_call", start)
+prototype.BPMNTask(hospital, [waiting, doctors], [done, doctors], "treat", treat_behavior)
 
 prototype.BPMNEndEvent(hospital, [done], [], "complete")
 

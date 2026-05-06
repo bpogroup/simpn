@@ -1,79 +1,141 @@
-import random
-
-from simpn.simulator import SimProblem, SimToken
-from simpn.reporters import SimpleReporter
+from simpn.simulator import SimProblem, SimToken, SimTokenValue, SimVar
+from random import expovariate as exp
+from random import uniform
+from simpn.reporters import EventLogReporter
 import simpn.prototypes as prototype
-from simpn.visualisation import Visualisation
-
-# The simulator
-
-terminal = SimProblem()
-
-cranes = prototype.BPMNLane(terminal, "cranes")
-cranes.put("c1")
-cranes.put("c2")
-
-arrived = prototype.BPMNFlow(terminal, "arrived")
-completed = prototype.BPMNFlow(terminal, "completed")
-
-def load_container(truck, crane, assignment):
-    truck_type = truck[1]
-    processing_time = None
-    if (truck_type, crane) == ("T1", "c1"):
-        processing_time = random.uniform(2, 4)
-    elif (truck_type, crane) == ("T1", "c2"):
-        processing_time = random.uniform(3, 5)
-    elif (truck_type, crane) == ("T2", "c1"):
-        processing_time = random.uniform(4, 6)
-    elif (truck_type, crane) == ("T2", "c2"):
-        processing_time = random.uniform(5, 7)
-    return [SimToken((truck, crane), delay=processing_time)]
-
-# We introduce a state variable that keeps track of the assignments X_{t, c}, which indicate whether crane c is assigned to truck t.
-assignments = terminal.add_var("assignments")
-# A truck t can only be loaded by a crane c if X_{t, c} = 1. We can express this as a guard on the loading event.
-def load_container_controller(truck, crane, assignment):
-    return (truck, crane) == assignment
-
-# Put the process together
-
-prototype.BPMNStartEvent(terminal, [], [arrived], "truck_arrives", lambda: random.expovariate(1/10), behavior=lambda: [SimToken(random.choice(["T1","T2"]))])
-prototype.BPMNTask(terminal, [arrived, cranes, assignments], [completed, cranes], "load_container", load_container, guard=load_container_controller)
-prototype.BPMNEndEvent(terminal, [completed], [], name="done")
+from simpn.visualisation.base import Visualisation
 
 
-# Add the assignment decision making event
-# The decision moment:
-# there are waiting trucks and available cranes
-# that are not assigned yet.
+"""
+Implements the resource allocation example from the ER paper.
+
+Process is:
+- arrival start event -> treat task -> complete end event
+- two types of patients T1, T2 can arrive.
+- two doctors D1, D2 exist with names for the treat task.
+- Patients arrive according to an exponential distribution with mean 5 minutes (12 per hour). They are 50/50 T1/T2.
+- It takes on average 8 minutes to treat a patient (we can treat 7.5 per hour per resource = 15 per hour).
+- Different doctor/ patient combinations have different treatment times. (D1, T1) is 6 minutes, (D1, T2) is 9 minutes, (D2, T1) is 10 minutes, (D2, T2) is 7 minutes.
+
+Decision is:
+- The decision moment is when there are unassigned patients and unassigned doctors.
+- The decision is to assign one of the unassigned patients to one of the unassigned doctors.
+"""
+
+
+# --------------------------
+# PROCESS MODEL
+# --------------------------
+
+# Instantiate the problem.
+hospital = SimProblem()
+
+# Define queues and other 'places' in the process.
+waiting = prototype.BPMNFlow(hospital, "waiting")
+done = prototype.BPMNFlow(hospital, "done")
+
+# Define resources and resource data
+doctors = prototype.BPMNLane(hospital, "doctors")
+doctor_data = prototype.DataStore(hospital, "doctor_data")
+doctors.put("D1")
+doctor_data.update_data("D1", "Dr. Smith")
+doctors.put("D2")
+doctor_data.update_data("D2", "Dr. Johnson")
+
+# Define patient data
+patient_data = prototype.DataStore(hospital, "patient_data")
+
+# Define start event with patient type data
+def arrival_time():
+  return exp(12/60)
+
+def arrival_behavior(id):
+  patient_type = "T1" if uniform(0, 1) < 0.5 else "T2"
+  patient_data.update_data(id, patient_type)
+  return SimToken(id)
+
+prototype.BPMNStartEvent(hospital, [], [waiting], "arrival", arrival_time, arrival_behavior)
+
+# Define the assignment variable X_{d, p} that indicates whether doctor d is assigned to patient p.
+assignments = hospital.add_var("assignments")
+assignments.set_invisible_edges() # we make the edges invisible, though strictly speaking the treat task depends on it, I just think it looks cleaner to not mix the BPMN with the Petri net edges
+
+# Define the treatment task with doctor/ patient type dependent processing times
+def treat_behavior(patient, doctor, assignment):
+  patient_type = patient_data.read_data(patient)[1]
+  if (doctor, patient_type) == ("D1", "T1"):
+    return [SimToken((patient, doctor), delay=uniform(4, 8))]
+  elif (doctor, patient_type) == ("D1", "T2"):
+    return [SimToken((patient, doctor), delay=uniform(7, 11))]
+  elif (doctor, patient_type) == ("D2", "T1"):
+    return [SimToken((patient, doctor), delay=uniform(8, 12))]
+  elif (doctor, patient_type) == ("D2", "T2"):
+    return [SimToken((patient, doctor), delay=uniform(5, 9))]
+  raise ValueError("Invalid doctor/ patient type combination. This should not happen if the model is correct.")
+
+# The 'controlled behavior' is that only doctor/ patient combinations that are assigned (i.e., for which X_{d, p} = 1) can actually be used.
+def treat_guard(patient, doctor, assignment):
+  return (patient, doctor) == assignment
+
+prototype.BPMNTask(hospital, [waiting, doctors, assignments], [done, doctors], "treat", treat_behavior, treat_guard)
+
+# Define end event
+prototype.BPMNEndEvent(hospital, [done], [], "complete")
+
+
+# --------------------------
+# DECISION MODEL
+# --------------------------
+
+# The decision moment: there are unassigned patients and unassigned doctors
+def unassigned_patients(state):
+  waiting_patients = set([token.value for token in state.waiting])
+  assigned_patients = set([token.value[0] for token in state.assignments])
+  return waiting_patients - assigned_patients
+
+def unassigned_doctors(state):
+  available_doctors = set([token.value for token in state.doctors])
+  assigned_doctors = set([token.value[1] for token in state.assignments])
+  return available_doctors - assigned_doctors
+
 def assignment_decision_guard(state):
-    assigned_trucks = set()
-    assigned_cranes = set()
-    for assigned_token in state.assignments:
-        assigned_trucks.add(assigned_token.value[0])
-        assigned_cranes.add(assigned_token.value[1])
-    unassigned_waiting_trucks = set([token.value for token in state.arrived]) - assigned_trucks
-    unassigned_available_cranes = set([token.value for token in state.cranes]) - assigned_cranes
-    return len(unassigned_waiting_trucks) > 0 and len(unassigned_available_cranes) > 0
-# The decision:
-# Randomly assign one of the unassigned waiting trucks to one of the unassigned available cranes, and add this assignment to the assignment variable.
+  return len(unassigned_patients(state)) > 0 and len(unassigned_doctors(state)) > 0
+
+# The decision: since this is a simulation model, we model 'imperatively' rather than declaratively. We do so by modeling a decision policy that is executed at the decision moment.
+# The policy: choose an assignment in order of preference (D1, T1) > (D2, T2) > (D1, T2) > (D2, T1)
 def assignment_decision_behavior(state):
-    assigned_trucks = set()
-    assigned_cranes = set()
-    for assigned_token in state.assignments:
-        assigned_trucks.add(assigned_token.value[0])
-        assigned_cranes.add(assigned_token.value[1])
-    unassigned_waiting_trucks = set([token.value for token in state.arrived]) - assigned_trucks
-    unassigned_available_cranes = set([token.value for token in state.cranes]) - assigned_cranes
-    truck = random.choice(list(unassigned_waiting_trucks))
-    crane = random.choice(list(unassigned_available_cranes))
-    state.assignments.add(SimToken((truck, crane)))
-    return []
+  ud = unassigned_doctors(state)
+  up = unassigned_patients(state)
+  best_assignment = None
+  best_assignment_value = None # lower is better: (D1, T1) = 1, (D2, T2) = 2, (D1, T2) = 3, (D2, T1) = 4
+  for d in ud:
+    for p in up:
+      p_type = patient_data.read_data(p)[1]
+      if (d, p_type) == ("D1", "T1"):
+        assignment_value = 1
+      elif (d, p_type) == ("D2", "T2"):
+        assignment_value = 2
+      elif (d, p_type) == ("D1", "T2"):
+        assignment_value = 3
+      elif (d, p_type) == ("D2", "T1"):
+        assignment_value = 4
+      else:
+        raise ValueError("Invalid doctor/ patient type combination. This should not happen if the model is correct.")
+      if best_assignment is None or assignment_value < best_assignment_value:
+        best_assignment = (p, d)
+        best_assignment_value = assignment_value
+  state.assignments.add(SimToken(best_assignment))
+  return []
+
 # Now add the decision event to the simulator as a global event
-terminal.add_global_event(behavior=assignment_decision_behavior, guard=assignment_decision_guard)
+decision = hospital.add_global_event(behavior=assignment_decision_behavior, guard=assignment_decision_guard)
+decision.set_invisible() # we make it invisible
 
 
-# Run the thing
+# --------------------------
+# SIMULATION
+# --------------------------
 
-vis = Visualisation(terminal)
-vis.show()
+v = Visualisation(hospital)
+v.show()
+
