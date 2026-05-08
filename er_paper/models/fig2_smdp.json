@@ -1,0 +1,1409 @@
+{
+  "name": "fig2_resource_assignment_smdp",
+  "description": "SMDP compiled from BPMN+OPT problem 'fig2_resource_assignment'",
+  "source": {
+    "type": "bpmn+opt",
+    "problem_name": "fig2_resource_assignment",
+    "compilation_episodes": 2000
+  },
+  "smdp": {
+    "discount": 1.0,
+    "horizon": 200,
+    "n_states": 28,
+    "n_actions": 4,
+    "states": [
+      {
+        "id": "W(1xP1,1xP2)_R(phi1)",
+        "waiting_type_counts": {
+          "P1": 1,
+          "P2": 1
+        },
+        "idle_resources": [
+          "phi1"
+        ]
+      },
+      {
+        "id": "W(1xP1,1xP2)_R(phi2)",
+        "waiting_type_counts": {
+          "P1": 1,
+          "P2": 1
+        },
+        "idle_resources": [
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(1xP1,1xP2)_R(none)",
+        "waiting_type_counts": {
+          "P1": 1,
+          "P2": 1
+        },
+        "idle_resources": []
+      },
+      {
+        "id": "W(1xP1,2xP2)_R(phi1)",
+        "waiting_type_counts": {
+          "P1": 1,
+          "P2": 2
+        },
+        "idle_resources": [
+          "phi1"
+        ]
+      },
+      {
+        "id": "W(1xP1,2xP2)_R(phi2)",
+        "waiting_type_counts": {
+          "P1": 1,
+          "P2": 2
+        },
+        "idle_resources": [
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(1xP1)_R(phi1,phi2)",
+        "waiting_type_counts": {
+          "P1": 1
+        },
+        "idle_resources": [
+          "phi1",
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(1xP1)_R(phi1)",
+        "waiting_type_counts": {
+          "P1": 1
+        },
+        "idle_resources": [
+          "phi1"
+        ]
+      },
+      {
+        "id": "W(1xP1)_R(phi2)",
+        "waiting_type_counts": {
+          "P1": 1
+        },
+        "idle_resources": [
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(1xP1)_R(none)",
+        "waiting_type_counts": {
+          "P1": 1
+        },
+        "idle_resources": []
+      },
+      {
+        "id": "W(2xP1,1xP2)_R(phi1)",
+        "waiting_type_counts": {
+          "P1": 2,
+          "P2": 1
+        },
+        "idle_resources": [
+          "phi1"
+        ]
+      },
+      {
+        "id": "W(2xP1,1xP2)_R(phi2)",
+        "waiting_type_counts": {
+          "P1": 2,
+          "P2": 1
+        },
+        "idle_resources": [
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(2xP1,1xP2)_R(none)",
+        "waiting_type_counts": {
+          "P1": 2,
+          "P2": 1
+        },
+        "idle_resources": []
+      },
+      {
+        "id": "W(2xP1,2xP2)_R(phi1)",
+        "waiting_type_counts": {
+          "P1": 2,
+          "P2": 2
+        },
+        "idle_resources": [
+          "phi1"
+        ]
+      },
+      {
+        "id": "W(2xP1)_R(phi1)",
+        "waiting_type_counts": {
+          "P1": 2
+        },
+        "idle_resources": [
+          "phi1"
+        ]
+      },
+      {
+        "id": "W(2xP1)_R(phi2)",
+        "waiting_type_counts": {
+          "P1": 2
+        },
+        "idle_resources": [
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(3xP1)_R(phi1)",
+        "waiting_type_counts": {
+          "P1": 3
+        },
+        "idle_resources": [
+          "phi1"
+        ]
+      },
+      {
+        "id": "W(3xP1)_R(phi2)",
+        "waiting_type_counts": {
+          "P1": 3
+        },
+        "idle_resources": [
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(1xP2)_R(phi1,phi2)",
+        "waiting_type_counts": {
+          "P2": 1
+        },
+        "idle_resources": [
+          "phi1",
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(1xP2)_R(phi1)",
+        "waiting_type_counts": {
+          "P2": 1
+        },
+        "idle_resources": [
+          "phi1"
+        ]
+      },
+      {
+        "id": "W(1xP2)_R(phi2)",
+        "waiting_type_counts": {
+          "P2": 1
+        },
+        "idle_resources": [
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(1xP2)_R(none)",
+        "waiting_type_counts": {
+          "P2": 1
+        },
+        "idle_resources": []
+      },
+      {
+        "id": "W(2xP2)_R(phi1)",
+        "waiting_type_counts": {
+          "P2": 2
+        },
+        "idle_resources": [
+          "phi1"
+        ]
+      },
+      {
+        "id": "W(2xP2)_R(phi2)",
+        "waiting_type_counts": {
+          "P2": 2
+        },
+        "idle_resources": [
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(3xP2)_R(phi1)",
+        "waiting_type_counts": {
+          "P2": 3
+        },
+        "idle_resources": [
+          "phi1"
+        ]
+      },
+      {
+        "id": "W(3xP2)_R(phi2)",
+        "waiting_type_counts": {
+          "P2": 3
+        },
+        "idle_resources": [
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(empty)_R(phi1,phi2)",
+        "waiting_type_counts": {},
+        "idle_resources": [
+          "phi1",
+          "phi2"
+        ]
+      },
+      {
+        "id": "W(empty)_R(phi1)",
+        "waiting_type_counts": {},
+        "idle_resources": [
+          "phi1"
+        ]
+      },
+      {
+        "id": "W(empty)_R(phi2)",
+        "waiting_type_counts": {},
+        "idle_resources": [
+          "phi2"
+        ]
+      }
+    ],
+    "actions": {
+      "W(1xP2)_R(phi1,phi2)": [
+        "P2->phi1",
+        "P2->phi2"
+      ],
+      "W(1xP1)_R(phi1,phi2)": [
+        "P1->phi1",
+        "P1->phi2"
+      ],
+      "W(1xP2)_R(phi2)": [
+        "P2->phi2"
+      ],
+      "W(1xP1)_R(phi1)": [
+        "P1->phi1"
+      ],
+      "W(1xP2)_R(phi1)": [
+        "P2->phi1"
+      ],
+      "W(1xP1)_R(phi2)": [
+        "P1->phi2"
+      ],
+      "W(3xP1)_R(phi2)": [
+        "P1->phi2"
+      ],
+      "W(2xP1)_R(phi1)": [
+        "P1->phi1"
+      ],
+      "W(1xP1,1xP2)_R(phi1)": [
+        "P1->phi1",
+        "P2->phi1"
+      ],
+      "W(2xP1,1xP2)_R(phi2)": [
+        "P1->phi2",
+        "P2->phi2"
+      ],
+      "W(2xP1,1xP2)_R(phi1)": [
+        "P1->phi1",
+        "P2->phi1"
+      ],
+      "W(1xP1,1xP2)_R(phi2)": [
+        "P1->phi2",
+        "P2->phi2"
+      ],
+      "W(3xP2)_R(phi1)": [
+        "P2->phi1"
+      ],
+      "W(2xP2)_R(phi2)": [
+        "P2->phi2"
+      ],
+      "W(3xP1)_R(phi1)": [
+        "P1->phi1"
+      ],
+      "W(2xP1)_R(phi2)": [
+        "P1->phi2"
+      ],
+      "W(1xP1,2xP2)_R(phi2)": [
+        "P1->phi2",
+        "P2->phi2"
+      ],
+      "W(2xP2)_R(phi1)": [
+        "P2->phi1"
+      ],
+      "W(1xP1,2xP2)_R(phi1)": [
+        "P1->phi1",
+        "P2->phi1"
+      ],
+      "W(3xP2)_R(phi2)": [
+        "P2->phi2"
+      ],
+      "W(2xP1,2xP2)_R(phi1)": [
+        "P2->phi1"
+      ]
+    },
+    "transitions": {
+      "W(1xP2)_R(phi1,phi2)": {
+        "P2->phi1": {
+          "W(1xP2)_R(phi1,phi2)": {
+            "probability": 0.331761,
+            "expected_reward": -3.972,
+            "expected_holding_time": 14.013,
+            "n_samples": 2250
+          },
+          "W(1xP1)_R(phi1,phi2)": {
+            "probability": 0.328517,
+            "expected_reward": -3.9689,
+            "expected_holding_time": 14.0003,
+            "n_samples": 2228
+          },
+          "W(1xP2)_R(phi2)": {
+            "probability": 0.163669,
+            "expected_reward": -1.9097,
+            "expected_holding_time": 1.9097,
+            "n_samples": 1110
+          },
+          "W(empty)_R(phi1,phi2)": {
+            "probability": 0.012386,
+            "expected_reward": -3.9996,
+            "expected_holding_time": 3.9996,
+            "n_samples": 84
+          },
+          "W(1xP1)_R(phi2)": {
+            "probability": 0.163669,
+            "expected_reward": -1.854,
+            "expected_holding_time": 1.854,
+            "n_samples": 1110
+          }
+        },
+        "P2->phi2": {
+          "W(1xP2)_R(phi1,phi2)": {
+            "probability": 0.256076,
+            "expected_reward": -5.9652,
+            "expected_holding_time": 16.0012,
+            "n_samples": 1707
+          },
+          "W(1xP1)_R(phi1,phi2)": {
+            "probability": 0.262676,
+            "expected_reward": -5.959,
+            "expected_holding_time": 15.8965,
+            "n_samples": 1751
+          },
+          "W(1xP1)_R(phi1)": {
+            "probability": 0.228473,
+            "expected_reward": -2.7901,
+            "expected_holding_time": 2.7901,
+            "n_samples": 1523
+          },
+          "W(empty)_R(phi1,phi2)": {
+            "probability": 0.016652,
+            "expected_reward": -5.9721,
+            "expected_holding_time": 5.9721,
+            "n_samples": 111
+          },
+          "W(1xP2)_R(phi1)": {
+            "probability": 0.236124,
+            "expected_reward": -2.6987,
+            "expected_holding_time": 2.6987,
+            "n_samples": 1574
+          }
+        }
+      },
+      "W(1xP1)_R(phi1,phi2)": {
+        "P1->phi1": {
+          "W(1xP1)_R(phi1,phi2)": {
+            "probability": 0.362079,
+            "expected_reward": -2.9637,
+            "expected_holding_time": 13.159,
+            "n_samples": 2431
+          },
+          "W(1xP2)_R(phi1,phi2)": {
+            "probability": 0.36476,
+            "expected_reward": -2.9686,
+            "expected_holding_time": 13.2354,
+            "n_samples": 2449
+          },
+          "W(1xP2)_R(phi2)": {
+            "probability": 0.133452,
+            "expected_reward": -1.435,
+            "expected_holding_time": 1.435,
+            "n_samples": 896
+          },
+          "W(1xP1)_R(phi2)": {
+            "probability": 0.129729,
+            "expected_reward": -1.5082,
+            "expected_holding_time": 1.5082,
+            "n_samples": 871
+          },
+          "W(empty)_R(phi1,phi2)": {
+            "probability": 0.009979,
+            "expected_reward": -3.0295,
+            "expected_holding_time": 3.0295,
+            "n_samples": 67
+          }
+        },
+        "P1->phi2": {
+          "W(1xP2)_R(phi1)": {
+            "probability": 0.199251,
+            "expected_reward": -2.2767,
+            "expected_holding_time": 2.2767,
+            "n_samples": 1330
+          },
+          "W(1xP2)_R(phi1,phi2)": {
+            "probability": 0.290487,
+            "expected_reward": -4.9644,
+            "expected_holding_time": 14.754,
+            "n_samples": 1939
+          },
+          "W(1xP1)_R(phi1,phi2)": {
+            "probability": 0.293034,
+            "expected_reward": -4.9633,
+            "expected_holding_time": 14.5957,
+            "n_samples": 1956
+          },
+          "W(empty)_R(phi1,phi2)": {
+            "probability": 0.015581,
+            "expected_reward": -5.0276,
+            "expected_holding_time": 5.0276,
+            "n_samples": 104
+          },
+          "W(1xP1)_R(phi1)": {
+            "probability": 0.201648,
+            "expected_reward": -2.2904,
+            "expected_holding_time": 2.2904,
+            "n_samples": 1346
+          }
+        }
+      },
+      "W(1xP2)_R(phi2)": {
+        "P2->phi2": {
+          "W(1xP1)_R(phi1)": {
+            "probability": 0.216701,
+            "expected_reward": -5.4379,
+            "expected_holding_time": 3.0932,
+            "n_samples": 628
+          },
+          "W(1xP2)_R(phi1,phi2)": {
+            "probability": 0.275707,
+            "expected_reward": -8.0355,
+            "expected_holding_time": 16.3175,
+            "n_samples": 799
+          },
+          "W(1xP2)_R(phi1)": {
+            "probability": 0.210145,
+            "expected_reward": -5.5383,
+            "expected_holding_time": 3.2286,
+            "n_samples": 609
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.008972,
+            "expected_reward": -8.0039,
+            "expected_holding_time": 2.6925,
+            "n_samples": 26
+          },
+          "W(1xP1)_R(phi1,phi2)": {
+            "probability": 0.258109,
+            "expected_reward": -7.9957,
+            "expected_holding_time": 15.876,
+            "n_samples": 748
+          },
+          "W(empty)_R(phi1)": {
+            "probability": 0.006901,
+            "expected_reward": -4.8562,
+            "expected_holding_time": 2.109,
+            "n_samples": 20
+          },
+          "W(empty)_R(phi1,phi2)": {
+            "probability": 0.010697,
+            "expected_reward": -7.3949,
+            "expected_holding_time": 6.0641,
+            "n_samples": 31
+          },
+          "W(2xP1)_R(phi1)": {
+            "probability": 0.005521,
+            "expected_reward": -7.6502,
+            "expected_holding_time": 2.7146,
+            "n_samples": 16
+          },
+          "W(2xP2)_R(phi1)": {
+            "probability": 0.004486,
+            "expected_reward": -7.2807,
+            "expected_holding_time": 2.5,
+            "n_samples": 13
+          },
+          "W(1xP1)_R(none)": {
+            "probability": 0.001725,
+            "expected_reward": -3.7102,
+            "expected_holding_time": 1.77,
+            "n_samples": 5
+          },
+          "W(1xP1,2xP2)_R(phi1)": {
+            "probability": 0.000345,
+            "expected_reward": -13.6696,
+            "expected_holding_time": 3.6786,
+            "n_samples": 1
+          },
+          "W(1xP2)_R(none)": {
+            "probability": 0.000345,
+            "expected_reward": -0.933,
+            "expected_holding_time": 0.4665,
+            "n_samples": 1
+          },
+          "W(2xP1,1xP2)_R(phi1)": {
+            "probability": 0.000345,
+            "expected_reward": -14.2822,
+            "expected_holding_time": 3.9276,
+            "n_samples": 1
+          }
+        }
+      },
+      "W(1xP1)_R(phi1)": {
+        "P1->phi1": {
+          "W(1xP2)_R(phi2)": {
+            "probability": 0.068775,
+            "expected_reward": -4.4827,
+            "expected_holding_time": 2.0839,
+            "n_samples": 311
+          },
+          "W(1xP1)_R(phi1)": {
+            "probability": 0.066342,
+            "expected_reward": -7.2618,
+            "expected_holding_time": 3.1062,
+            "n_samples": 300
+          },
+          "W(1xP2)_R(phi1,phi2)": {
+            "probability": 0.339009,
+            "expected_reward": -5.9579,
+            "expected_holding_time": 13.4901,
+            "n_samples": 1533
+          },
+          "W(1xP1)_R(phi1,phi2)": {
+            "probability": 0.352278,
+            "expected_reward": -5.9256,
+            "expected_holding_time": 13.1687,
+            "n_samples": 1593
+          },
+          "W(1xP2)_R(phi1)": {
+            "probability": 0.071429,
+            "expected_reward": -7.2602,
+            "expected_holding_time": 3.2106,
+            "n_samples": 323
+          },
+          "W(1xP1)_R(phi2)": {
+            "probability": 0.0659,
+            "expected_reward": -4.3175,
+            "expected_holding_time": 2.0509,
+            "n_samples": 298
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.007298,
+            "expected_reward": -9.3509,
+            "expected_holding_time": 3.022,
+            "n_samples": 33
+          },
+          "W(2xP1)_R(phi1)": {
+            "probability": 0.002875,
+            "expected_reward": -9.3163,
+            "expected_holding_time": 3.1436,
+            "n_samples": 13
+          },
+          "W(3xP1)_R(phi1)": {
+            "probability": 0.000221,
+            "expected_reward": -9.6904,
+            "expected_holding_time": 2.6079,
+            "n_samples": 1
+          },
+          "W(1xP1,1xP2)_R(phi2)": {
+            "probability": 0.003317,
+            "expected_reward": -6.3409,
+            "expected_holding_time": 2.0442,
+            "n_samples": 15
+          },
+          "W(empty)_R(phi1)": {
+            "probability": 0.005086,
+            "expected_reward": -6.353,
+            "expected_holding_time": 2.9864,
+            "n_samples": 23
+          },
+          "W(2xP2)_R(phi1)": {
+            "probability": 0.003981,
+            "expected_reward": -8.8549,
+            "expected_holding_time": 2.9748,
+            "n_samples": 18
+          },
+          "W(empty)_R(phi1,phi2)": {
+            "probability": 0.003981,
+            "expected_reward": -6.3098,
+            "expected_holding_time": 3.8984,
+            "n_samples": 18
+          },
+          "W(2xP1,1xP2)_R(phi1)": {
+            "probability": 0.000442,
+            "expected_reward": -12.0068,
+            "expected_holding_time": 3.4325,
+            "n_samples": 2
+          },
+          "W(1xP1,2xP2)_R(phi1)": {
+            "probability": 0.000221,
+            "expected_reward": -13.0781,
+            "expected_holding_time": 3.8247,
+            "n_samples": 1
+          },
+          "W(empty)_R(phi2)": {
+            "probability": 0.002875,
+            "expected_reward": -4.3653,
+            "expected_holding_time": 1.9393,
+            "n_samples": 13
+          },
+          "W(1xP1,2xP2)_R(phi2)": {
+            "probability": 0.000442,
+            "expected_reward": -9.7759,
+            "expected_holding_time": 2.8802,
+            "n_samples": 2
+          },
+          "W(2xP2)_R(phi2)": {
+            "probability": 0.002211,
+            "expected_reward": -7.4728,
+            "expected_holding_time": 2.3554,
+            "n_samples": 10
+          },
+          "W(1xP2)_R(none)": {
+            "probability": 0.000221,
+            "expected_reward": -2.2515,
+            "expected_holding_time": 1.1257,
+            "n_samples": 1
+          },
+          "W(2xP1)_R(phi2)": {
+            "probability": 0.002433,
+            "expected_reward": -8.8295,
+            "expected_holding_time": 2.7837,
+            "n_samples": 11
+          },
+          "W(1xP1)_R(none)": {
+            "probability": 0.000442,
+            "expected_reward": -4.4333,
+            "expected_holding_time": 2.2167,
+            "n_samples": 2
+          },
+          "W(3xP1)_R(phi2)": {
+            "probability": 0.000221,
+            "expected_reward": -6.7305,
+            "expected_holding_time": 2.1841,
+            "n_samples": 1
+          }
+        }
+      },
+      "W(1xP2)_R(phi1)": {
+        "P2->phi1": {
+          "W(1xP1)_R(phi1,phi2)": {
+            "probability": 0.321646,
+            "expected_reward": -7.1286,
+            "expected_holding_time": 13.8165,
+            "n_samples": 1477
+          },
+          "W(3xP1)_R(phi2)": {
+            "probability": 0.000436,
+            "expected_reward": -10.4776,
+            "expected_holding_time": 3.173,
+            "n_samples": 2
+          },
+          "W(1xP1)_R(phi2)": {
+            "probability": 0.116725,
+            "expected_reward": -5.3887,
+            "expected_holding_time": 2.5699,
+            "n_samples": 536
+          },
+          "W(1xP2)_R(phi2)": {
+            "probability": 0.113458,
+            "expected_reward": -5.6066,
+            "expected_holding_time": 2.6615,
+            "n_samples": 521
+          },
+          "W(1xP2)_R(phi1,phi2)": {
+            "probability": 0.318815,
+            "expected_reward": -7.0748,
+            "expected_holding_time": 14.1271,
+            "n_samples": 1464
+          },
+          "W(1xP1)_R(phi1)": {
+            "probability": 0.041376,
+            "expected_reward": -9.4682,
+            "expected_holding_time": 3.9558,
+            "n_samples": 190
+          },
+          "W(empty)_R(phi1,phi2)": {
+            "probability": 0.006969,
+            "expected_reward": -5.6899,
+            "expected_holding_time": 4.1879,
+            "n_samples": 32
+          },
+          "W(1xP2)_R(phi1)": {
+            "probability": 0.040723,
+            "expected_reward": -9.5364,
+            "expected_holding_time": 3.9615,
+            "n_samples": 187
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.00588,
+            "expected_reward": -11.7553,
+            "expected_holding_time": 3.8678,
+            "n_samples": 27
+          },
+          "W(2xP1,1xP2)_R(phi2)": {
+            "probability": 0.001307,
+            "expected_reward": -10.4371,
+            "expected_holding_time": 3.3174,
+            "n_samples": 6
+          },
+          "W(2xP1,1xP2)_R(phi1)": {
+            "probability": 0.000871,
+            "expected_reward": -13.6041,
+            "expected_holding_time": 4.0113,
+            "n_samples": 4
+          },
+          "W(1xP1,1xP2)_R(none)": {
+            "probability": 0.000436,
+            "expected_reward": -6.3642,
+            "expected_holding_time": 2.2889,
+            "n_samples": 2
+          },
+          "W(empty)_R(phi2)": {
+            "probability": 0.004355,
+            "expected_reward": -5.122,
+            "expected_holding_time": 2.5526,
+            "n_samples": 20
+          },
+          "W(1xP1,1xP2)_R(phi2)": {
+            "probability": 0.007622,
+            "expected_reward": -8.131,
+            "expected_holding_time": 2.7631,
+            "n_samples": 35
+          },
+          "W(2xP1)_R(phi2)": {
+            "probability": 0.00392,
+            "expected_reward": -8.9712,
+            "expected_holding_time": 3.0625,
+            "n_samples": 18
+          },
+          "W(empty)_R(phi1)": {
+            "probability": 0.00196,
+            "expected_reward": -8.1424,
+            "expected_holding_time": 3.8425,
+            "n_samples": 9
+          },
+          "W(2xP2)_R(phi2)": {
+            "probability": 0.004573,
+            "expected_reward": -9.0646,
+            "expected_holding_time": 2.9163,
+            "n_samples": 21
+          },
+          "W(2xP1)_R(phi1)": {
+            "probability": 0.003267,
+            "expected_reward": -11.4798,
+            "expected_holding_time": 3.7739,
+            "n_samples": 15
+          },
+          "W(1xP1,2xP2)_R(phi1)": {
+            "probability": 0.000871,
+            "expected_reward": -15.4273,
+            "expected_holding_time": 4.1812,
+            "n_samples": 4
+          },
+          "W(2xP2)_R(phi1)": {
+            "probability": 0.00196,
+            "expected_reward": -11.2317,
+            "expected_holding_time": 3.9059,
+            "n_samples": 9
+          },
+          "W(2xP1,2xP2)_R(phi1)": {
+            "probability": 0.000218,
+            "expected_reward": -17.706,
+            "expected_holding_time": 4.0203,
+            "n_samples": 1
+          },
+          "W(2xP1,1xP2)_R(none)": {
+            "probability": 0.000218,
+            "expected_reward": -10.2867,
+            "expected_holding_time": 3.0833,
+            "n_samples": 1
+          },
+          "W(1xP2)_R(none)": {
+            "probability": 0.000436,
+            "expected_reward": -5.3481,
+            "expected_holding_time": 2.674,
+            "n_samples": 2
+          },
+          "W(3xP2)_R(phi1)": {
+            "probability": 0.000436,
+            "expected_reward": -13.0621,
+            "expected_holding_time": 3.9057,
+            "n_samples": 2
+          },
+          "W(1xP1,2xP2)_R(phi2)": {
+            "probability": 0.000436,
+            "expected_reward": -12.3821,
+            "expected_holding_time": 3.5406,
+            "n_samples": 2
+          },
+          "W(1xP1)_R(none)": {
+            "probability": 0.001089,
+            "expected_reward": -4.2343,
+            "expected_holding_time": 2.0123,
+            "n_samples": 5
+          }
+        }
+      },
+      "W(1xP1)_R(phi2)": {
+        "P1->phi2": {
+          "W(1xP2)_R(phi1,phi2)": {
+            "probability": 0.315626,
+            "expected_reward": -7.0619,
+            "expected_holding_time": 14.9983,
+            "n_samples": 915
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.005864,
+            "expected_reward": -8.0495,
+            "expected_holding_time": 2.6623,
+            "n_samples": 17
+          },
+          "W(1xP2)_R(phi1)": {
+            "probability": 0.182822,
+            "expected_reward": -5.149,
+            "expected_holding_time": 2.8146,
+            "n_samples": 530
+          },
+          "W(1xP1)_R(phi1,phi2)": {
+            "probability": 0.291825,
+            "expected_reward": -7.1001,
+            "expected_holding_time": 15.3661,
+            "n_samples": 846
+          },
+          "W(2xP1)_R(phi1)": {
+            "probability": 0.005864,
+            "expected_reward": -8.3889,
+            "expected_holding_time": 2.8493,
+            "n_samples": 17
+          },
+          "W(1xP1)_R(phi1)": {
+            "probability": 0.169024,
+            "expected_reward": -5.0487,
+            "expected_holding_time": 2.7467,
+            "n_samples": 490
+          },
+          "W(empty)_R(phi1)": {
+            "probability": 0.008969,
+            "expected_reward": -4.812,
+            "expected_holding_time": 2.2173,
+            "n_samples": 26
+          },
+          "W(empty)_R(phi1,phi2)": {
+            "probability": 0.011728,
+            "expected_reward": -6.8119,
+            "expected_holding_time": 4.9697,
+            "n_samples": 34
+          },
+          "W(1xP1,2xP2)_R(phi1)": {
+            "probability": 0.000345,
+            "expected_reward": -13.3599,
+            "expected_holding_time": 3.2546,
+            "n_samples": 1
+          },
+          "W(1xP1)_R(phi2)": {
+            "probability": 0.00069,
+            "expected_reward": -10.3203,
+            "expected_holding_time": 4.1999,
+            "n_samples": 2
+          },
+          "W(2xP2)_R(phi1)": {
+            "probability": 0.004139,
+            "expected_reward": -8.2243,
+            "expected_holding_time": 2.8835,
+            "n_samples": 12
+          },
+          "W(3xP2)_R(phi1)": {
+            "probability": 0.000345,
+            "expected_reward": -16.2548,
+            "expected_holding_time": 4.6229,
+            "n_samples": 1
+          },
+          "W(1xP2)_R(phi2)": {
+            "probability": 0.00138,
+            "expected_reward": -10.695,
+            "expected_holding_time": 4.144,
+            "n_samples": 4
+          },
+          "W(1xP1)_R(none)": {
+            "probability": 0.00069,
+            "expected_reward": -2.7294,
+            "expected_holding_time": 1.3647,
+            "n_samples": 2
+          },
+          "W(1xP2)_R(none)": {
+            "probability": 0.000345,
+            "expected_reward": -0.8321,
+            "expected_holding_time": 0.2774,
+            "n_samples": 1
+          },
+          "W(2xP1,2xP2)_R(phi1)": {
+            "probability": 0.000345,
+            "expected_reward": -13.5901,
+            "expected_holding_time": 3.2449,
+            "n_samples": 1
+          }
+        }
+      },
+      "W(3xP1)_R(phi2)": {
+        "P1->phi2": {
+          "W(2xP1)_R(phi1)": {
+            "probability": 1.0,
+            "expected_reward": -4.1599,
+            "expected_holding_time": 0.832,
+            "n_samples": 3
+          }
+        }
+      },
+      "W(2xP1)_R(phi1)": {
+        "P1->phi1": {
+          "W(2xP1)_R(phi1)": {
+            "probability": 0.041096,
+            "expected_reward": -10.848,
+            "expected_holding_time": 2.712,
+            "n_samples": 3
+          },
+          "W(1xP1)_R(phi2)": {
+            "probability": 0.643836,
+            "expected_reward": -5.456,
+            "expected_holding_time": 1.364,
+            "n_samples": 47
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.041096,
+            "expected_reward": -11.9257,
+            "expected_holding_time": 2.9814,
+            "n_samples": 3
+          },
+          "W(1xP1)_R(phi1)": {
+            "probability": 0.191781,
+            "expected_reward": -11.7231,
+            "expected_holding_time": 2.9308,
+            "n_samples": 14
+          },
+          "W(1xP1,1xP2)_R(phi2)": {
+            "probability": 0.054795,
+            "expected_reward": -9.4487,
+            "expected_holding_time": 2.3622,
+            "n_samples": 4
+          },
+          "W(2xP1)_R(phi2)": {
+            "probability": 0.027397,
+            "expected_reward": -8.0785,
+            "expected_holding_time": 2.0196,
+            "n_samples": 2
+          }
+        }
+      },
+      "W(1xP1,1xP2)_R(phi1)": {
+        "P1->phi1": {
+          "W(1xP2)_R(phi2)": {
+            "probability": 0.655738,
+            "expected_reward": -5.6103,
+            "expected_holding_time": 1.4026,
+            "n_samples": 40
+          },
+          "W(1xP2)_R(phi1)": {
+            "probability": 0.213115,
+            "expected_reward": -11.2485,
+            "expected_holding_time": 2.8121,
+            "n_samples": 13
+          },
+          "W(2xP2)_R(phi1)": {
+            "probability": 0.04918,
+            "expected_reward": -10.2127,
+            "expected_holding_time": 2.5532,
+            "n_samples": 3
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.016393,
+            "expected_reward": -11.0899,
+            "expected_holding_time": 2.7725,
+            "n_samples": 1
+          },
+          "W(1xP1,1xP2)_R(phi2)": {
+            "probability": 0.04918,
+            "expected_reward": -8.2215,
+            "expected_holding_time": 2.0554,
+            "n_samples": 3
+          },
+          "W(2xP2)_R(phi2)": {
+            "probability": 0.016393,
+            "expected_reward": -4.8186,
+            "expected_holding_time": 1.2046,
+            "n_samples": 1
+          }
+        },
+        "P2->phi1": {
+          "W(1xP1)_R(phi2)": {
+            "probability": 0.769231,
+            "expected_reward": -5.9735,
+            "expected_holding_time": 1.4934,
+            "n_samples": 50
+          },
+          "W(1xP1)_R(phi1)": {
+            "probability": 0.107692,
+            "expected_reward": -15.0872,
+            "expected_holding_time": 3.7718,
+            "n_samples": 7
+          },
+          "W(2xP1)_R(phi2)": {
+            "probability": 0.046154,
+            "expected_reward": -14.2303,
+            "expected_holding_time": 3.5576,
+            "n_samples": 3
+          },
+          "W(2xP1,1xP2)_R(phi1)": {
+            "probability": 0.015385,
+            "expected_reward": -14.9072,
+            "expected_holding_time": 3.7142,
+            "n_samples": 1
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.030769,
+            "expected_reward": -13.3161,
+            "expected_holding_time": 3.329,
+            "n_samples": 2
+          },
+          "W(1xP1,1xP2)_R(phi2)": {
+            "probability": 0.030769,
+            "expected_reward": -10.6297,
+            "expected_holding_time": 2.6574,
+            "n_samples": 2
+          }
+        }
+      },
+      "W(2xP1,1xP2)_R(phi2)": {
+        "P1->phi2": {
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.8,
+            "expected_reward": -3.9847,
+            "expected_holding_time": 0.7969,
+            "n_samples": 4
+          },
+          "W(2xP1,1xP2)_R(phi1)": {
+            "probability": 0.2,
+            "expected_reward": -18.924,
+            "expected_holding_time": 3.7848,
+            "n_samples": 1
+          }
+        },
+        "P2->phi2": {
+          "W(2xP1)_R(phi1)": {
+            "probability": 1.0,
+            "expected_reward": -6.6838,
+            "expected_holding_time": 1.3368,
+            "n_samples": 3
+          }
+        }
+      },
+      "W(2xP1,1xP2)_R(phi1)": {
+        "P1->phi1": {
+          "W(1xP1,1xP2)_R(phi2)": {
+            "probability": 0.666667,
+            "expected_reward": -6.0934,
+            "expected_holding_time": 1.2187,
+            "n_samples": 4
+          },
+          "W(1xP1,2xP2)_R(phi2)": {
+            "probability": 0.166667,
+            "expected_reward": -3.1416,
+            "expected_holding_time": 0.6283,
+            "n_samples": 1
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.166667,
+            "expected_reward": -11.3752,
+            "expected_holding_time": 2.275,
+            "n_samples": 1
+          }
+        },
+        "P2->phi1": {
+          "W(2xP1)_R(phi2)": {
+            "probability": 1.0,
+            "expected_reward": -10.6054,
+            "expected_holding_time": 2.1211,
+            "n_samples": 4
+          }
+        }
+      },
+      "W(1xP1,1xP2)_R(phi2)": {
+        "P1->phi2": {
+          "W(3xP2)_R(phi1)": {
+            "probability": 0.029412,
+            "expected_reward": -16.0216,
+            "expected_holding_time": 3.8873,
+            "n_samples": 1
+          },
+          "W(1xP2)_R(phi1)": {
+            "probability": 0.823529,
+            "expected_reward": -4.7976,
+            "expected_holding_time": 1.1994,
+            "n_samples": 28
+          },
+          "W(2xP2)_R(phi1)": {
+            "probability": 0.117647,
+            "expected_reward": -5.2058,
+            "expected_holding_time": 1.3014,
+            "n_samples": 4
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.029412,
+            "expected_reward": -9.8625,
+            "expected_holding_time": 2.4656,
+            "n_samples": 1
+          }
+        },
+        "P2->phi2": {
+          "W(1xP1)_R(phi1)": {
+            "probability": 0.891892,
+            "expected_reward": -5.3493,
+            "expected_holding_time": 1.3373,
+            "n_samples": 33
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.027027,
+            "expected_reward": -17.2034,
+            "expected_holding_time": 4.3009,
+            "n_samples": 1
+          },
+          "W(2xP1,1xP2)_R(phi1)": {
+            "probability": 0.027027,
+            "expected_reward": -12.6241,
+            "expected_holding_time": 2.7728,
+            "n_samples": 1
+          },
+          "W(2xP1)_R(phi1)": {
+            "probability": 0.054054,
+            "expected_reward": -7.6328,
+            "expected_holding_time": 1.9082,
+            "n_samples": 2
+          }
+        }
+      },
+      "W(3xP2)_R(phi1)": {
+        "P2->phi1": {
+          "W(2xP2)_R(phi2)": {
+            "probability": 0.6,
+            "expected_reward": -5.3886,
+            "expected_holding_time": 1.0777,
+            "n_samples": 3
+          },
+          "W(3xP2)_R(phi2)": {
+            "probability": 0.2,
+            "expected_reward": -5.8248,
+            "expected_holding_time": 1.165,
+            "n_samples": 1
+          },
+          "W(1xP1,2xP2)_R(phi2)": {
+            "probability": 0.2,
+            "expected_reward": -3.4612,
+            "expected_holding_time": 0.6922,
+            "n_samples": 1
+          }
+        }
+      },
+      "W(2xP2)_R(phi2)": {
+        "P2->phi2": {
+          "W(1xP2)_R(phi1)": {
+            "probability": 0.818182,
+            "expected_reward": -5.4018,
+            "expected_holding_time": 1.3505,
+            "n_samples": 36
+          },
+          "W(2xP2)_R(phi1)": {
+            "probability": 0.090909,
+            "expected_reward": -7.7695,
+            "expected_holding_time": 1.9424,
+            "n_samples": 4
+          },
+          "W(1xP1,2xP2)_R(phi1)": {
+            "probability": 0.022727,
+            "expected_reward": -16.25,
+            "expected_holding_time": 3.304,
+            "n_samples": 1
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.068182,
+            "expected_reward": -5.1402,
+            "expected_holding_time": 1.285,
+            "n_samples": 3
+          }
+        }
+      },
+      "W(3xP1)_R(phi1)": {
+        "P1->phi1": {
+          "W(2xP1)_R(phi2)": {
+            "probability": 1.0,
+            "expected_reward": -3.5196,
+            "expected_holding_time": 0.7039,
+            "n_samples": 1
+          }
+        }
+      },
+      "W(2xP1)_R(phi2)": {
+        "P1->phi2": {
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.052632,
+            "expected_reward": -5.9215,
+            "expected_holding_time": 1.4804,
+            "n_samples": 2
+          },
+          "W(1xP1)_R(phi1)": {
+            "probability": 0.921053,
+            "expected_reward": -4.4531,
+            "expected_holding_time": 1.1133,
+            "n_samples": 35
+          },
+          "W(2xP1)_R(phi1)": {
+            "probability": 0.026316,
+            "expected_reward": -7.8371,
+            "expected_holding_time": 1.9593,
+            "n_samples": 1
+          }
+        }
+      },
+      "W(1xP1,2xP2)_R(phi2)": {
+        "P2->phi2": {
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 1.0,
+            "expected_reward": -8.7293,
+            "expected_holding_time": 1.7459,
+            "n_samples": 4
+          }
+        },
+        "P1->phi2": {
+          "W(2xP2)_R(phi1)": {
+            "probability": 0.75,
+            "expected_reward": -2.2678,
+            "expected_holding_time": 0.4536,
+            "n_samples": 3
+          },
+          "W(1xP1,2xP2)_R(phi1)": {
+            "probability": 0.25,
+            "expected_reward": -8.1023,
+            "expected_holding_time": 1.6205,
+            "n_samples": 1
+          }
+        }
+      },
+      "W(2xP2)_R(phi1)": {
+        "P2->phi1": {
+          "W(1xP2)_R(phi2)": {
+            "probability": 0.633803,
+            "expected_reward": -7.0146,
+            "expected_holding_time": 1.7536,
+            "n_samples": 45
+          },
+          "W(1xP2)_R(phi1)": {
+            "probability": 0.126761,
+            "expected_reward": -15.2457,
+            "expected_holding_time": 3.8114,
+            "n_samples": 9
+          },
+          "W(1xP1,1xP2)_R(phi2)": {
+            "probability": 0.084507,
+            "expected_reward": -7.9362,
+            "expected_holding_time": 1.984,
+            "n_samples": 6
+          },
+          "W(2xP2)_R(phi2)": {
+            "probability": 0.084507,
+            "expected_reward": -11.2988,
+            "expected_holding_time": 2.8247,
+            "n_samples": 6
+          },
+          "W(2xP2)_R(phi1)": {
+            "probability": 0.014085,
+            "expected_reward": -12.8503,
+            "expected_holding_time": 3.2126,
+            "n_samples": 1
+          },
+          "W(3xP2)_R(phi1)": {
+            "probability": 0.014085,
+            "expected_reward": -16.6478,
+            "expected_holding_time": 3.7486,
+            "n_samples": 1
+          },
+          "W(1xP1,2xP2)_R(phi2)": {
+            "probability": 0.028169,
+            "expected_reward": -12.8155,
+            "expected_holding_time": 3.05,
+            "n_samples": 2
+          },
+          "W(1xP1,1xP2)_R(phi1)": {
+            "probability": 0.014085,
+            "expected_reward": -15.2612,
+            "expected_holding_time": 3.8153,
+            "n_samples": 1
+          }
+        }
+      },
+      "W(1xP1,2xP2)_R(phi1)": {
+        "P1->phi1": {
+          "W(3xP2)_R(phi2)": {
+            "probability": 0.333333,
+            "expected_reward": -10.9967,
+            "expected_holding_time": 2.1993,
+            "n_samples": 2
+          },
+          "W(2xP2)_R(phi2)": {
+            "probability": 0.5,
+            "expected_reward": -7.3685,
+            "expected_holding_time": 1.4737,
+            "n_samples": 3
+          },
+          "W(2xP2)_R(phi1)": {
+            "probability": 0.166667,
+            "expected_reward": -13.7625,
+            "expected_holding_time": 2.7525,
+            "n_samples": 1
+          }
+        },
+        "P2->phi1": {
+          "W(1xP1,1xP2)_R(phi2)": {
+            "probability": 1.0,
+            "expected_reward": -4.6587,
+            "expected_holding_time": 0.9317,
+            "n_samples": 3
+          }
+        }
+      },
+      "W(3xP2)_R(phi2)": {
+        "P2->phi2": {
+          "W(2xP2)_R(phi1)": {
+            "probability": 1.0,
+            "expected_reward": -7.7833,
+            "expected_holding_time": 1.5567,
+            "n_samples": 3
+          }
+        }
+      },
+      "W(2xP1,2xP2)_R(phi1)": {
+        "P2->phi1": {
+          "W(2xP1,1xP2)_R(phi2)": {
+            "probability": 1.0,
+            "expected_reward": -7.6741,
+            "expected_holding_time": 1.279,
+            "n_samples": 2
+          }
+        }
+      }
+    },
+    "initial_state_distribution": {
+      "W(1xP2)_R(phi1,phi2)": 0.522,
+      "W(1xP1)_R(phi1,phi2)": 0.478
+    },
+    "reward_semantics": {
+      "type": "holding_cost",
+      "description": "Step reward = -integral of n(t) over the holding interval between decision epochs. Represents the cycle-time contribution of each interval."
+    },
+    "objective": {
+      "direction": "minimize",
+      "type": "total_cycle_time",
+      "description": "Sum of (complete-start) for completed patients + (time-start) for in-progress/waiting patients."
+    }
+  }
+}

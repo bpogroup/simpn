@@ -1,0 +1,138 @@
+{
+  "name": "fig2_resource_assignment",
+  "description": "Simplified resource-assignment fragment from Figure 2 of the BPMN+OPT paper.",
+
+  "object_types": {
+    "case_types": [
+      {
+        "name": "Patient",
+        "attributes": [
+          {"name": "id", "type": "int"},
+          {"name": "type", "type": "enum", "values": ["P1", "P2"]},
+          {"name": "start", "type": "float", "default": null},
+          {"name": "complete", "type": "float", "default": null}
+        ]
+      }
+    ],
+    "resource_types": [
+      {
+        "name": "Oncologist",
+        "attributes": [
+          {"name": "id", "type": "str"},
+          {"name": "name", "type": "str"}
+        ]
+      }
+    ]
+  },
+
+  "authorization": [
+    {"resource_type": "Oncologist", "task": "Examination"}
+  ],
+
+  "process": {
+    "flows": [
+      {"name": "waiting", "object_type": "Patient"},
+      {"name": "done", "object_type": "Patient"}
+    ],
+    "lanes": [
+      {"name": "idle_oncologist", "object_type": "Oncologist"}
+    ],
+
+    "initial_resources": [
+      {
+        "lane": "idle_oncologist",
+        "instances": [
+          {"id": "phi1", "name": "Dr. Smith"},
+          {"id": "phi2", "name": "Dr. Johnson"}
+        ]
+      }
+    ],
+
+    "start_events": [
+      {
+        "name": "arrival",
+        "outgoing_flow": "waiting",
+        "interarrival_time": {"distribution": "exponential", "mean": 10},
+        "case_generator": {
+          "type": {"distribution": "choice", "values": ["P1", "P2"]},
+          "start": "current_time",
+          "complete": null
+        }
+      }
+    ],
+
+    "tasks": [
+      {
+        "name": "Examination",
+        "incoming_flow": "waiting",
+        "outgoing_flow": "done",
+        "resource_lane": "idle_oncologist",
+        "processing_time": {
+          "rules": [
+            {"condition": {"resource.id": "phi1", "case.type": "P1"}, "distribution": {"type": "uniform", "low": 2, "high": 4}},
+            {"condition": {"resource.id": "phi1", "case.type": "P2"}, "distribution": {"type": "uniform", "low": 3, "high": 5}},
+            {"condition": {"resource.id": "phi2", "case.type": "P1"}, "distribution": {"type": "uniform", "low": 4, "high": 6}},
+            {"condition": {"resource.id": "phi2", "case.type": "P2"}, "distribution": {"type": "uniform", "low": 5, "high": 7}}
+          ]
+        },
+        "controlled": true,
+        "behavior": {}
+      }
+    ],
+
+    "end_events": [
+      {
+        "name": "complete",
+        "incoming_flow": "done",
+        "behavior": {"complete": "current_time"}
+      }
+    ],
+
+    "gateways": [],
+
+    "sequence_flows": [
+      ["arrival", "waiting"],
+      ["waiting", "Examination"],
+      ["Examination", "done"],
+      ["done", "complete"]
+    ]
+  },
+
+  "decision": {
+    "variables": {
+      "type": "assignment",
+      "case_flow": "waiting",
+      "resource_lane": "idle_oncologist",
+      "domain": [0, 1],
+      "semantics": "sequential"
+    },
+    "moments": {
+      "condition": "exists_unassigned_feasible_pair",
+      "description": "A decision can be taken when there exists an unassigned waiting patient AND an unassigned idle oncologist."
+    },
+    "constraints": [
+      {
+        "type": "at_most_one_resource_per_case",
+        "description": "Each waiting patient assigned to at most one idle oncologist."
+      },
+      {
+        "type": "at_most_one_case_per_resource",
+        "description": "Each idle oncologist assigned to at most one waiting patient."
+      }
+    ],
+    "objectives": [
+      {
+        "direction": "minimize",
+        "type": "total_cycle_time",
+        "description": "Sum of (complete-start) for completed patients + (time-start) for in-progress/waiting patients."
+      }
+    ]
+  },
+
+  "smdp": {
+    "horizon": 200,
+    "discount": 1.0,
+    "reward_type": "terminal",
+    "reward_expression": "negative_total_cycle_time"
+  }
+}

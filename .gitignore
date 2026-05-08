@@ -2,6 +2,9 @@
 /temp/
 .DS_Store
 
+# ER paper docs (LaTeX, PDFs, figures — managed outside git)
+er_paper/docs/
+
 # dotenv
 .env
 .vscode/

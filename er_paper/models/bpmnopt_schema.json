@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BPMN+OPT Problem Definition",
+  "description": "JSON Schema for declarative BPMN+OPT problem definitions that map to SMDP execution semantics.",
+  "type": "object",
+  "required": ["name", "object_types", "process", "decision", "smdp"],
+  "properties": {
+    "name": {"type": "string"},
+    "description": {"type": "string"},
+
+    "object_types": {
+      "type": "object",
+      "required": ["case_types", "resource_types"],
+      "properties": {
+        "case_types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "attributes"],
+            "properties": {
+              "name": {"type": "string"},
+              "attributes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type"],
+                  "properties": {
+                    "name": {"type": "string"},
+                    "type": {"type": "string", "enum": ["int", "float", "str", "bool", "enum"]},
+                    "values": {"type": "array", "items": {"type": "string"}},
+                    "default": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "resource_types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "attributes"],
+            "properties": {
+              "name": {"type": "string"},
+              "attributes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type"],
+                  "properties": {
+                    "name": {"type": "string"},
+                    "type": {"type": "string"},
+                    "values": {"type": "array"},
+                    "default": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "authorization": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["resource_type", "task"],
+        "properties": {
+          "resource_type": {"type": "string"},
+          "task": {"type": "string"}
+        }
+      }
+    },
+
+    "process": {
+      "type": "object",
+      "required": ["flows", "lanes", "start_events", "tasks", "end_events"],
+      "properties": {
+        "flows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {"type": "string"},
+              "object_type": {"type": "string"}
+            }
+          }
+        },
+        "lanes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {"type": "string"},
+              "object_type": {"type": "string"}
+            }
+          }
+        },
+        "initial_resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["lane", "instances"],
+            "properties": {
+              "lane": {"type": "string"},
+              "instances": {
+                "type": "array",
+                "items": {"type": "object"}
+              }
+            }
+          }
+        },
+        "start_events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "outgoing_flow", "interarrival_time"],
+            "properties": {
+              "name": {"type": "string"},
+              "outgoing_flow": {"type": "string"},
+              "interarrival_time": {
+                "type": "object",
+                "required": ["distribution"],
+                "properties": {
+                  "distribution": {"type": "string"},
+                  "mean": {"type": "number"},
+                  "rate": {"type": "number"},
+                  "value": {"type": "number"}
+                }
+              },
+              "case_generator": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "incoming_flow", "outgoing_flow", "resource_lane", "processing_time"],
+            "properties": {
+              "name": {"type": "string"},
+              "incoming_flow": {"type": "string"},
+              "outgoing_flow": {"type": "string"},
+              "resource_lane": {"type": "string"},
+              "processing_time": {
+                "type": "object",
+                "properties": {
+                  "rules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["condition", "distribution"],
+                      "properties": {
+                        "condition": {"type": "object"},
+                        "distribution": {
+                          "type": "object",
+                          "required": ["type"],
+                          "properties": {
+                            "type": {"type": "string", "enum": ["uniform", "exponential", "normal", "constant"]},
+                            "low": {"type": "number"},
+                            "high": {"type": "number"},
+                            "mean": {"type": "number"},
+                            "std": {"type": "number"},
+                            "value": {"type": "number"}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "controlled": {"type": "boolean"},
+              "behavior": {"type": "object"}
+            }
+          }
+        },
+        "end_events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "incoming_flow"],
+            "properties": {
+              "name": {"type": "string"},
+              "incoming_flow": {"type": "string"},
+              "behavior": {"type": "object"}
+            }
+          }
+        },
+        "gateways": {"type": "array"},
+        "sequence_flows": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
+    },
+
+    "decision": {
+      "type": "object",
+      "required": ["variables", "moments", "constraints", "objectives"],
+      "properties": {
+        "variables": {
+          "type": "object",
+          "required": ["type", "case_flow", "resource_lane"],
+          "properties": {
+            "type": {"type": "string"},
+            "case_flow": {"type": "string"},
+            "resource_lane": {"type": "string"},
+            "domain": {"type": "array"},
+            "semantics": {"type": "string", "enum": ["sequential", "simultaneous"]}
+          }
+        },
+        "moments": {
+          "type": "object",
+          "required": ["condition"],
+          "properties": {
+            "condition": {"type": "string"},
+            "description": {"type": "string"}
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {"type": "string"},
+              "description": {"type": "string"}
+            }
+          }
+        },
+        "objectives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["direction", "type"],
+            "properties": {
+              "direction": {"type": "string", "enum": ["minimize", "maximize"]},
+              "type": {"type": "string"},
+              "description": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+
+    "smdp": {
+      "type": "object",
+      "required": ["horizon", "discount"],
+      "properties": {
+        "horizon": {"type": "number"},
+        "discount": {"type": "number", "minimum": 0, "maximum": 1},
+        "reward_type": {"type": "string", "enum": ["terminal", "step", "mixed"]},
+        "reward_expression": {"type": "string"}
+      }
+    }
+  }
+}
