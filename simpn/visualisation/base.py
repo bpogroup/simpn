@@ -434,7 +434,7 @@ class SimulationPanel(QWidget):
 
     def faster_simulation(self):
         """Increase simulation speed by decreasing delay."""
-        self._play_step_delay = max(100, self._play_step_delay - 100)
+        self._play_step_delay = max(1, self._play_step_delay - 100)
         self._play_timer.setInterval(self._play_step_delay)
 
     def slower_simulation(self):
