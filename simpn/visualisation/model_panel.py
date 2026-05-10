@@ -856,6 +856,9 @@ class ModelPanel:
         button: Qt.MouseButton = event.button
         if button == Qt.MouseButton.LeftButton:
             node = self._get_node_at(pos)
+            if hasattr(node, 'selectable') and not node.selectable:
+                print("found unselectable node")
+                node = None
             if node is not None:
                 self._selected_nodes = [node], pos
                 # Dispatch event through centralized dispatcher
@@ -941,6 +944,10 @@ class ModelPanel:
         y_delta = (new_pos[1] - org_pos[1]) / self._zoom_level
 
         for node in nodes:
+
+            if hasattr(node, 'movable') and not node.moveable:
+                continue
+
             new_x = node.get_pos()[0] + x_delta
             new_y = node.get_pos()[1] + y_delta
             if snap:
