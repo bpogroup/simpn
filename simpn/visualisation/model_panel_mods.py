@@ -612,6 +612,7 @@ class RecorderModule(IEventHandler):
         include_ui: bool = False,
         settings: RecordingSettings = None,
         size: Tuple[int, int] = None,
+        sample_rate: int = -1
     ):
         super().__init__()
         self._fname = fname
@@ -620,6 +621,8 @@ class RecorderModule(IEventHandler):
         self._started = False
         self._includeui = include_ui
         self._size = size
+        self._sample = 1 
+        self.sample_rate = sample_rate
 
         if settings is None:
             self._settings = self.RecordingSettings()
@@ -664,6 +667,12 @@ class RecorderModule(IEventHandler):
         """
         Extracts the screen state into a frame for recording.
         """
+        if self.sample_rate > 0 and (self._sample % self.sample_rate) > 0:
+            self._sample = self._sample + 1
+            return 
+        else:
+            self._sample = 1
+
         if self._size is None:
             self._size = screen.get_width(), screen.get_height()
         temp_surface = pygame.Surface(self._size)
