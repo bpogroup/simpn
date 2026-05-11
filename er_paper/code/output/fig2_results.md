@@ -1,6 +1,6 @@
 # Evaluation Results: fig2_resource_assignment
 
-**Generated:** 2026-05-07 20:41:06  
+**Generated:** 2026-05-11 09:20:37  
 **Horizon:** 200  
 **Discount:** 1.0  
 **Evaluation episodes:** 100 per method  
@@ -31,14 +31,14 @@
 
 - Alpha: 0.05, Gamma: 1.0, Epsilon: 0.5 → 0.0248 (decayed)
 - Q-table size: 42 entries
-- Training time: 1.8s
+- Training time: 4.6s
 
 ### 3. Value Iteration (Exact)
 
 - Abstract states discovered: 21
 - State-action pairs: 29
 - Convergence: 1000 max iterations, theta=1e-06
-- Solve time: 2.8s
+- Solve time: 6.3s
 
 ## Reward Semantics
 

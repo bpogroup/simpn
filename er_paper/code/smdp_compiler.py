@@ -8,8 +8,8 @@ The compilation runs Monte Carlo simulation episodes to discover:
   - Expected step rewards R(s, a, s')
   - Expected holding times τ(s, a, s')
 
-The output is a self-contained SMDP JSON that any standard SMDP solver can
-consume, independent of the original BPMN+OPT model or SimPN runtime.
+Uses the environment's own abstraction methods (abstract_state, abstract_action,
+resolve_abstract_action), making the compiler fully generic across any BPMN+OPT model.
 
 Usage:
     python smdp_compiler.py --input ../models/fig2_problem.json --output ../models/fig2_smdp.json
@@ -30,72 +30,9 @@ sys.path.insert(0, os.path.dirname(_ER_PAPER_DIR))
 from smdp_env import SMDPEnv
 
 
-def _abstract_state(env):
-    """Map environment state to a hashable abstract state tuple."""
-    waiting = env.model.get_waiting_cases()
-    idle = env.model.get_idle_resources()
-    type_counts = {}
-    for tok in waiting:
-        t = tok.value["type"] if isinstance(tok.value, dict) else tok.value.type
-        type_counts[t] = type_counts.get(t, 0) + 1
-    idle_ids = tuple(sorted(
-        (tok.value["id"] if isinstance(tok.value, dict) else tok.value.id)
-        for tok in idle
-    ))
-    return (tuple(sorted(type_counts.items())), idle_ids)
-
-
-def _abstract_action(action, env):
-    """Map (case_id, resource_id) to (case_type, resource_id)."""
-    c_id, r_id = action
-    for tok in env.model.get_waiting_cases():
-        val = tok.value
-        pid = val["id"] if isinstance(val, dict) else val.id
-        if pid == c_id:
-            c_type = val["type"] if isinstance(val, dict) else val.type
-            return (c_type, r_id)
-    return action
-
-
-def _resolve_abstract_to_concrete(abs_action, actions, env):
-    """FIFO tiebreaking: pick earliest-waiting patient of the given type."""
-    c_type, r_id = abs_action
-    waiting = env.model.get_waiting_cases()
-    best_concrete = None
-    earliest_start = float("inf")
-    for tok in waiting:
-        val = tok.value
-        pid = val["id"] if isinstance(val, dict) else val.id
-        ptype = val["type"] if isinstance(val, dict) else val.type
-        start = val["start"] if isinstance(val, dict) else val.start
-        if ptype == c_type and start < earliest_start:
-            if any(cid == pid and rid == r_id for cid, rid in actions):
-                earliest_start = start
-                best_concrete = (pid, r_id)
-    return best_concrete
-
-
-def _state_to_str(state):
-    """Convert abstract state tuple to a readable string key."""
-    type_counts, idle_ids = state
-    parts = []
-    for ct, n in type_counts:
-        parts.append(f"{n}x{ct}")
-    waiting_str = ",".join(parts) if parts else "empty"
-    idle_str = ",".join(idle_ids) if idle_ids else "none"
-    return f"W({waiting_str})_R({idle_str})"
-
-
-def _action_to_str(action):
-    """Convert abstract action tuple to a readable string key."""
-    c_type, r_id = action
-    return f"{c_type}->{r_id}"
-
-
 def compile_smdp(bpmnopt_json_path, n_episodes=2000, seed_base=0, verbose=True):
     """
     Compile a BPMN+OPT problem into an SMDP model via Monte Carlo exploration.
-
     Returns a dict representing the complete SMDP, ready for JSON serialization.
     """
     with open(bpmnopt_json_path) as f:
@@ -112,28 +49,36 @@ def compile_smdp(bpmnopt_json_path, n_episodes=2000, seed_base=0, verbose=True):
 
     for ep in range(n_episodes):
         env.reset(seed=seed_base + ep)
-        abs_state = _abstract_state(env)
+        abs_state = env.abstract_state()
         initial_state_counts[abs_state] += 1
         prev_time = env.model.problem.clock
 
-        while not env.done:
+        step_count = 0
+        max_steps = 5000
+        while not env.done and step_count < max_steps:
             actions = env.get_actions()
             if not actions:
                 break
 
-            abs_actions = set()
-            for a in actions:
-                abs_actions.add(_abstract_action(a, env))
-            chosen_abs = random.choice(list(abs_actions))
-            concrete = _resolve_abstract_to_concrete(chosen_abs, actions, env)
-            if concrete is None:
-                concrete = random.choice(actions)
+            # Bias scheduling toward immediate to prevent backlogs
+            schedule_acts = [a for a in actions if a[0] == "schedule"]
+            if schedule_acts and random.random() < 0.7:
+                immediates = [a for a in schedule_acts if a[2] == 0]
+                concrete = immediates[0] if immediates else schedule_acts[0]
+            else:
+                abs_actions = set()
+                for a in actions:
+                    abs_actions.add(env.abstract_action(a))
+                chosen_abs = random.choice(sorted(abs_actions))
+                concrete = env.resolve_abstract_action(chosen_abs, actions)
+                if concrete is None:
+                    concrete = random.choice(actions)
 
-            abs_action = _abstract_action(concrete, env)
+            abs_action = env.abstract_action(concrete)
             state_actions[abs_state].add(abs_action)
 
             _, reward, done, info = env.step(concrete)
-            abs_next = _abstract_state(env)
+            abs_next = env.abstract_state()
             current_time = env.model.problem.clock
             tau = current_time - prev_time
 
@@ -145,15 +90,17 @@ def compile_smdp(bpmnopt_json_path, n_episodes=2000, seed_base=0, verbose=True):
             if not info.get("same_time", False):
                 prev_time = current_time
             abs_state = abs_next
+            step_count += 1
+
+        if verbose and (ep + 1) % max(1, n_episodes // 10) == 0:
+            print(f"  Episode {ep+1}/{n_episodes} (states: {len(state_actions)})")
 
     all_states = set(state_actions.keys())
     for (s, a), trans in transitions.items():
         all_states.add(s)
         all_states.update(trans.keys())
 
-    state_index = {}
-    for s in sorted(all_states, key=str):
-        state_index[s] = _state_to_str(s)
+    state_index = {s: _state_to_str(s) for s in sorted(all_states, key=str)}
 
     action_index = {}
     for s, acts in state_actions.items():
@@ -163,12 +110,7 @@ def compile_smdp(bpmnopt_json_path, n_episodes=2000, seed_base=0, verbose=True):
 
     smdp_states = []
     for s in sorted(all_states, key=str):
-        tc, idle = s
-        smdp_states.append({
-            "id": state_index[s],
-            "waiting_type_counts": {ct: n for ct, n in tc},
-            "idle_resources": list(idle),
-        })
+        smdp_states.append({"id": state_index[s], "raw": str(s)})
 
     smdp_actions = {}
     for s, acts in state_actions.items():
@@ -189,8 +131,8 @@ def compile_smdp(bpmnopt_json_path, n_episodes=2000, seed_base=0, verbose=True):
         for ns, samples in trans_map.items():
             ns_id = state_index[ns]
             prob = len(samples) / total_samples
-            avg_reward = sum(s["reward"] for s in samples) / len(samples)
-            avg_tau = sum(s["holding_time"] for s in samples) / len(samples)
+            avg_reward = sum(sm["reward"] for sm in samples) / len(samples)
+            avg_tau = sum(sm["holding_time"] for sm in samples) / len(samples)
             smdp_transitions[s_id][a_id][ns_id] = {
                 "probability": round(prob, 6),
                 "expected_reward": round(avg_reward, 4),
@@ -223,8 +165,7 @@ def compile_smdp(bpmnopt_json_path, n_episodes=2000, seed_base=0, verbose=True):
             "initial_state_distribution": initial_distribution,
             "reward_semantics": {
                 "type": "holding_cost",
-                "description": "Step reward = -integral of n(t) over the holding interval between decision epochs. "
-                               "Represents the cycle-time contribution of each interval.",
+                "description": "Step reward = -integral of n(t) over the holding interval.",
             },
             "objective": spec["decision"]["objectives"][0] if spec["decision"].get("objectives") else {},
         },
@@ -233,7 +174,6 @@ def compile_smdp(bpmnopt_json_path, n_episodes=2000, seed_base=0, verbose=True):
     if verbose:
         print(f"  States:      {len(smdp_states)}")
         print(f"  Actions:     {len(action_index)}")
-        print(f"  Transitions: {sum(len(a) for a in smdp_transitions.values())} state-action pairs")
         total_trans = sum(
             len(ns_map)
             for a_map in smdp_transitions.values()
@@ -242,6 +182,34 @@ def compile_smdp(bpmnopt_json_path, n_episodes=2000, seed_base=0, verbose=True):
         print(f"  Total (s,a,s') triples: {total_trans}")
 
     return smdp_json
+
+
+def _state_to_str(state):
+    """Generic state-to-string for any abstract state tuple."""
+    parts = []
+    for component in state:
+        if isinstance(component, tuple):
+            items = []
+            for k, v in component:
+                items.append(f"{k}={v}")
+            parts.append(",".join(items) if items else "empty")
+        else:
+            parts.append(str(component))
+    return "S(" + "|".join(parts) + ")"
+
+
+def _action_to_str(action):
+    """Generic action-to-string for any typed abstract action tuple."""
+    atype = action[0]
+    if atype == "assign":
+        if len(action) == 4:
+            return f"assign({action[1]},{action[2]},{action[3]})"
+        return f"assign({','.join(str(x) for x in action[1:])})"
+    elif atype == "schedule":
+        return f"sched(+{action[1]})"
+    elif atype == "route":
+        return f"route({action[1]})"
+    return str(action)
 
 
 def main():

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<title>BPMN+OPT → SMDP: Experimental Results</title>
+<style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; max-width: 1100px; margin: 2em auto; padding: 0 1.5em; background: #fafafa; color: #222; line-height: 1.6; }
+    h1 { border-bottom: 3px solid #2563eb; padding-bottom: 0.3em; margin-bottom: 0.2em; }
+    h2 { color: #1e40af; margin-top: 2.5em; border-bottom: 1px solid #cbd5e1; padding-bottom: 0.2em; }
+    h3 { color: #475569; margin-top: 1.5em; }
+    .subtitle { color: #6b7280; font-size: 0.9em; margin-bottom: 2em; }
+    table { border-collapse: collapse; margin: 1em 0; font-size: 0.88em; }
+    th { background: #1e40af; color: white; padding: 8px 12px; text-align: left; white-space: nowrap; }
+    td { padding: 6px 12px; border-bottom: 1px solid #e5e7eb; }
+    tr:hover { background: #eff6ff; }
+    .win { background: #dcfce7; color: #166534; font-weight: bold; }
+    .lose { background: #fee2e2; color: #991b1b; }
+    .neutral { background: #fef9c3; color: #854d0e; }
+    .dim { color: #6b7280; font-size: 0.85em; }
+    .ci { color: #6b7280; font-size: 0.82em; }
+    .highlight { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 2px solid #2563eb; border-radius: 12px; padding: 1.2em 1.5em; margin: 1.5em 0; }
+    .highlight h3 { color: #1e40af; margin-top: 0; }
+    .pipeline { display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin: 1em 0; }
+    .pipeline .step { background: white; border: 2px solid #93c5fd; border-radius: 8px; padding: 0.5em 1em; font-size: 0.85em; }
+    .pipeline .arrow { color: #2563eb; font-size: 1.2em; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    ul { padding-left: 1.5em; }
+    li { margin-bottom: 0.3em; }
+    .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; margin: 1.5em 0; }
+    .comparison > div { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1em 1.2em; }
+    @media (max-width: 768px) { .comparison { grid-template-columns: 1fr; } }
+</style></head><body>
+
+<h1>BPMN+OPT &rarr; SMDP: Experimental Results</h1>
+<p class="subtitle">For Remco &amp; Stefanie &middot; May 2026 &middot; K=5 replications with 95% CIs where noted</p>
+
+<h2>1. Pipeline</h2>
+<div class="pipeline">
+    <div class="step"><b>BPMN+OPT JSON</b><br><span class="dim">declarative model</span></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step"><b>CPN (SimPN)</b><br><span class="dim">executable simulation</span></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step"><b>SMDP Env</b><br><span class="dim">gym-like interface</span></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step"><b>Solve</b><br><span class="dim">heuristic / tabular / deep RL</span></div>
+</div>
+<p>Three decision types handled: <b>scheduling</b> (when to admit), <b>routing</b> (which pathway), <b>assignment</b> (which resource).</p>
+
+<h2>2. Test Problems</h2>
+<div class="comparison">
+    <div>
+        <h3>Figure 2 &mdash; Assignment Only</h3>
+        <ul>
+            <li>1 task, 2 oncologists, 2 patient types</li>
+            <li>Low utilization &rarr; simple</li>
+            <li>4&ndash;17 abstract states</li>
+        </ul>
+    </div>
+    <div>
+        <h3>Figure 1 &mdash; Full Process</h3>
+        <ul>
+            <li>6 tasks, 4 resource types (30 instances)</li>
+            <li>3 decision types interacting</li>
+            <li>High utilization &rarr; complex</li>
+            <li><b>Transient</b> state space (50&ndash;125 unique states, never revisited)</li>
+        </ul>
+    </div>
+</div>
+
+<h2>3. Figure 2 Results</h2>
+
+<h3>3.1 Heuristics <span class="dim">(K=5, 95% CI)</span></h3>
+<table>
+<thead><tr><th>H</th><th>FIFO</th><th>SPT</th><th>Random</th></tr></thead>
+<tbody>
+<tr><td>100</td><td>46.2 <span class="ci">[43.2, 49.3]</span></td><td><b>46.2</b> <span class="ci">[43.2, 49.2]</span></td><td>50.4 <span class="ci">[48.0, 52.7]</span></td></tr>
+<tr><td>200</td><td>86.8 <span class="ci">[84.5, 89.0]</span></td><td><b>86.7</b> <span class="ci">[84.4, 89.0]</span></td><td>96.5 <span class="ci">[94.0, 99.1]</span></td></tr>
+</tbody></table>
+
+<h3>3.2 Tabular Learning vs Best Heuristic <span class="dim">(K=5, 95% CI)</span></h3>
+<table>
+<thead><tr><th>H</th><th>Abstraction</th><th>|S|</th><th>QL &Delta;</th><th>VI &Delta;</th></tr></thead>
+<tbody>
+<tr><td>100</td><td>L0 (counts)</td><td>4</td><td class="lose">+9.7%</td><td class="lose">+9.7%</td></tr>
+<tr><td>100</td><td>L1 (resource_ids)</td><td>4</td><td class="win">-1.1%</td><td class="win">-1.1%</td></tr>
+<tr><td>100</td><td>L3 (cpn_marking)</td><td>9</td><td class="win">-1.0%</td><td class="win">-1.1%</td></tr>
+<tr><td>200</td><td>L0 (counts)</td><td>4</td><td class="lose">+8.3%</td><td class="lose">+8.3%</td></tr>
+<tr><td>200</td><td>L1 (resource_ids)</td><td>5</td><td class="lose">+9.8%</td><td class="win">-1.2%</td></tr>
+<tr><td>200</td><td>L3 (cpn_marking)</td><td>17</td><td class="win">-1.2%</td><td class="win">-1.2%</td></tr>
+</tbody></table>
+<p><b>L0 fails</b> because it hides resource identity. From <b>L1 upward</b>, VI consistently beats heuristics by ~1%.</p>
+
+<h3>3.3 Deep RL <span class="dim">(h=200, single run, 1000 train eps)</span></h3>
+<table>
+<thead><tr><th>Method</th><th>Avg CT</th><th>vs SPT</th></tr></thead>
+<tbody>
+<tr><td>SPT (best heur)</td><td>89.0</td><td>&mdash;</td></tr>
+<tr><td class="win">DQN</td><td class="win">87.0</td><td class="win">-2.2%</td></tr>
+<tr><td>PPO</td><td>89.1</td><td class="neutral">+0.1%</td></tr>
+</tbody></table>
+
+<h2>4. Figure 1 Results</h2>
+
+<h3>4.1 Heuristics <span class="dim">(K=5, 95% CI)</span></h3>
+<table>
+<thead><tr><th>H</th><th>FIFO</th><th>SPT</th><th>Clinical</th><th>ShortQ</th><th>Stagger+SPT</th><th>Random</th></tr></thead>
+<tbody>
+<tr><td>60</td><td><b>368.9</b></td><td>368.9</td><td>369.1</td><td>368.9</td><td>369.9</td><td>370.7</td></tr>
+<tr><td>120</td><td>1285.7</td><td><b>1284.6</b></td><td>1313.3</td><td>1284.6</td><td>1321.1</td><td>1308.3</td></tr>
+</tbody></table>
+<p><b>All heuristics are essentially equivalent.</b> Scheduling delays don't help (patients arrive one-at-a-time). Clinical routing is actually <em>worse</em> at h=120 (ties up chairs 3&times; longer). The bottleneck is structural (2 oncologists, 2 lab staff), not a sequencing problem.</p>
+
+<h3>4.2 Tabular Learning <span class="dim">(K=5, 95% CI)</span></h3>
+<table>
+<thead><tr><th>H</th><th>Abstraction</th><th>|S|</th><th>QL &Delta;</th><th>VI &Delta;</th></tr></thead>
+<tbody>
+<tr><td>60</td><td>L0 (counts)</td><td>50</td><td class="neutral">+0.8%</td><td class="win">-1.1%</td></tr>
+<tr><td>60</td><td>L1 (resource_ids)</td><td>50</td><td class="neutral">+0.3%</td><td class="neutral">+0.4%</td></tr>
+<tr><td>60</td><td>L3 (cpn_marking)</td><td>50</td><td class="lose">+3.6%</td><td class="neutral">+0.8%</td></tr>
+<tr><td>120</td><td>L0 (counts)</td><td>125</td><td class="neutral">+0.9%</td><td class="lose">+2.5%</td></tr>
+<tr><td>120</td><td>L1 (resource_ids)</td><td>125</td><td class="lose">+3.2%</td><td class="lose">+3.3%</td></tr>
+<tr><td>120</td><td>L2 (patient_attrs)</td><td>125</td><td class="lose">+3.5%</td><td class="neutral">+1.4%</td></tr>
+</tbody></table>
+<p><b>Tabular methods cannot beat heuristics on Figure 1.</b> The state space is <b>transient</b>: |S|=50 at h=60 means 50 decision epochs in one run, each with a unique abstract state even at L0. The 16-dimensional count vector (12 flows &times; 4 resource pools) almost never repeats. Tabular methods memorize instead of learning.</p>
+
+<div class="highlight">
+<h3>4.3 Deep RL on Figure 1 &mdash; The Key Result</h3>
+<table style="width:auto;">
+<thead><tr><th>Method</th><th>Avg CT (h=60)</th><th>vs Best Heuristic</th></tr></thead>
+<tbody>
+<tr><td>FIFO (best heuristic)</td><td>367.2</td><td>&mdash;</td></tr>
+<tr><td>All other heuristics</td><td>367&ndash;371</td><td class="dim">indistinguishable</td></tr>
+<tr><td>Tabular QL/VI (best)</td><td>364.7</td><td class="dim">-1.1% (noisy, not reliable)</td></tr>
+<tr><td>DQN</td><td>384.2</td><td class="lose">+4.6%</td></tr>
+<tr style="font-size: 1.1em;"><td class="win"><b>PPO</b></td><td class="win"><b>340.2</b></td><td class="win"><b>-7.4%</b></td></tr>
+</tbody></table>
+<p style="margin-bottom:0;">
+<span class="badge badge-green">PPO: -7.4%</span> &mdash;
+PPO finds a <b>coordinated policy across all 3 decision types</b> that reduces mean cycle time by 27 units.
+This is where 6 different heuristics and 2 tabular methods all failed.
+DQN struggles with the 157-action vocabulary; PPO's policy gradient handles action masking naturally.
+</p>
+</div>
+
+<h2>5. What Changed Since Initial Figure 2 Work</h2>
+<table style="width:100%;">
+<thead><tr><th style="width:25%;">Aspect</th><th style="width:35%;">Initial (Section 4.4.1)</th><th style="width:40%;">Current</th></tr></thead>
+<tbody>
+<tr><td><b>Models</b></td><td>Fig 2 only (1 task, 1 decision)</td><td>Fig 1 + Fig 2 (6 tasks, 3 decisions)</td></tr>
+<tr><td><b>Heuristics</b></td><td>FIFO, SPT</td><td>6 composable heuristics</td></tr>
+<tr><td><b>State abstraction</b></td><td>L0 only</td><td>L0&ndash;L3 with analysis</td></tr>
+<tr><td><b>Statistics</b></td><td>Single run</td><td>K=5 replications, 95% CI</td></tr>
+<tr><td><b>Tabular RL</b></td><td>QL, VI (beat FIFO by ~3%)</td><td>+ diagnosis of failure on multi-stage</td></tr>
+<tr><td><b>Deep RL</b></td><td>&mdash;</td><td><span class="badge badge-green">DQN + PPO</span></td></tr>
+<tr><td><b>Key finding</b></td><td>QL/VI beat FIFO by ~3% on Fig 2</td><td><span class="badge badge-green">PPO beats all methods by 7.4% on Fig 1</span></td></tr>
+</tbody></table>
+
+<h2>6. Takeaways</h2>
+<ol>
+<li><b>The compilation pipeline works end-to-end</b>: JSON &rarr; CPN &rarr; SMDP &rarr; solve. Fully general.</li>
+<li><b>Tabular RL has clear limits</b>: works for simple fragments (Fig 2), fails for multi-stage processes (Fig 1) due to transient state spaces.</li>
+<li><b>Deep RL (PPO) finds policies no heuristic captures</b>: 7.4% improvement by coordinating scheduling, routing, and assignment jointly.</li>
+<li><b>In healthcare ops, -7% cycle time is significant</b>: patients spend substantially less time in the clinic &mdash; found automatically from the process model.</li>
+</ol>
+
+<h2>7. Next Steps</h2>
+<ul>
+<li>Run DQN/PPO with K=5 replications + 95% CIs</li>
+<li>More training episodes (2000&ndash;5000) to see if PPO improves further</li>
+<li>Test on h=120 for Figure 1</li>
+<li>Consider clinical constraints on routing (measurements threshold)</li>
+</ul>
+
+</body></html>

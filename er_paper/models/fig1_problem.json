@@ -1,0 +1,372 @@
+{
+  "name": "fig1_full_outpatient",
+  "description": "Full outpatient chemotherapy process (Figure 1) with scheduling, assignment, and routing decisions.",
+
+  "object_types": {
+    "case_types": [
+      {
+        "name": "Patient",
+        "attributes": [
+          {"name": "id", "type": "int"},
+          {"name": "start", "type": "float", "description": "arrival time"},
+          {"name": "complete", "type": "float", "default": null},
+          {"name": "appointment_time", "type": "float", "default": null},
+          {"name": "measurements", "type": "float", "default": null},
+          {"name": "infusion_type", "type": "enum", "values": ["standard", "intensive"], "default": null},
+          {"name": "chair_id", "type": "str", "default": null}
+        ]
+      }
+    ],
+    "resource_types": [
+      {
+        "name": "LabStaff",
+        "attributes": [
+          {"name": "id", "type": "str"},
+          {"name": "level", "type": "enum", "values": ["senior", "junior"]}
+        ]
+      },
+      {
+        "name": "Oncologist",
+        "attributes": [
+          {"name": "id", "type": "str"}
+        ]
+      },
+      {
+        "name": "Pharmacist",
+        "attributes": [
+          {"name": "id", "type": "str"}
+        ]
+      },
+      {
+        "name": "Chair",
+        "attributes": [
+          {"name": "id", "type": "str"}
+        ]
+      }
+    ]
+  },
+
+  "authorization": [
+    {"resource_type": "LabStaff", "task": "Bloodwork"},
+    {"resource_type": "Oncologist", "task": "Examination"},
+    {"resource_type": "Pharmacist", "task": "Drug_preparation"},
+    {"resource_type": "Chair", "task": "Standard_infusion"},
+    {"resource_type": "Chair", "task": "Intensive_infusion"},
+    {"resource_type": "Chair", "task": "Observation"}
+  ],
+
+  "process": {
+    "flows": [
+      {"name": "arrived", "object_type": "Patient"},
+      {"name": "scheduled", "object_type": "Patient"},
+      {"name": "waiting_bloodwork", "object_type": "Patient"},
+      {"name": "post_bloodwork", "object_type": "Patient"},
+      {"name": "waiting_examination", "object_type": "Patient"},
+      {"name": "waiting_drug_prep", "object_type": "Patient"},
+      {"name": "exam_done", "object_type": "Patient"},
+      {"name": "drug_done", "object_type": "Patient"},
+      {"name": "pre_infusion", "object_type": "Patient"},
+      {"name": "waiting_standard_infusion", "object_type": "Patient"},
+      {"name": "waiting_intensive_infusion", "object_type": "Patient"},
+      {"name": "waiting_observation", "object_type": "Patient"},
+      {"name": "done", "object_type": "Patient"}
+    ],
+    "lanes": [
+      {"name": "idle_lab_staff", "object_type": "LabStaff"},
+      {"name": "idle_oncologist", "object_type": "Oncologist"},
+      {"name": "idle_pharmacist", "object_type": "Pharmacist"},
+      {"name": "idle_chair", "object_type": "Chair"}
+    ],
+
+    "initial_resources": [
+      {
+        "lane": "idle_lab_staff",
+        "instances": [
+          {"id": "lab1", "level": "senior"},
+          {"id": "lab2", "level": "junior"}
+        ]
+      },
+      {
+        "lane": "idle_oncologist",
+        "instances": [
+          {"id": "onc1"},
+          {"id": "onc2"}
+        ]
+      },
+      {
+        "lane": "idle_pharmacist",
+        "instances": [
+          {"id": "pharm1"},
+          {"id": "pharm2"},
+          {"id": "pharm3"},
+          {"id": "pharm4"},
+          {"id": "pharm5"},
+          {"id": "pharm6"}
+        ]
+      },
+      {
+        "lane": "idle_chair",
+        "instances": [
+          {"id": "ch1"},
+          {"id": "ch2"},
+          {"id": "ch3"},
+          {"id": "ch4"},
+          {"id": "ch5"},
+          {"id": "ch6"},
+          {"id": "ch7"},
+          {"id": "ch8"},
+          {"id": "ch9"},
+          {"id": "ch10"},
+          {"id": "ch11"},
+          {"id": "ch12"},
+          {"id": "ch13"},
+          {"id": "ch14"},
+          {"id": "ch15"},
+          {"id": "ch16"},
+          {"id": "ch17"},
+          {"id": "ch18"},
+          {"id": "ch19"},
+          {"id": "ch20"}
+        ]
+      }
+    ],
+
+    "start_events": [
+      {
+        "name": "patient_arrival",
+        "outgoing_flow": "arrived",
+        "interarrival_time": {"distribution": "exponential", "mean": 6},
+        "case_generator": {
+          "start": "current_time",
+          "complete": null,
+          "appointment_time": null,
+          "measurements": null,
+          "infusion_type": null,
+          "chair_id": null
+        }
+      }
+    ],
+
+    "tasks": [
+      {
+        "name": "Bloodwork",
+        "incoming_flow": "waiting_bloodwork",
+        "outgoing_flow": "post_bloodwork",
+        "resource_lane": "idle_lab_staff",
+        "processing_time": {
+          "rules": [
+            {"condition": {"resource.level": "senior"}, "distribution": {"type": "uniform", "low": 2, "high": 8}},
+            {"condition": {"resource.level": "junior"}, "distribution": {"type": "uniform", "low": 10, "high": 20}}
+          ]
+        },
+        "controlled": true,
+        "behavior": {
+          "set_measurements": "random_uniform_0_1"
+        }
+      },
+      {
+        "name": "Examination",
+        "incoming_flow": "waiting_examination",
+        "outgoing_flow": "exam_done",
+        "resource_lane": "idle_oncologist",
+        "processing_time": {
+          "rules": [
+            {"condition": {}, "distribution": {"type": "uniform", "low": 5, "high": 15}}
+          ]
+        },
+        "controlled": true,
+        "behavior": {}
+      },
+      {
+        "name": "Drug_preparation",
+        "incoming_flow": "waiting_drug_prep",
+        "outgoing_flow": "drug_done",
+        "resource_lane": "idle_pharmacist",
+        "processing_time": {
+          "rules": [
+            {"condition": {}, "distribution": {"type": "uniform", "low": 20, "high": 40}}
+          ]
+        },
+        "controlled": true,
+        "behavior": {}
+      },
+      {
+        "name": "Standard_infusion",
+        "incoming_flow": "waiting_standard_infusion",
+        "outgoing_flow": "waiting_observation",
+        "resource_lane": "idle_chair",
+        "processing_time": {
+          "rules": [
+            {"condition": {}, "distribution": {"type": "uniform", "low": 25, "high": 35}}
+          ]
+        },
+        "controlled": true,
+        "behavior": {
+          "bind_chair": true
+        }
+      },
+      {
+        "name": "Intensive_infusion",
+        "incoming_flow": "waiting_intensive_infusion",
+        "outgoing_flow": "waiting_observation",
+        "resource_lane": "idle_chair",
+        "processing_time": {
+          "rules": [
+            {"condition": {}, "distribution": {"type": "uniform", "low": 70, "high": 110}}
+          ]
+        },
+        "controlled": true,
+        "behavior": {
+          "bind_chair": true
+        }
+      },
+      {
+        "name": "Observation",
+        "incoming_flow": "waiting_observation",
+        "outgoing_flow": "done",
+        "resource_lane": "idle_chair",
+        "processing_time": {
+          "rules": [
+            {"condition": {}, "distribution": {"type": "uniform", "low": 30, "high": 40}}
+          ]
+        },
+        "controlled": false,
+        "behavior": {}
+      }
+    ],
+
+    "gateways": [
+      {
+        "name": "and_split_post_bloodwork",
+        "type": "AND-split",
+        "incoming": "post_bloodwork",
+        "outgoing": ["waiting_examination", "waiting_drug_prep"]
+      },
+      {
+        "name": "and_join_pre_infusion",
+        "type": "AND-join",
+        "incoming": ["exam_done", "drug_done"],
+        "outgoing": "pre_infusion",
+        "match_on": "case.id"
+      },
+      {
+        "name": "xor_split_infusion",
+        "type": "XOR-split",
+        "incoming": "pre_infusion",
+        "outgoing": [
+          {"flow": "waiting_standard_infusion", "condition": "case.infusion_type == standard"},
+          {"flow": "waiting_intensive_infusion", "condition": "case.infusion_type == intensive"}
+        ],
+        "controlled": true
+      }
+    ],
+
+    "scheduling": {
+      "incoming_flow": "arrived",
+      "outgoing_flow": "waiting_bloodwork",
+      "intermediate_flow": "scheduled",
+      "decision_attribute": "appointment_time",
+      "wait_condition": "time >= case.appointment_time",
+      "slot_offsets": [0, 5, 10, 15, 20],
+      "description": "Assign an appointment time to the patient. The patient waits until the appointment time, then enters the bloodwork queue."
+    },
+
+    "end_events": [
+      {
+        "name": "discharge",
+        "incoming_flow": "done",
+        "behavior": {"complete": "current_time"}
+      }
+    ],
+
+    "sequence_flows": [
+      ["patient_arrival", "arrived"],
+      ["arrived", "scheduling", "scheduled"],
+      ["scheduled", "waiting_bloodwork"],
+      ["waiting_bloodwork", "Bloodwork"],
+      ["Bloodwork", "post_bloodwork"],
+      ["post_bloodwork", "and_split_post_bloodwork"],
+      ["and_split_post_bloodwork", "waiting_examination"],
+      ["and_split_post_bloodwork", "waiting_drug_prep"],
+      ["waiting_examination", "Examination"],
+      ["Examination", "exam_done"],
+      ["waiting_drug_prep", "Drug_preparation"],
+      ["Drug_preparation", "drug_done"],
+      ["exam_done", "and_join_pre_infusion"],
+      ["drug_done", "and_join_pre_infusion"],
+      ["and_join_pre_infusion", "pre_infusion"],
+      ["pre_infusion", "xor_split_infusion"],
+      ["xor_split_infusion", "waiting_standard_infusion"],
+      ["xor_split_infusion", "waiting_intensive_infusion"],
+      ["waiting_standard_infusion", "Standard_infusion"],
+      ["waiting_intensive_infusion", "Intensive_infusion"],
+      ["Standard_infusion", "waiting_observation"],
+      ["Intensive_infusion", "waiting_observation"],
+      ["waiting_observation", "Observation"],
+      ["Observation", "done"],
+      ["done", "discharge"]
+    ]
+  },
+
+  "decision": {
+    "types": [
+      {
+        "name": "scheduling",
+        "type": "scheduling",
+        "description": "Assign appointment time to newly arrived patient.",
+        "moment": "exists patient in 'arrived' without appointment_time",
+        "variables": {
+          "type": "appointment_offset",
+          "domain": [0, 5, 10, 15, 20],
+          "semantics": "sequential"
+        },
+        "constraints": [
+          {"type": "appointment_not_in_past", "description": "appointment_time >= current_time"}
+        ]
+      },
+      {
+        "name": "assignment",
+        "type": "assignment",
+        "description": "Assign idle resource to waiting patient at controlled tasks.",
+        "moment": "exists unassigned feasible (case, resource) pair at a controlled task",
+        "variables": {
+          "type": "assignment",
+          "domain": [0, 1],
+          "semantics": "sequential"
+        },
+        "constraints": [
+          {"type": "at_most_one_resource_per_case"},
+          {"type": "at_most_one_case_per_resource"}
+        ],
+        "tasks": ["Bloodwork", "Examination", "Drug_preparation", "Standard_infusion", "Intensive_infusion"]
+      },
+      {
+        "name": "routing",
+        "type": "routing",
+        "description": "Choose standard or intensive infusion for the patient.",
+        "moment": "exists patient in 'pre_infusion'",
+        "variables": {
+          "type": "categorical",
+          "domain": ["standard", "intensive"],
+          "target_attribute": "infusion_type",
+          "semantics": "sequential"
+        },
+        "constraints": []
+      }
+    ],
+    "objectives": [
+      {
+        "direction": "minimize",
+        "type": "total_cycle_time",
+        "description": "Sum of (complete-start) for completed + (time-start) for in-progress patients."
+      }
+    ]
+  },
+
+  "smdp": {
+    "horizon": 480,
+    "discount": 1.0,
+    "reward_type": "holding_cost",
+    "reward_expression": "negative_integral_n_t"
+  }
+}
