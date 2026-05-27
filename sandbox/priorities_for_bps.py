@@ -29,10 +29,17 @@ are selected first. The latter two priority classes do not support this
 functionality.
 """
 
+from typing import List
+
+from matplotlib.figure import Figure
+from pygame.event import Event
+
 from simpn.helpers import BPMN
 from simpn.prototypes import BPMNFlow
 from simpn.simulator import SimProblem, SimToken, SimTokenValue
 from simpn.visualisation import Visualisation
+from simpn.visualisation.events import EventType, check_event
+from simpn.visualisation.model_panel_mods import GraphingPanel
 
 from simpn.priorities import FirstClassPriority
 from simpn.priorities import WeightedFirstClassPriority
@@ -44,8 +51,8 @@ from os.path import join, exists
 from enum import Enum, auto
 
 LAYOUT_FILE = join(".", "temp", "priorities_for_bps.layout")
-PRIORITY = 2
-RECORD = True
+PRIORITY = 3
+RECORD = False
 
 
 class CustomerType(Enum):
@@ -81,6 +88,60 @@ class CustomerType(Enum):
 
     def __repr__(self):
         return self.__str__()
+
+
+class ActionedCustomersGraphPanel(GraphingPanel):
+    """
+    Plots a bar graph to show how many times customer type is actioned.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            width=300, height=150, 
+            title="Actioned Customer Types", 
+            subtext="Shows the number of times a customer type was actioned."
+        )
+
+        self.customers = {
+            CustomerType.NEW : 0,
+            CustomerType.BRONZE : 0,
+            CustomerType.SILVER : 0,
+            CustomerType.GOLD : 0
+        }
+
+    def listen_to(self) -> List[EventType]:
+        return super().listen_to() + [
+            EventType.BINDING_FIRED
+        ]
+    
+    def handle_event(self, event: Event) -> bool:
+        super().handle_event(event)
+
+        if check_event(event, EventType.BINDING_FIRED):
+            # update the customer tracker
+            binding = event.fired 
+            tokens:List[SimToken] = binding[0]
+            for ev, tok in tokens:
+                if hasattr(tok.value, "type"):
+                    cus_type = getattr(tok.value, "type")
+                    self.customers[cus_type] += 1
+
+    def create_figure(self, figure: Figure) -> Figure | None:
+        figure.patch.set_alpha(0.0)
+        axes = figure.add_subplot(111)
+        axes.patch.set_alpha(0.0)
+        axes.tick_params(axis="both", labelsize=8)
+
+        axes.bar(
+            [ cus.value for cus in self.customers.keys()], self.customers.values(),
+        )
+        axes.set_xticks([ cus.value for cus in self.customers.keys()])
+        axes.set_xticklabels([ str(cus) for cus in self.customers.keys()])
+        axes.set_xlabel("Customer Types", fontsize=8)
+        axes.set_ylabel("Actioned", fontsize=8)
+
+        figure.subplots_adjust(left=0.17, right=0.90, bottom=0.25, top=0.9)
+        return figure
 
 
 def employee_speed(base_time, employee: SimTokenValue):
@@ -297,6 +358,8 @@ class HandledCustomer(BPMN):
 
 
 mods = []
+graph_panel = ActionedCustomersGraphPanel()
+mods.append(graph_panel)
 if RECORD:
     from simpn.visualisation.model_panel_mods import RecorderModule
     mods.append(
@@ -307,7 +370,9 @@ if exists(LAYOUT_FILE):
     vis = Visualisation(model, layout_file=LAYOUT_FILE, extra_modules=mods)
 else:
     vis = Visualisation(model, extra_modules=mods)
-
 model.set_binding_priority(class_priority)
+for _ in range(15):
+    vis.main_window.simulation_panel.faster_simulation()
+vis.main_window.simulation_panel.start_simulation()
 vis.show()
 vis.save_layout(join(".", "temp", "priorities_for_bps.layout"))

@@ -285,7 +285,7 @@ class TestWeightedFirstClassPriority(unittest.TestCase):
         self.problem = create_dummy_bpmn(structured=True)
         self.ideal_priority = WeightedFirstClassPriority(
             class_attr="type",
-            weights={"gold": 5, "silver": 2.5, "bronze": 0.5},
+            weights={"gold": 12.5, "silver": 2.5, "bronze": 0.5},
         )
         return super().setUp()
 
