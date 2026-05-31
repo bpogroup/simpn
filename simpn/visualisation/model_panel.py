@@ -722,7 +722,7 @@ class ModelPanel:
             for line in f:
                 id, x, y = line.strip().split(",")
                 if id in self._nodes:
-                    self._nodes[id].set_pos((int(x), int(y)))
+                    self._nodes[id].set_pos((float(x), float(y)))
 
     def __load_layout_from_dict(self, layout_dict):
         """
