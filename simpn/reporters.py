@@ -101,10 +101,14 @@ class WarmupReporter(Reporter):
     def callback(self, timed_binding):
         (binding, time, event) = timed_binding
         if event.get_id().endswith("<start_event>"):
-            case_id = binding[0][1].value  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
+            case_id = binding[0][1].value  # the case_id is always [0] the first variable in the binding, the [1] token value of that
             self.__case_arrivals[case_id] = time
         elif event.get_id().endswith("<end_event>"):
-            case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
+            case = binding[0][1].value  # the case is always [0] the first variable in the binding, the [1] token value of that
+            if type(case) == tuple:
+                case_id = case[0]
+            else:
+                case_id = case
             waiting_time = time - self.__case_arrivals[case_id]
             total_time = self.__total_times[self.__nr_completed_cases]
             total_time += waiting_time
@@ -159,7 +163,11 @@ class ProcessReporter(Reporter):
             if time > self.warmup_time:
                 self.nr_started += 1
         elif event.get_id().endswith("<task:start>"):
-            case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
+            case = binding[0][1].value  # the case is always [0] the first variable in the binding, the [1] token value of that
+            if type(case) == tuple:
+                case_id = case[0]
+            else:
+                case_id = case
             resource_id = binding[1][1].value  # the resource_id is always [1] the second variable in the binding, the [1] token value of that.
             self.__resource_start_times[resource_id] = time
             activity_id = event.get_id()[:event.get_id().index("<")]
@@ -171,8 +179,12 @@ class ProcessReporter(Reporter):
             nr_busy_tasks += 1
             self.__status[case_id] = (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change)
         elif event.get_id().endswith("<task:complete>"):
-            case_id = binding[0][1].value[0][0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
-            resource_id = binding[0][1].value[1]  # the resource_id is always [0] the first variable in the binding, the [1] token value of that, and [1] the resource_id of the value.
+            case = binding[0][1].value[0]
+            if type(case) == tuple:
+                case_id = case[0]
+            else:               
+                case_id = case
+            resource_id = binding[0][1].value[1]
             activity_id = event.get_id()[:event.get_id().index("<")]
             if time > self.warmup_time:
                 if resource_id not in self.resource_busy_times.keys():
@@ -197,7 +209,11 @@ class ProcessReporter(Reporter):
             nr_busy_tasks -= 1
             self.__status[case_id] = (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change)
         elif event.get_id().endswith("<end_event>"):
-            case_id = binding[0][1].value[0]  # the case_id is always [0] the first variable in the binding, the [1] token value of that, and [0] the case_id of the value.
+            case = binding[0][1].value  # the case is always [0] the first variable in the binding, the [1] token value of that
+            if type(case) == tuple:
+                case_id = case[0]
+            else:
+                case_id = case
             (nr_busy_tasks, arrival_time, sum_wait_times, sum_proc_times, time_last_busy_change) = self.__status[case_id]
             if case_id in self.__status.keys():
                 del self.__status[case_id]

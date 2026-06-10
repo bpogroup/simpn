@@ -1,9 +1,19 @@
+from typing import List
+from os.path import join
+
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from pygame.event import Event
+
 from simpn.simulator import SimProblem, SimToken, SimTokenValue, SimVar
 from random import expovariate as exp
 from random import uniform
-from simpn.reporters import EventLogReporter
+from simpn.reporters import EventLogReporter, ProcessReporter, WarmupReporter
 import simpn.prototypes as prototype
 from simpn.visualisation.base import Visualisation
+from simpn.visualisation.events import check_event
+from simpn.visualisation.model_panel_mods import GraphingPanel, RecorderModule
+from simpn.visualisation.events import EventType
 
 
 """
@@ -35,15 +45,15 @@ waiting = prototype.BPMNFlow(hospital, "waiting")
 done = prototype.BPMNFlow(hospital, "done")
 
 # Define resources and resource data
-doctors = prototype.BPMNLane(hospital, "doctors")
-doctor_data = prototype.DataStore(hospital, "doctor_data")
+doctors = prototype.BPMNLane(hospital, "oncologist")
+doctor_data = prototype.DataStore(hospital, "oncologists")
 doctors.put("D1")
 doctor_data.update_data("D1", "Dr. Smith")
 doctors.put("D2")
 doctor_data.update_data("D2", "Dr. Johnson")
 
 # Define patient data
-patient_data = prototype.DataStore(hospital, "patient_data")
+patient_data = prototype.DataStore(hospital, "patients")
 
 # Define start event with patient type data
 def arrival_time():
@@ -54,7 +64,7 @@ def arrival_behavior(id):
   patient_data.update_data(id, patient_type)
   return SimToken(id)
 
-prototype.BPMNStartEvent(hospital, [], [waiting], "arrival", arrival_time, arrival_behavior)
+prototype.BPMNStartEvent(hospital, [], [waiting], "arrives", arrival_time, arrival_behavior)
 
 # Define the assignment variable X_{d, p} that indicates whether doctor d is assigned to patient p.
 assignments = hospital.add_var("assignments")
@@ -77,7 +87,7 @@ def treat_behavior(patient, doctor, assignment):
 def treat_guard(patient, doctor, assignment):
   return (patient, doctor) == assignment
 
-prototype.BPMNTask(hospital, [waiting, doctors, assignments], [done, doctors], "treat", treat_behavior, treat_guard)
+prototype.BPMNTask(hospital, [waiting, doctors, assignments], [done, doctors], "Examination", treat_behavior, treat_guard)
 
 # Define end event
 prototype.BPMNEndEvent(hospital, [done], [], "complete")
@@ -94,7 +104,7 @@ def unassigned_patients(state):
   return waiting_patients - assigned_patients
 
 def unassigned_doctors(state):
-  available_doctors = set([token.value for token in state.doctors])
+  available_doctors = set([token.value for token in state.oncologist])
   assigned_doctors = set([token.value[1] for token in state.assignments])
   return available_doctors - assigned_doctors
 
@@ -136,6 +146,47 @@ decision.set_invisible() # we make it invisible
 # SIMULATION
 # --------------------------
 
-v = Visualisation(hospital)
-v.show()
+class WarmUpGraphPanel(GraphingPanel):
+    """
+    Adds a grapher for the given reporter.
+    """
 
+    def __init__(self, reporter: WarmupReporter) -> None:
+        super().__init__(
+            25,
+            25,
+            300,
+            150,
+            "Mean Cycle Times",
+            "(mean cycle time over time)"
+        )
+        self._reporter = reporter
+
+    def listen_to(self) -> List[EventType]:
+        return super().listen_to() + [EventType.BINDING_FIRED]
+
+    def handle_event(self, event: Event) -> bool:
+        super().handle_event(event)
+        if check_event(event, EventType.BINDING_FIRED):
+            reporter.callback(event.fired)
+        return True
+
+    def create_figure(self, figure: Figure) -> Figure | None:
+        figure.patch.set_alpha(0.0)
+        axes = figure.add_subplot(111)
+        axes.patch.set_alpha(0.0)
+        axes.tick_params(axis="both", labelsize=8)
+
+        axes.plot(reporter.times, reporter.average_cycle_times, color="blue")
+        axes.set_xlabel("time (min)", fontsize=8)
+        axes.set_ylabel("cycle time (min)", fontsize=8)
+
+        figure.subplots_adjust(left=0.17, right=0.90, bottom=0.25, top=0.9)
+
+        return figure
+
+reporter = WarmupReporter()
+graph_panel = WarmUpGraphPanel(reporter)
+recorder = RecorderModule(join(".", "temp", "example.mp4"), format="mp4", include_ui=True)
+v = Visualisation(hospital, extra_modules=[graph_panel, recorder])
+v.show()

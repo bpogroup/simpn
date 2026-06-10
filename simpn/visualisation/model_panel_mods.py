@@ -613,7 +613,7 @@ class RecorderModule(IEventHandler):
     def __init__(
         self,
         fname: str,
-        format: Literal["gif"] = "gif",
+        format: Literal["gif", "mp4"] = "gif",
         include_ui: bool = False,
         settings: RecordingSettings = None,
         size: Tuple[int, int] = None,
@@ -629,7 +629,7 @@ class RecorderModule(IEventHandler):
         if settings is None:
             self._settings = self.RecordingSettings()
         else:
-            self._setting = settings
+            self._settings = settings
 
     def listen_to(self):
         return [
@@ -679,23 +679,35 @@ class RecorderModule(IEventHandler):
         self._frames.append(frame)
 
     def save(self):
-        if self._format == "gif":
-            if len(self._frames) > 0:
-                print("RecorderModule:: saving out recording...")
-                imageio.mimsave(
-                    self._fname,
-                    self._frames,
-                    fps=self._settings.fps,
-                    palettesize=self._settings.palettesize,
-                    subrectangles=self._settings.subrectangles,
-                )
-            else:
-                import warnings
+        if len(self._frames) == 0:
+            import warnings
 
-                warnings.warn(
-                    "RecorderModule:: No frames have been saved,"
-                    " no ouput will be produced."
-                )
+            warnings.warn(
+                "RecorderModule:: No frames have been saved,"
+                " no ouput will be produced."
+            )
+            return
+
+        print("RecorderModule:: saving out recording...")
+
+        if self._format == "gif":
+            imageio.mimsave(
+                self._fname,
+                self._frames,
+                fps=self._settings.fps,
+                palettesize=self._settings.palettesize,
+                subrectangles=self._settings.subrectangles,
+            )
+        elif self._format == "mp4":
+            try:
+                with imageio.get_writer(self._fname, fps=self._settings.fps) as writer:
+                    for frame in self._frames:
+                        writer.append_data(frame)
+            except ValueError as exc:
+                raise ValueError(
+                    "Could not write mp4. Install video backend support with "
+                    "`pip install imageio[ffmpeg]` (or `pip install imageio-ffmpeg`)."
+                ) from exc
         else:
             raise ValueError(f"Unknown format for saving :: {self._format}")
 
