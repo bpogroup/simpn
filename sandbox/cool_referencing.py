@@ -8,8 +8,10 @@ customers_waiting = m.add_var("customers_waiting")
 customers_ready = m.add_var("customers_ready")
 
 def process(state, customer):
-    for customer in state.customers_waiting:
-        print("Processing customer " + customer.name, customer.time) 
+    print(f"Processing customer: {customer['name']}")
+    print("The following customers are still waiting: ")
+    for c in state.customers_waiting:
+        print(f"   Customer: {c.name}, time: {c.time}")
     return [SimToken(customer, delay=0.75)]
 
 m.add_event([customers_waiting], [customers_ready], process, state_access=True)

@@ -1,4 +1,5 @@
 import inspect
+from typing import Dict, List
 try:
     import pygame
     import simpn.visualisation as vis
@@ -201,6 +202,91 @@ if VISUALIZATION_AVAILABLE:
                     # to prevent drawing a million groups
                     if (rows >= self._max_rows):
                         break
+
+class DataStore(SimVar):
+    def __init__(self, model, _id, priority=None):
+        super().__init__(_id, priority=priority)
+        
+        self.visualize_edges = False
+
+        model.add_prototype_var(self)
+
+        self.data = {}
+
+    def update_data(self, id, *values:List[object], **dict_values:Dict[str,object]):
+        token_value = SimTokenValue(id, *values, **dict_values)
+        token = SimToken(token_value)
+        if id in self.data:
+            self.delete_data(id)
+        self.add_token(token)
+        self.data[id] = token
+
+    def read_data(self, id):
+        return self.data[id].value
+
+    def delete_data(self, id):
+        token = self.data[id]
+        self.remove_token(token)
+        del self.data[id]
+
+    def get_description(self):
+        description = [(super().get_id() + ": BPMNLane", Describable.Style.HEADING)]
+        description.append( (" ", Describable.Style.NORMAL) )
+        description.append( ("Marking:", Describable.Style.NORMAL) )
+        for token in self.marking:
+            description.append( (str(token), Describable.Style.BOXED) )
+        return description
+    
+    if VISUALIZATION_AVAILABLE:
+        class DataStoreViz(vis.Node):
+            def __init__(self, model_node):
+                super().__init__(model_node)
+                self._width = 100
+                self._height = int(vis.STANDARD_NODE_HEIGHT * 1.5)
+                self._half_width =  self._width / 2
+                self._half_height = self._height / 2
+
+            def draw(self, screen):
+                ellipse_h = int(self._width * 0.3)
+                x_pos = int(self._pos[0] - self._width / 2)
+                y_pos = int(self._pos[1] - self._height / 2)
+
+                bottom_rect = pygame.Rect(x_pos, y_pos + self._height - ellipse_h, self._width, ellipse_h)
+                top_rect = pygame.Rect(x_pos, y_pos, self._width, ellipse_h)
+
+                # 1. filled bottom ellipse
+                pygame.draw.ellipse(screen, vis.TUE_LIGHTBLUE, bottom_rect)
+                pygame.draw.ellipse(screen, vis.TUE_BLUE, bottom_rect, vis.LINE_WIDTH)
+
+                # 2. filled rectangle (no outline) covering body + overlap with both ellipses
+                body_rect = pygame.Rect(x_pos, y_pos + ellipse_h // 2, self._width, self._height - ellipse_h)
+                pygame.draw.rect(screen, vis.TUE_LIGHTBLUE, body_rect)
+
+                # 3. vertical sides
+                pygame.draw.line(screen, vis.TUE_BLUE, (x_pos, y_pos + ellipse_h // 2), (x_pos, y_pos + self._height - ellipse_h // 2), vis.LINE_WIDTH)
+                pygame.draw.line(screen, vis.TUE_BLUE, (x_pos + self._width - vis.LINE_WIDTH, y_pos + ellipse_h // 2), (x_pos + self._width - vis.LINE_WIDTH, y_pos + self._height - ellipse_h // 2), vis.LINE_WIDTH)
+
+                # 4. top ellipse (filled then outlined)
+                pygame.draw.ellipse(screen, vis.TUE_LIGHTBLUE, top_rect)
+                pygame.draw.ellipse(screen, vis.TUE_BLUE, top_rect, vis.LINE_WIDTH)
+
+                # 5. label centered in the body
+                font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE)
+                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                text_x_pos = int((self._width - label.get_width()) / 2) + x_pos
+                text_y_pos = int(y_pos + ellipse_h // 2 + (self._height - ellipse_h - label.get_height()) / 2)
+                screen.blit(label, (text_x_pos, text_y_pos))
+
+                # token shower centered in the top ellipse
+                shower_pos = (self._pos[0], y_pos + ellipse_h // 2)
+                vis.TokenShower(self._model_node.marking) \
+                    .set_pos(shower_pos) \
+                    .show_token_count(True) \
+                    .set_time(self._curr_time) \
+                    .draw(screen)
+
+        def get_visualisation(self):
+            return self.DataStoreViz(self)
 
 
 class BPMNStartEvent(Prototype):  

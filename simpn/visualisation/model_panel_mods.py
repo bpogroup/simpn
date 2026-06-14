@@ -30,9 +30,14 @@ from simpn.visualisation.events import (
 )
 from dataclasses import dataclass
 from collections import deque
-from typing import List, Tuple, Literal
+from typing import List, Tuple, Literal, Optional
 from .text import prevent_overflow_while_rendering
 import imageio
+
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from math import sin
+from collections import deque
 
 
 class ClockModule(IEventHandler):
@@ -608,7 +613,7 @@ class RecorderModule(IEventHandler):
     def __init__(
         self,
         fname: str,
-        format: Literal["gif"] = "gif",
+        format: Literal["gif", "mp4"] = "gif",
         include_ui: bool = False,
         settings: RecordingSettings = None,
         size: Tuple[int, int] = None,
@@ -627,7 +632,7 @@ class RecorderModule(IEventHandler):
         if settings is None:
             self._settings = self.RecordingSettings()
         else:
-            self._setting = settings
+            self._settings = settings
 
     def listen_to(self):
         return [
@@ -676,31 +681,216 @@ class RecorderModule(IEventHandler):
         if self._size is None:
             self._size = screen.get_width(), screen.get_height()
         temp_surface = pygame.Surface(self._size)
-        pygame.transform.smoothscale(
-            screen, self._size, temp_surface
-        )
+        pygame.transform.smoothscale(screen, self._size, temp_surface)
         frame = pygame.surfarray.array3d(temp_surface)
         frame = frame.transpose([1, 0, 2])  # Convert to (height, width, channels)
 
         self._frames.append(frame)
 
     def save(self):
-        if self._format == "gif":
-            if len(self._frames) > 0:
-                print("RecorderModule:: saving out recording...")
-                imageio.mimsave(
-                    self._fname,
-                    self._frames,
-                    fps=self._settings.fps,
-                    palettesize=self._settings.palettesize,
-                    subrectangles=self._settings.subrectangles,
-                )
-            else:
-                import warnings
+        if len(self._frames) == 0:
+            import warnings
 
-                warnings.warn(
-                    "RecorderModule:: No frames have been saved,"
-                    " no ouput will be produced."
-                )
+            warnings.warn(
+                "RecorderModule:: No frames have been saved,"
+                " no ouput will be produced."
+            )
+            return
+
+        print("RecorderModule:: saving out recording...")
+
+        if self._format == "gif":
+            imageio.mimsave(
+                self._fname,
+                self._frames,
+                fps=self._settings.fps,
+                palettesize=self._settings.palettesize,
+                subrectangles=self._settings.subrectangles,
+            )
+        elif self._format == "mp4":
+            try:
+                with imageio.get_writer(self._fname, fps=self._settings.fps) as writer:
+                    for frame in self._frames:
+                        writer.append_data(frame)
+            except ValueError as exc:
+                raise ValueError(
+                    "Could not write mp4. Install video backend support with "
+                    "`pip install imageio[ffmpeg]` (or `pip install imageio-ffmpeg`)."
+                ) from exc
         else:
             raise ValueError(f"Unknown format for saving :: {self._format}")
+
+
+class GraphingPanel(IEventHandler):
+    """
+    Adds a graphing panel to the simulation panel. Users can subclass this panel
+    and override `create_figure` function to have a continously updating graph
+    visualisation while the simulation unfolds.
+
+    The position of the panel and size of the panel can be controlled by
+    the arguments to the panel.
+
+    By default the panel will show a sine wave that is connected to the
+    time of the simulation for demonstrative purposes.
+
+    :param `right_offset:int=25`:
+        An offset from the right of the screen to place the panel
+    :param `top_offset:int=25`:
+        An offset from the top of the screen to place the panel
+    :param `width:int=300`:
+        the width of the panel.
+    :param `height:int=500`:
+        the height of the panel.
+    :param `title:str='...'`:
+        text for the title of the panel.
+    :param `subtext:str='...'`:
+        text below the title of the panel.
+    :param `title_fontsize:int=14`:
+        the size of the font for the title.
+    :param `fontsize:int=12`:
+        the size of the font for all other text:
+    """
+
+    def __init__(
+        self,
+        right_offset: int = 25,
+        top_offset: int = 25,
+        width: int = 300,
+        height: int = 500,
+        title: str = "Graph Panel",
+        subtext: str = "You can add extra information via the subtext parameter",
+        title_fontsize: int = 14,
+        fontsize: int = 12,
+    ) -> None:
+        super().__init__()
+        self._title_fontsize = title_fontsize
+        self._fontsize = fontsize
+        self._history_signature = None
+        self.right_offset = right_offset
+        self.top_offset = top_offset
+        self.graph_width = width
+        self.graph_height = height
+        self.title = title
+        self.subtext = subtext
+        self.width = self.graph_width + 10
+        self.height = self.graph_height + 50
+
+        self._history_surface: Optional[Surface] = None
+        self._text_fonter: pygame.font.Font = None  # type: ignore
+        self._title_fonter: pygame.font.Font = None  # type: ignore
+        self._bounding_rect = None
+
+        # default state for graph
+        self.__past_clock_times = deque([0], maxlen=100)
+
+    def _draw_figure_to_surface(self) -> Optional[Surface]:
+        """
+        Handles creating the matplotlib figure and drawing the figure to
+        a pygame surface.
+        """
+        figure = Figure(
+            figsize=(self.graph_width / 100, self.graph_height / 100), dpi=100
+        )
+        figure = self.create_figure(figure)
+
+        if figure is not None:
+            canvas = FigureCanvasAgg(figure)
+            canvas.draw()
+            graph_surface = pygame.image.frombuffer(
+                canvas.buffer_rgba(),
+                canvas.get_width_height(),
+                "RGBA",
+            ).copy()
+            return graph_surface
+        return None
+
+    def create_figure(self, figure: Figure) -> Optional[Figure]:
+        """
+        This function is called once per each draw cycle. If the function
+        returns a matplotlib figure, the panel will render that graph
+        into the panel following the panels height and width.
+
+        The default implementation shows a sine wave based on the past
+        simulation clock times.
+        """
+        figure.patch.set_alpha(0.0)
+        axes = figure.add_subplot(111)
+        axes.patch.set_alpha(0.0)
+
+        # draw sine wave
+        axes.plot(self.__past_clock_times, [sin(x) for x in self.__past_clock_times])
+
+        # you might need need to pad in the graph otherwise it will be cut off
+        # usually its the labels for axes that get cut off the most
+        figure.subplots_adjust(left=0.15, right=0.85, bottom=0.2, top=0.8)
+
+        return figure
+
+    def listen_to(self) -> List[EventType]:
+        return [
+            EventType.VISUALIZATION_CREATED,
+            EventType.RENDER_UI,
+            EventType.POST_EVENT_LOOP,
+        ]
+
+    def handle_event(self, event: Event) -> bool:
+        if check_event(event, EventType.VISUALIZATION_CREATED):
+            self._fonter = pygame.font.SysFont("Calibri", self._fontsize)
+            self._title_fonter = pygame.font.SysFont("Calibri", self._title_fontsize)
+        elif check_event(event, EventType.RENDER_UI):
+            self.render(event.window)
+        elif check_event(event, EventType.POST_EVENT_LOOP):
+            if event.sim.clock > self.__past_clock_times[-1]:
+                self.__past_clock_times.append(event.sim.clock)
+        return True
+
+    def render(self, window: Surface):
+        """
+        Renders the current transitions fired per seconds.
+        """
+        width_offset = window.get_width() - self.graph_width - self.right_offset
+        height_offset = self.top_offset
+        self._bounding_rect = pygame.Rect(
+            width_offset, height_offset, self.graph_width, self.graph_height + 50
+        )
+
+        # draw background
+        pygame.draw.rect(
+            window,
+            TUE_LIGHTBLUE,
+            self._bounding_rect,
+            border_radius=5,
+        )
+        pygame.draw.rect(
+            window,
+            TUE_BLUE,
+            self._bounding_rect,
+            LINE_WIDTH,
+            border_radius=5,
+        )
+
+        # draw text for the panel
+        last_x, last_y = prevent_overflow_while_rendering(
+            window,
+            lambda t: self._title_fonter.render(t, True, TUE_BLUE),
+            self._bounding_rect.width - 10,
+            self.title,
+            (self._bounding_rect.x + 5, self._bounding_rect.y + 5),
+            2.5,
+        )
+        _, last_y = prevent_overflow_while_rendering(
+            window,
+            lambda t: self._fonter.render(t, True, TUE_BLUE),
+            self._bounding_rect.width - 10,
+            self.subtext,
+            (self._bounding_rect.x + 5, last_y + 5),
+            2.5,
+        )
+
+        # collect the figure and draw it to the panel
+        graph_surface = self._draw_figure_to_surface()
+        if graph_surface is not None:
+            window.blit(
+                graph_surface,
+                (self._bounding_rect.x + 10, last_y + 5),
+            )

@@ -23,7 +23,7 @@ dependencies = [
     "python-igraph>=1.0.0",
     "pyqt6>=6.4.0; python_version<'3.14'",
     "matplotlib>=3.7.0",
-    "imageio>=2.7"
+    "imageio[ffmpeg]>=2.7"
 ]
 
 [project.optional-dependencies]
