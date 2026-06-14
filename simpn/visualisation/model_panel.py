@@ -26,6 +26,7 @@ from simpn.visualisation.constants import (
     ARROW_HEIGHT,
     TEXT_SIZE,
 )
+from simpn.visualisation.text import prevent_overflow_while_rendering
 
 
 class Shape(Enum):
@@ -442,10 +443,23 @@ class TransitionViz(Node):
         font = pygame.font.SysFont("Calibri", TEXT_SIZE)
 
         # draw label
-        label = font.render(self._model_node.get_id(), True, TUE_BLUE)
-        text_x_pos = self._pos[0] - int(label.get_width() / 2)
-        text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
-        screen.blit(label, (text_x_pos, text_y_pos))
+        padding = self._half_width
+        half_padding = padding / 2
+        x_start = self._pos[0] - self._half_width - half_padding 
+        y_start = self._pos[1] + self._half_height
+        _ = prevent_overflow_while_rendering(
+            screen,
+            lambda text: font.render(text, True, TUE_BLUE),
+            self._width + padding,
+            self._model_node.get_id(),
+            (x_start, y_start),
+            2,
+            'character',
+        )
+        # label = font.render(self._model_node.get_id(), True, TUE_BLUE)
+        # text_x_pos = self._pos[0] - int(label.get_width() / 2)
+        # text_y_pos = self._pos[1] + self._half_height + LINE_WIDTH
+        # screen.blit(label, (text_x_pos, text_y_pos))
 
 
 class ModelPanel:

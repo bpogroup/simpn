@@ -7,6 +7,7 @@ except ImportError:
     VISUALIZATION_AVAILABLE = False
 from simpn.simulator import SimToken, SimVar, SimEvent, SimProblem, Describable
 from simpn.simulator import SimTokenValue
+from simpn.visualisation.text import prevent_overflow_while_rendering
 import math
 import re
 
@@ -356,10 +357,21 @@ class BPMNTask(Prototype):
                 bold_font = pygame.font.SysFont('Calibri', vis.TEXT_SIZE, bold=True)
 
                 # draw label
-                label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
-                text_x_pos = int((self._width - label.get_width())/2) + x_pos
-                text_y_pos = int((self._height - label.get_height())/2) + y_pos
-                screen.blit(label, (text_x_pos, text_y_pos))
+                _, last_y = prevent_overflow_while_rendering(
+                    screen,
+                    lambda t: font.render(t, True, vis.TUE_BLUE),
+                    self._width - 30,
+                    self._model_node.get_id(),
+                    (x_pos + 15, y_pos + 5),
+                    2.5,
+                    'word'
+                )
+                self._height = int(max(self._height, (last_y + 10) - y_pos))
+                self._half_height = self._height / 2
+                # label = font.render(self._model_node.get_id(), True, vis.TUE_BLUE)
+                # text_x_pos = int((self._width - label.get_width())/2) + x_pos
+                # text_y_pos = int((self._height - label.get_height())/2) + y_pos
+                # screen.blit(label, (text_x_pos, text_y_pos))
 
                 # draw tokens above the task being processed
                 self._token_shower \
