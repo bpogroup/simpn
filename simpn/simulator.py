@@ -1285,3 +1285,114 @@ class SimProblem:
                             r.callback(timed_binding)
             else:
                 active_model = False
+
+
+class DecProblem(SimProblem):
+    """
+    A simulation problem with explicit decision events.
+
+    Decision events are executed in decision mode: while there are enabled decision
+    events at the current clock time, one decision event is fired and then regular
+    events are drained at the current clock before the next decision is considered.
+    During decision mode, the clock does not advance.
+    """
+
+    def __init__(self, debugging=True, binding_priority=None):
+        super().__init__(debugging=debugging, binding_priority=binding_priority)
+        self.is_deciding = True
+        self.decision_events = []
+        self._decision_needs_regular_drain = False
+
+    def add_decision(self, inflow, outflow, behavior, name=None, guard=None, state_access=False):
+        """
+        Creates a new decision event with the same signature as add_event,
+        adds it to the model, and marks it as a decision event.
+        """
+        event = self.add_event(inflow, outflow, behavior, name=name, guard=guard, state_access=state_access)
+        self.decision_events.append(event)
+        return event
+
+    def _is_decision_event(self, event):
+        return event in self.decision_events
+
+    def _regular_events(self):
+        return [event for event in self.events if event not in self.decision_events]
+
+    def _bindings_at_current_clock(self, events):
+        """
+        Returns bindings for the provided events that are enabled at or before
+        the current clock, without advancing time.
+        """
+        bindings = []
+        for event in events:
+            timed_binding = self.event_bindings(event)
+            if timed_binding is None:
+                continue
+            (binding, time) = timed_binding
+            if time <= self.clock:
+                bindings.append((binding, self.clock, event))
+        return bindings
+
+    def _step_with_output(self):
+        # Decision mode: clock must not move forward.
+        if self.is_deciding:
+            # After every decision, drain regular events at the current clock.
+            if self._decision_needs_regular_drain:
+                regular_bindings = self._bindings_at_current_clock(self._regular_events())
+                if len(regular_bindings) > 0:
+                    timed_binding = self.binding_priority(regular_bindings)
+                    output_binding = self.fire(timed_binding)
+                    return timed_binding, output_binding
+                self._decision_needs_regular_drain = False
+
+            decision_bindings = self._bindings_at_current_clock(self.decision_events)
+            if len(decision_bindings) > 0:
+                timed_binding = self.binding_priority(decision_bindings)
+                output_binding = self.fire(timed_binding)
+                self._decision_needs_regular_drain = True
+                return timed_binding, output_binding
+
+            # No enabled decisions left at current time: leave decision mode.
+            self.is_deciding = False
+
+        # Normal mode: use regular SimProblem timing semantics.
+        bindings = super().bindings()
+        if len(bindings) == 0:
+            return None, None
+
+        timed_binding = self.binding_priority(bindings)
+        output_binding = self.fire(timed_binding)
+
+        if self._is_decision_event(timed_binding[2]):
+            self.is_deciding = True
+            self._decision_needs_regular_drain = True
+
+        return timed_binding, output_binding
+
+    def step(self):
+        """
+        Executes a single step of the simulation.
+        Returns the binding that happened, or None if no event could happen.
+        """
+        timed_binding, _ = self._step_with_output()
+        return timed_binding
+
+    def simulate(self, duration, reporter=None):
+        """
+        Executes a simulation run for the problem for the specified duration.
+        """
+        active_model = True
+        while self.clock <= duration and active_model:
+            timed_binding, output_binding = self._step_with_output()
+            if timed_binding is not None:
+                if reporter is not None:
+                    if not type(reporter) == list:
+                        reporter = [reporter]
+                    for r in reporter:
+                        from simpn.reporters import OutputReporter
+                        if isinstance(r, OutputReporter):
+                            r.callback(timed_binding[0], timed_binding[1], timed_binding[2], output_binding)
+                        else:
+                            r.callback(timed_binding)
+            else:
+                active_model = False

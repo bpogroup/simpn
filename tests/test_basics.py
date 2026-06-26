@@ -1,5 +1,5 @@
 import unittest
-from simpn.simulator import SimProblem, SimToken, SimVarQueue
+from simpn.simulator import DecProblem, SimProblem, SimToken, SimVarQueue
 from simpn.reporters import Reporter, OutputReporter
 import simpn.prototypes as prototype
 from random import randint
@@ -1293,6 +1293,149 @@ class TestReporters(unittest.TestCase):
         # both reporters should have been called once with the binding for the event a_to_b, at time 1
         self.assertEqual(len(reporter.reported), 1, "the reporter should have been called once")
         self.assertEqual(len(output_reporter.reported), 1, "the output reporter should have been called once")
+
+
+class TestDecisionProblem(unittest.TestCase):
+
+    def test_add_decision_registers_event(self):
+        problem = DecProblem()
+        a = problem.add_var("a")
+        b = problem.add_var("b")
+
+        decision = problem.add_decision([a], [b], lambda x: [SimToken(x)], name="decide")
+
+        self.assertTrue(problem.is_deciding, "DecProblem starts in deciding state")
+        self.assertIn(decision, problem.events, "decision is a regular event in the model")
+        self.assertIn(decision, problem.decision_events, "decision is tracked as decision event")
+
+    def test_decision_mode_alternates_with_regular_drain_without_clock_advance(self):
+        class TraceReporter(Reporter):
+            def __init__(self):
+                self.events = []
+
+            def callback(self, timed_binding):
+                self.events.append(timed_binding[2]._id)
+
+        problem = DecProblem(binding_priority=SimProblem.PRIORITY_BINDING)
+        decision_in = problem.add_var("decision_in")
+        regular_in = problem.add_var("regular_in")
+
+        decision_in.put("d1", 0)
+        decision_in.put("d2", 0)
+
+        problem.add_decision([decision_in], [regular_in], lambda d: [SimToken("r_" + d)], name="decide")
+        problem.add_event([regular_in], [], lambda _: [], name="regular")
+
+        reporter = TraceReporter()
+        problem.simulate(duration=0, reporter=reporter)
+
+        self.assertEqual(
+            reporter.events,
+            ["decide", "regular", "decide", "regular"],
+            "decision events are alternated with draining regular events at same clock",
+        )
+        self.assertEqual(problem.clock, 0, "clock does not advance during decision-mode processing")
+        self.assertFalse(problem.is_deciding, "problem exits deciding state when no decision is enabled")
+
+    def test_multiple_regular_events_are_drained_before_next_decision(self):
+        class TraceReporter(Reporter):
+            def __init__(self):
+                self.events = []
+
+            def callback(self, timed_binding):
+                self.events.append(timed_binding[2]._id)
+
+        problem = DecProblem(binding_priority=SimProblem.PRIORITY_BINDING)
+        decision_in = problem.add_var("decision_in")
+        regular1_in = problem.add_var("regular1_in")
+        regular2_in = problem.add_var("regular2_in")
+
+        decision_in.put("d1", 0)
+        decision_in.put("d2", 0)
+
+        problem.add_decision(
+            [decision_in],
+            [regular1_in, regular2_in],
+            lambda d: [SimToken("r1_" + d), SimToken("r2_" + d)],
+            name="decide",
+        )
+        problem.add_event([regular1_in], [], lambda _: [], name="regular_1")
+        problem.add_event([regular2_in], [], lambda _: [], name="regular_2")
+
+        reporter = TraceReporter()
+        problem.simulate(duration=0, reporter=reporter)
+
+        self.assertEqual(
+            reporter.events,
+            ["decide", "regular_1", "regular_2", "decide", "regular_1", "regular_2"],
+            "after each decision, all enabled regular events at current clock are drained before next decision",
+        )
+        self.assertEqual(problem.clock, 0, "clock should not advance while handling decision-time work")
+
+    def test_clock_forward_for_regular_waits_for_all_decisions_up_to_current_clock(self):
+        class TraceReporter(Reporter):
+            def __init__(self):
+                self.events = []
+
+            def callback(self, timed_binding):
+                self.events.append((timed_binding[2]._id, timed_binding[1]))
+
+        problem = DecProblem(binding_priority=SimProblem.PRIORITY_BINDING)
+        decision_in = problem.add_var("decision_in")
+        regular_in = problem.add_var("regular_in")
+
+        decision_in.put("d0", 0)
+        decision_in.put("d1", 1)
+        regular_in.put("r1", 1)
+
+        problem.add_decision([decision_in], [], lambda _: [], name="decide")
+        problem.add_event([regular_in], [], lambda _: [], name="regular")
+
+        reporter = TraceReporter()
+        problem.simulate(duration=1, reporter=reporter)
+
+        self.assertEqual(
+            reporter.events,
+            [("decide", 0), ("decide", 1), ("regular", 1)],
+            "regular work at moved-forward clock should wait until all decisions at or before that clock are done",
+        )
+        self.assertEqual(problem.clock, 1, "clock should move forward to 1 to execute the regular event")
+
+    def test_clock_forward_for_next_decision_waits_for_all_current_time_decisions(self):
+        class TraceReporter(Reporter):
+            def __init__(self):
+                self.events = []
+
+            def callback(self, timed_binding):
+                self.events.append((timed_binding[2]._id, timed_binding[1]))
+
+        problem = DecProblem(binding_priority=SimProblem.PRIORITY_BINDING)
+        decision_in = problem.add_var("decision_in")
+        regular_in = problem.add_var("regular_in")
+
+        decision_in.put("d0a", 0)
+        decision_in.put("d0b", 0)
+        decision_in.put("d2", 2)
+
+        problem.add_decision([decision_in], [regular_in], lambda d: [SimToken("r_" + d)], name="decide")
+        problem.add_event([regular_in], [], lambda _: [], name="regular")
+
+        reporter = TraceReporter()
+        problem.simulate(duration=2, reporter=reporter)
+
+        self.assertEqual(
+            reporter.events,
+            [
+                ("decide", 0),
+                ("regular", 0),
+                ("decide", 0),
+                ("regular", 0),
+                ("decide", 2),
+                ("regular", 2),
+            ],
+            "next decision at a future clock should happen only after all decisions at current clock are completed",
+        )
+        self.assertEqual(problem.clock, 2, "clock should move forward to execute the next decision")
 
 
 if __name__ == '__main__':
