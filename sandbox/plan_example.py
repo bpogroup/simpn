@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from pygame.event import Event
 
-from simpn.simulator import SimProblem, SimToken, SimTokenValue, SimVar
+from simpn.simulator import DecProblem, SimToken
 from random import expovariate as exp
 from random import uniform
 from simpn.reporters import EventLogReporter, ProcessReporter, WarmupReporter
@@ -38,7 +38,7 @@ Decision is:
 # --------------------------
 
 # Instantiate the problem.
-hospital = SimProblem()
+hospital = DecProblem()
 
 # Define queues and other 'places' in the process.
 waiting = prototype.BPMNFlow(hospital, "waiting")
@@ -98,47 +98,37 @@ prototype.BPMNEndEvent(hospital, [done], [], "complete")
 # --------------------------
 
 # The decision moment: there are unassigned patients and unassigned doctors
-def unassigned_patients(state):
-  waiting_patients = set([token.value for token in state.waiting])
-  assigned_patients = set([token.value[0] for token in state.assignments])
-  return waiting_patients - assigned_patients
-
-def unassigned_doctors(state):
-  available_doctors = set([token.value for token in state.oncologist])
-  assigned_doctors = set([token.value[1] for token in state.assignments])
-  return available_doctors - assigned_doctors
-
 def assignment_decision_guard(state):
-  return len(unassigned_patients(state)) > 0 and len(unassigned_doctors(state)) > 0
+  return len(state.waiting) > 0 and len(state.oncologist) > 0
 
 # The decision: since this is a simulation model, we model 'imperatively' rather than declaratively. We do so by modeling a decision policy that is executed at the decision moment.
 # The policy: choose an assignment in order of preference (D1, T1) > (D2, T2) > (D1, T2) > (D2, T1)
 def assignment_decision_behavior(state):
-  ud = unassigned_doctors(state)
-  up = unassigned_patients(state)
   best_assignment = None
   best_assignment_value = None # lower is better: (D1, T1) = 1, (D2, T2) = 2, (D1, T2) = 3, (D2, T1) = 4
-  for d in ud:
-    for p in up:
-      p_type = patient_data.read_data(p)[1]
-      if (d, p_type) == ("D1", "T1"):
+  for o in state.oncologist:
+    for p in state.waiting:
+      o_id = o.value
+      p_id = p.value
+      p_type = patient_data.read_data(p_id)[1]
+      if (o_id, p_type) == ("D1", "T1"):
         assignment_value = 1
-      elif (d, p_type) == ("D2", "T2"):
+      elif (o_id, p_type) == ("D2", "T2"):
         assignment_value = 2
-      elif (d, p_type) == ("D1", "T2"):
+      elif (o_id, p_type) == ("D1", "T2"):
         assignment_value = 3
-      elif (d, p_type) == ("D2", "T1"):
+      elif (o_id, p_type) == ("D2", "T1"):
         assignment_value = 4
       else:
         raise ValueError("Invalid doctor/ patient type combination. This should not happen if the model is correct.")
       if best_assignment is None or assignment_value < best_assignment_value:
-        best_assignment = (p, d)
+        best_assignment = (p_id, o_id)
         best_assignment_value = assignment_value
   state.assignments.add(SimToken(best_assignment))
   return []
 
 # Now add the decision event to the simulator as a global event
-decision = hospital.add_global_event(behavior=assignment_decision_behavior, guard=assignment_decision_guard)
+decision = hospital.add_decision(assignment_decision_behavior, assignment_decision_guard, name="Assignment Decision")
 decision.set_invisible() # we make it invisible
 
 

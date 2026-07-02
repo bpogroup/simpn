@@ -1312,6 +1312,15 @@ class DecProblem(SimProblem):
         self.decision_events.append(event)
         return event
 
+    def add_global_decision(self, behavior, guard, name=None):
+        """
+        Creates a new decision event with the same signature as add_global_event,
+        adds it to the model, and marks it as a decision event.
+        """
+        event = self.add_global_event(behavior, guard, name)
+        self.decision_events.append(event)
+        return event
+
     def _is_decision_event(self, event):
         return event in self.decision_events
 
