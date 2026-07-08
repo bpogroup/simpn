@@ -83,10 +83,13 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.BPMNTask" title="simpn.prototypes.BPMNTask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPMNTask</span></code></a>(model, incoming, outgoing, name, ...)</p></td>
 <td><p>Generates a composition of SimVar and SimEvent that represents a BPMN task.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.Prototype" title="simpn.prototypes.Prototype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prototype</span></code></a>(model, incoming, outgoing, name)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.DataStore" title="simpn.prototypes.DataStore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataStore</span></code></a>(model, _id[, priority])</p></td>
+<td><p>A <code class="docutils literal notranslate"><span class="pre">SimVar</span></code> that stores row-like data by identifier, similar to a simple table.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.Prototype" title="simpn.prototypes.Prototype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prototype</span></code></a>(model, incoming, outgoing, name)</p></td>
 <td><p>Superclass for all prototypes.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.TaskTokenShower" title="simpn.prototypes.TaskTokenShower"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TaskTokenShower</span></code></a>(model_node)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.TaskTokenShower" title="simpn.prototypes.TaskTokenShower"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TaskTokenShower</span></code></a>(model_node)</p></td>
 <td><p>A helper drawer that captures the in-flights tokens that are being  processed by a BPMN prototype.</p></td>
 </tr>
 </tbody>
@@ -393,6 +396,103 @@ The behavior must take input parameters according to the incoming variables and 
 <dd><p>Returns a description of the object. This is can be used for visualisation purposes.
 The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
 :return: a list of tuples.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.prototypes.DataStore">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.prototypes.</span></span><span class="sig-name descname"><span class="pre">DataStore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">dict_of_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.DataStore" title="Link to this definition">¶</a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">SimVar</span></code> that stores row-like data by identifier, similar to a simple table.</p>
+<p>Each row is stored as a <a class="reference internal" href="simulator.html#simpn.simulator.SimTokenValue" title="simpn.simulator.SimTokenValue"><code class="xref py py-class docutils literal notranslate"><span class="pre">simpn.simulator.SimTokenValue</span></code></a> where:
+- <code class="docutils literal notranslate"><span class="pre">id</span></code> is the row identifier,
+- positional values are unnamed columns,
+- named values are keyword columns.</p>
+<p>Optional schema typing can be defined with positional and/or named types.
+Type checks are applied on <code class="docutils literal notranslate"><span class="pre">update_data</span></code> for both raw values and incoming
+<code class="docutils literal notranslate"><span class="pre">SimTokenValue</span></code> objects.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.DataStore.delete_data" title="simpn.prototypes.DataStore.delete_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">delete_data</span></code></a>(id)</p></td>
+<td><p>Deletes the row with the given identifier from the datastore.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.DataStore.get_description" title="simpn.prototypes.DataStore.get_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_description</span></code></a>()</p></td>
+<td><p>Returns a description of the object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.prototypes.DataStore.read_data" title="simpn.prototypes.DataStore.read_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_data</span></code></a>(id)</p></td>
+<td><p>Returns the stored <code class="docutils literal notranslate"><span class="pre">SimTokenValue</span></code> for the given row identifier.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.prototypes.DataStore.update_data" title="simpn.prototypes.DataStore.update_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_data</span></code></a>(id, *values, **dict_values)</p></td>
+<td><p>Inserts or replaces a row for <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.DataStore.delete_data">
+<span class="sig-name descname"><span class="pre">delete_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.DataStore.delete_data" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes the row with the given identifier from the datastore.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>id</strong> – row identifier.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>KeyError</strong> – if the row does not exist.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.DataStore.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.DataStore.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a description of the object. This is can be used for visualisation purposes.
+The description is a list of tuples, where each tuple has the form (‘text’, styles) a text element with the specified styles, where styles is a list of elements of Describable.Style.
+:return: a list of tuples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.DataStore.read_data">
+<span class="sig-name descname"><span class="pre">read_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.DataStore.read_data" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the stored <code class="docutils literal notranslate"><span class="pre">SimTokenValue</span></code> for the given row identifier.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>id</strong> – row identifier.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the row value as <code class="docutils literal notranslate"><span class="pre">SimTokenValue</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>KeyError</strong> – if the row does not exist.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.prototypes.DataStore.update_data">
+<span class="sig-name descname"><span class="pre">update_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">object</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">dict_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.prototypes.DataStore.update_data" title="Link to this definition">¶</a></dt>
+<dd><p>Inserts or replaces a row for <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p>
+<p>Usage modes:
+- <code class="docutils literal notranslate"><span class="pre">update_data(id,</span> <span class="pre">*values,</span> <span class="pre">**dict_values)</span></code>: Raw values are validated against the schema and converted to <code class="docutils literal notranslate"><span class="pre">SimTokenValue</span></code>.
+- <code class="docutils literal notranslate"><span class="pre">update_data(id,</span> <span class="pre">token_value)</span></code> where <code class="docutils literal notranslate"><span class="pre">token_value</span></code> is a single <code class="docutils literal notranslate"><span class="pre">SimTokenValue</span></code>.
+The token value is validated as-is.</p>
+<p>Partial named updates:
+- Supported only for the raw-values mode and only for existing rows. Missing named fields are filled from the current stored row before validation.
+- Not applied for single <code class="docutils literal notranslate"><span class="pre">SimTokenValue</span></code> input.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>id</strong> – row identifier.</p></li>
+<li><p><strong>values</strong> – positional row values, or a single <code class="docutils literal notranslate"><span class="pre">SimTokenValue</span></code>.</p></li>
+<li><p><strong>dict_values</strong> – named row values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – if <code class="docutils literal notranslate"><span class="pre">id</span></code> and <code class="docutils literal notranslate"><span class="pre">SimTokenValue.id</span></code> do not match.</p></li>
+<li><p><strong>TypeError</strong> – if schema validation fails.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

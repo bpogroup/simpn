@@ -203,17 +203,147 @@ if VISUALIZATION_AVAILABLE:
                         break
 
 class DataStore(SimVar):
-    def __init__(self, model, _id, priority=None):
+    """
+    A ``SimVar`` that stores row-like data by identifier, similar to a simple table.
+
+    Each row is stored as a :class:`simpn.simulator.SimTokenValue` where:
+    - ``id`` is the row identifier,
+    - positional values are unnamed columns,
+    - named values are keyword columns.
+
+    Optional schema typing can be defined with positional and/or named types.
+    Type checks are applied on ``update_data`` for both raw values and incoming
+    ``SimTokenValue`` objects.
+    """
+
+    def __init__(self, model, _id, priority=None, *types:type, **dict_of_types:type):
+        """
+        Creates a ``DataStore`` and optionally defines a schema.
+
+        :param model: the ``SimProblem`` to which this variable is added.
+        :param _id: the identifier of the datastore.
+        :param priority: optional token priority function (same semantics as ``SimVar``).
+        :param types: optional positional column types.
+        :param dict_of_types: optional named column types.
+
+        Notes:
+        - For backwards compatibility and convenience, if the third positional
+          argument is a ``type`` (for example ``str``), it is interpreted as the
+          first positional schema type instead of a priority function.
+        - For fields typed as ``float``, both ``float`` and ``int`` values are
+          accepted (but ``bool`` is not), so common numeric literals like ``1``
+          can be used.
+        """
+        if priority is not None and type(priority) is type:
+            types = (priority,) + types
+            priority = None
+
         super().__init__(_id, priority=priority)
-        
+
         self.visualize_edges = False
 
         model.add_prototype_var(self)
 
         self.data = {}
 
+        self._types = types
+        self._dict_of_types = dict_of_types
+
+    def _type_name(self, expected_type):
+        if hasattr(expected_type, "__name__"):
+            return expected_type.__name__
+        return str(expected_type)
+
+    def _matches_expected_type(self, value, expected_type):
+        # Allow int for float-typed fields (common numeric widening), but not bool.
+        if expected_type is float:
+            return isinstance(value, (int, float)) and not isinstance(value, bool)
+        return isinstance(value, expected_type)
+
+    def _check_positional_types(self, id, values):
+        if len(self._types) == 0:
+            return
+        if len(values) != len(self._types):
+            raise TypeError("DataStore " + self.get_id() + ": row " + str(id) + " has " + str(len(values)) + " positional values, expected " + str(len(self._types)) + ".")
+        for i in range(len(values)):
+            expected_type = self._types[i]
+            if not self._matches_expected_type(values[i], expected_type):
+                raise TypeError("DataStore " + self.get_id() + ": row " + str(id) + " positional value " + str(i) + " has type " + str(type(values[i]).__name__) + ", expected " + str(self._type_name(expected_type)) + ".")
+
+    def _check_named_types(self, id, dict_values):
+        if len(self._dict_of_types) == 0:
+            return
+
+        expected_keys = set(self._dict_of_types.keys())
+        actual_keys = set(dict_values.keys())
+        missing_keys = expected_keys - actual_keys
+        extra_keys = actual_keys - expected_keys
+
+        if len(missing_keys) > 0:
+            raise TypeError("DataStore " + self.get_id() + ": row " + str(id) + " is missing named values " + str(sorted(list(missing_keys))) + ".")
+        if len(extra_keys) > 0:
+            raise TypeError("DataStore " + self.get_id() + ": row " + str(id) + " has unexpected named values " + str(sorted(list(extra_keys))) + ".")
+
+        for name in self._dict_of_types:
+            expected_type = self._dict_of_types[name]
+            value = dict_values[name]
+            if not self._matches_expected_type(value, expected_type):
+                raise TypeError("DataStore " + self.get_id() + ": row " + str(id) + " named value '" + str(name) + "' has type " + str(type(value).__name__) + ", expected " + str(self._type_name(expected_type)) + ".")
+
+    def _check_types(self, id, values, dict_values):
+        self._check_positional_types(id, values)
+        self._check_named_types(id, dict_values)
+
+    def _merge_partial_named_values(self, id, values, dict_values):
+        # Allow partial updates for named values only when raw kwargs are passed.
+        if len(values) != 0:
+            return values, dict_values
+        if len(dict_values) == 0:
+            return values, dict_values
+        if len(self._dict_of_types) == 0:
+            return values, dict_values
+        if id not in self.data:
+            return values, dict_values
+
+        current_value = self.data[id].value
+        if type(current_value) is not SimTokenValue:
+            return values, dict_values
+
+        merged_named_values = current_value.with_named_updates(**dict_values).named_values()
+
+        return values, merged_named_values
+
     def update_data(self, id, *values:List[object], **dict_values:Dict[str,object]):
-        token_value = SimTokenValue(id, *values, **dict_values)
+        """
+        Inserts or replaces a row for ``id``.
+
+        Usage modes:
+        - ``update_data(id, *values, **dict_values)``: Raw values are validated against the schema and converted to ``SimTokenValue``.
+        - ``update_data(id, token_value)`` where ``token_value`` is a single ``SimTokenValue``.
+        The token value is validated as-is.
+
+        Partial named updates:
+        - Supported only for the raw-values mode and only for existing rows. Missing named fields are filled from the current stored row before validation.
+        - Not applied for single ``SimTokenValue`` input.
+
+        :param id: row identifier.
+        :param values: positional row values, or a single ``SimTokenValue``.
+        :param dict_values: named row values.
+        :raises ValueError: if ``id`` and ``SimTokenValue.id`` do not match.
+        :raises TypeError: if schema validation fails.
+        """
+        if len(values) == 1 and type(values[0]) is SimTokenValue:
+            token_value = values[0]
+            if token_value.id != id:
+                raise ValueError("DataStore " + self.get_id() + ": row id " + str(id) + " does not match SimTokenValue id " + str(token_value.id) + ".")
+
+            positional_values = token_value.positional_values()
+            named_values = token_value.named_values()
+            self._check_types(id, positional_values, named_values)
+        else:
+            values, dict_values = self._merge_partial_named_values(id, values, dict_values)
+            self._check_types(id, values, dict_values)
+            token_value = SimTokenValue(id, *values, **dict_values)
         token = SimToken(token_value)
         if id in self.data:
             self.delete_data(id)
@@ -221,28 +351,41 @@ class DataStore(SimVar):
         self.data[id] = token
 
     def read_data(self, id):
+        """
+        Returns the stored ``SimTokenValue`` for the given row identifier.
+
+        :param id: row identifier.
+        :returns: the row value as ``SimTokenValue``.
+        :raises KeyError: if the row does not exist.
+        """
         return self.data[id].value
 
     def delete_data(self, id):
+        """
+        Deletes the row with the given identifier from the datastore.
+
+        :param id: row identifier.
+        :raises KeyError: if the row does not exist.
+        """
         token = self.data[id]
         self.remove_token(token)
         del self.data[id]
 
     def get_description(self):
-        description = [(super().get_id() + ": BPMNLane", Describable.Style.HEADING)]
-        description.append( (" ", Describable.Style.NORMAL) )
-        description.append( ("Marking:", Describable.Style.NORMAL) )
+        description = [(super().get_id() + ": DataStore", Describable.Style.HEADING)]
+        description.append((" ", Describable.Style.NORMAL))
+        description.append(("Marking:", Describable.Style.NORMAL))
         for token in self.marking:
-            description.append( (str(token), Describable.Style.BOXED) )
+            description.append((str(token), Describable.Style.BOXED))
         return description
-    
+
     if VISUALIZATION_AVAILABLE:
         class DataStoreViz(vis.Node):
             def __init__(self, model_node):
                 super().__init__(model_node)
                 self._width = 100
                 self._height = int(vis.STANDARD_NODE_HEIGHT * 1.5)
-                self._half_width =  self._width / 2
+                self._half_width = self._width / 2
                 self._half_height = self._height / 2
 
             def draw(self, screen):

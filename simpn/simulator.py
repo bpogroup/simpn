@@ -465,6 +465,29 @@ class SimTokenValue:
         :returns SimTokenValue:
         """
         return deepcopy(self)
+
+    def positional_values(self) -> List[object]:
+        """
+        Returns the positional values of this token value (excluding ``id``).
+        """
+        return list(self._values[1:self._named_start])
+
+    def named_values(self) -> Dict[str, object]:
+        """
+        Returns a dictionary with all named values of this token value.
+        """
+        return dict((name, self[name]) for name in self._names)
+
+    def with_named_updates(self, **dict_values:Dict[str, object]) -> 'SimTokenValue':
+        """
+        Returns a new token value with updated named values.
+
+        Existing named values are copied and overridden by ``dict_values``.
+        Positional values and ``id`` are preserved.
+        """
+        merged_named_values = self.named_values()
+        merged_named_values.update(dict_values)
+        return SimTokenValue(self.id, *self.positional_values(), **merged_named_values)
     
     def __hash__(self):
         return self._values.__hash__()

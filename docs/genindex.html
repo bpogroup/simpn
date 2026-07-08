@@ -52,6 +52,7 @@
  | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
  | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
@@ -67,7 +68,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="simulator.html#simpn.simulator.Marking.add">add() (simpn.simulator.Marking method)</a>
 </li>
+      <li><a href="simulator.html#simpn.simulator.DecProblem.add_decision">add_decision() (simpn.simulator.DecProblem method)</a>
+</li>
       <li><a href="simulator.html#simpn.simulator.SimProblem.add_event">add_event() (simpn.simulator.SimProblem method)</a>
+</li>
+      <li><a href="simulator.html#simpn.simulator.DecProblem.add_global_decision">add_global_decision() (simpn.simulator.DecProblem method)</a>
 </li>
       <li><a href="simulator.html#simpn.simulator.SimProblem.add_global_event">add_global_event() (simpn.simulator.SimProblem method)</a>
 </li>
@@ -75,10 +80,10 @@
 </li>
       <li><a href="simulator.html#simpn.simulator.SimProblem.add_prototype_event">add_prototype_event() (simpn.simulator.SimProblem method)</a>
 </li>
-      <li><a href="simulator.html#simpn.simulator.SimProblem.add_prototype_var">add_prototype_var() (simpn.simulator.SimProblem method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="simulator.html#simpn.simulator.SimProblem.add_prototype_var">add_prototype_var() (simpn.simulator.SimProblem method)</a>
+</li>
       <li><a href="simulator.html#simpn.simulator.SimVar.add_token">add_token() (simpn.simulator.SimVar method)</a>
 
       <ul>
@@ -159,12 +164,18 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="prototypes.html#simpn.prototypes.DataStore">DataStore (class in simpn.prototypes)</a>
+</li>
       <li><a href="reporters.html#simpn.reporters.TimeUnit.DAYS">DAYS (simpn.reporters.TimeUnit attribute)</a>
 </li>
-      <li><a href="simulator.html#simpn.simulator.Describable">Describable (class in simpn.simulator)</a>
+      <li><a href="simulator.html#simpn.simulator.DecProblem">DecProblem (class in simpn.simulator)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="prototypes.html#simpn.prototypes.DataStore.delete_data">delete_data() (simpn.prototypes.DataStore method)</a>
+</li>
+      <li><a href="simulator.html#simpn.simulator.Describable">Describable (class in simpn.simulator)</a>
+</li>
       <li><a href="simulator.html#simpn.simulator.Describable.Style">Describable.Style (class in simpn.simulator)</a>
 </li>
       <li><a href="prototypes.html#simpn.prototypes.TaskTokenShower.draw">draw() (simpn.prototypes.TaskTokenShower method)</a>
@@ -220,6 +231,8 @@
 </li>
         <li><a href="prototypes.html#simpn.prototypes.BPMNTask.get_description">(simpn.prototypes.BPMNTask method)</a>
 </li>
+        <li><a href="prototypes.html#simpn.prototypes.DataStore.get_description">(simpn.prototypes.DataStore method)</a>
+</li>
         <li><a href="simulator.html#simpn.simulator.Describable.get_description">(simpn.simulator.Describable method)</a>
 </li>
         <li><a href="simulator.html#simpn.simulator.SimEvent.get_description">(simpn.simulator.SimEvent method)</a>
@@ -271,6 +284,14 @@
   </ul></td>
 </tr></table>
 
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="simulator.html#simpn.simulator.SimTokenValue.named_values">named_values() (simpn.simulator.SimTokenValue method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -283,6 +304,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="simulator.html#simpn.simulator.SimProblem.place">place() (simpn.simulator.SimProblem method)</a>
+</li>
+      <li><a href="simulator.html#simpn.simulator.SimTokenValue.positional_values">positional_values() (simpn.simulator.SimTokenValue method)</a>
 </li>
       <li><a href="reporters.html#simpn.reporters.ProcessReporter.possible_graphs">possible_graphs() (simpn.reporters.ProcessReporter static method)</a>
 </li>
@@ -311,6 +334,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="simulator.html#simpn.simulator.SimProblem.RANDOM_BINDING">RANDOM_BINDING() (simpn.simulator.SimProblem static method)</a>
+</li>
+      <li><a href="prototypes.html#simpn.prototypes.DataStore.read_data">read_data() (simpn.prototypes.DataStore method)</a>
 </li>
       <li><a href="simulator.html#simpn.simulator.SimVar.remove_token">remove_token() (simpn.simulator.SimVar method)</a>
 
@@ -395,8 +420,12 @@
 </li>
       <li><a href="simulator.html#simpn.simulator.SimTokenValue">SimTokenValue (class in simpn.simulator)</a>
 </li>
-      <li><a href="simulator.html#simpn.simulator.SimProblem.simulate">simulate() (simpn.simulator.SimProblem method)</a>
+      <li><a href="simulator.html#simpn.simulator.DecProblem.simulate">simulate() (simpn.simulator.DecProblem method)</a>
+
+      <ul>
+        <li><a href="simulator.html#simpn.simulator.SimProblem.simulate">(simpn.simulator.SimProblem method)</a>
 </li>
+      </ul></li>
       <li><a href="simulator.html#simpn.simulator.SimVar">SimVar (class in simpn.simulator)</a>
 </li>
       <li><a href="simulator.html#simpn.simulator.SimVarQueue">SimVarQueue (class in simpn.simulator)</a>
@@ -405,8 +434,12 @@
 </li>
       <li><a href="simulator.html#simpn.simulator.StateAccessor">StateAccessor (class in simpn.simulator)</a>
 </li>
-      <li><a href="simulator.html#simpn.simulator.SimProblem.step">step() (simpn.simulator.SimProblem method)</a>
+      <li><a href="simulator.html#simpn.simulator.DecProblem.step">step() (simpn.simulator.DecProblem method)</a>
+
+      <ul>
+        <li><a href="simulator.html#simpn.simulator.SimProblem.step">(simpn.simulator.SimProblem method)</a>
 </li>
+      </ul></li>
       <li><a href="simulator.html#simpn.simulator.SimProblem.store_checkpoint">store_checkpoint() (simpn.simulator.SimProblem method)</a>
 
       <ul>
@@ -438,6 +471,10 @@
       <li><a href="simulator.html#simpn.simulator.Marking.update">update() (simpn.simulator.Marking method)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="prototypes.html#simpn.prototypes.DataStore.update_data">update_data() (simpn.prototypes.DataStore method)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="V">V</h2>
@@ -456,6 +493,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reporters.html#simpn.reporters.WarmupReporter">WarmupReporter (class in simpn.reporters)</a>
+</li>
+      <li><a href="simulator.html#simpn.simulator.SimTokenValue.with_named_updates">with_named_updates() (simpn.simulator.SimTokenValue method)</a>
 </li>
   </ul></td>
 </tr></table>

@@ -709,7 +709,7 @@ class ModelPanel:
                         + node.get_id()
                         + ": Saving the layout cannot work if the node id contains a comma or hard return."
                     )
-                f.write(f"{node.get_id()},{node.get_pos()[0]},{node.get_pos()[1]}\n")
+                f.write(f"{node.get_id()},{int(node.get_pos()[0])},{int(node.get_pos()[1])}\n")
 
     def __load_layout(self, filename):
         with open(filename, "r") as f:

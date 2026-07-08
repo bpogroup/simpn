@@ -53,44 +53,101 @@
 <p><strong>Classes:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.Describable" title="simpn.simulator.Describable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Describable</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.DecProblem" title="simpn.simulator.DecProblem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DecProblem</span></code></a>([debugging, binding_priority])</p></td>
+<td><p>A simulation problem with explicit decision events.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.Describable" title="simpn.simulator.Describable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Describable</span></code></a>()</p></td>
 <td><p>A class that can provide a description of itself for visualisation purposes.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.Marking" title="simpn.simulator.Marking"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Marking</span></code></a>([iterable, key])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.Marking" title="simpn.simulator.Marking"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Marking</span></code></a>([iterable, key])</p></td>
 <td><p>A Marking is a SortedKeyList of tokens.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimEvent" title="simpn.simulator.SimEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimEvent</span></code></a>(_id[, guard, behavior, incoming, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimEvent" title="simpn.simulator.SimEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimEvent</span></code></a>(_id[, guard, behavior, incoming, ...])</p></td>
 <td><p>A simulation event SimEvent that can happen when tokens are available on all of its incoming SimVar and its guard evaluates to True.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimGlobalEvent" title="simpn.simulator.SimGlobalEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimGlobalEvent</span></code></a>(_id[, guard, behavior, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimGlobalEvent" title="simpn.simulator.SimGlobalEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimGlobalEvent</span></code></a>(_id[, guard, behavior, ...])</p></td>
 <td><p>A global simulation event is a special kind of SimEvent that has access to the entire state of the simulator.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimProblem</span></code></a>([debugging, binding_priority])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimProblem" title="simpn.simulator.SimProblem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimProblem</span></code></a>([debugging, binding_priority])</p></td>
 <td><p>A simulation problem SimProblem, which consists of a collection of simulation variables SimVar and a collection of simulation events SimEvent.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimToken" title="simpn.simulator.SimToken"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimToken</span></code></a>(value[, time, delay])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimToken" title="simpn.simulator.SimToken"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimToken</span></code></a>(value[, time, delay])</p></td>
 <td><p>A token SimToken, which is a possible value of a SimVar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenTime" title="simpn.simulator.SimTokenTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTokenTime</span></code></a>(value[, time, delay, problem])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenTime" title="simpn.simulator.SimTokenTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTokenTime</span></code></a>(value[, time, delay, problem])</p></td>
 <td><p>A token that represents the simulation time.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenValue" title="simpn.simulator.SimTokenValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTokenValue</span></code></a>(id, *values, **dict_values)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenValue" title="simpn.simulator.SimTokenValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimTokenValue</span></code></a>(id, *values, **dict_values)</p></td>
 <td><p>A data structure to enable the handling of values and named attributes associated with tokens.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVar" title="simpn.simulator.SimVar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVar</span></code></a>(_id[, priority])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVar" title="simpn.simulator.SimVar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVar</span></code></a>(_id[, priority])</p></td>
 <td><p>A simulation variable SimVar has an identifier and a marking.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVarQueue" title="simpn.simulator.SimVarQueue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarQueue</span></code></a>(simvar)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVarQueue" title="simpn.simulator.SimVarQueue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarQueue</span></code></a>(simvar)</p></td>
 <td><p>A simulation variable that contains the queue of tokens from another SimVar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimVarTime" title="simpn.simulator.SimVarTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarTime</span></code></a>(problem)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimVarTime" title="simpn.simulator.SimVarTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimVarTime</span></code></a>(problem)</p></td>
 <td><p>A simulation variable that contains the simulation time.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.StateAccessor" title="simpn.simulator.StateAccessor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StateAccessor</span></code></a>(problem)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.StateAccessor" title="simpn.simulator.StateAccessor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StateAccessor</span></code></a>(problem)</p></td>
 <td><p>A class that provides easy access to the state of the simulator.</p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py class">
+<dt class="sig sig-object py" id="simpn.simulator.DecProblem">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">DecProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debugging</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binding_priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.DecProblem" title="Link to this definition">¶</a></dt>
+<dd><p>A simulation problem with explicit decision events.</p>
+<p>Decision events are executed in decision mode: while there are enabled decision
+events at the current clock time, one decision event is fired and then regular
+events are drained at the current clock before the next decision is considered.
+During decision mode, the clock does not advance.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.DecProblem.add_decision" title="simpn.simulator.DecProblem.add_decision"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_decision</span></code></a>(inflow, outflow, behavior[, ...])</p></td>
+<td><p>Creates a new decision event with the same signature as add_event, adds it to the model, and marks it as a decision event.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.DecProblem.add_global_decision" title="simpn.simulator.DecProblem.add_global_decision"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_global_decision</span></code></a>(behavior, guard[, name])</p></td>
+<td><p>Creates a new decision event with the same signature as add_global_event, adds it to the model, and marks it as a decision event.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.DecProblem.simulate" title="simpn.simulator.DecProblem.simulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulate</span></code></a>(duration[, reporter])</p></td>
+<td><p>Executes a simulation run for the problem for the specified duration.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.DecProblem.step" title="simpn.simulator.DecProblem.step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">step</span></code></a>()</p></td>
+<td><p>Executes a single step of the simulation.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.DecProblem.add_decision">
+<span class="sig-name descname"><span class="pre">add_decision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_access</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.DecProblem.add_decision" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a new decision event with the same signature as add_event,
+adds it to the model, and marks it as a decision event.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.DecProblem.add_global_decision">
+<span class="sig-name descname"><span class="pre">add_global_decision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.DecProblem.add_global_decision" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a new decision event with the same signature as add_global_event,
+adds it to the model, and marks it as a decision event.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.DecProblem.simulate">
+<span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reporter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.DecProblem.simulate" title="Link to this definition">¶</a></dt>
+<dd><p>Executes a simulation run for the problem for the specified duration.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.DecProblem.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.DecProblem.step" title="Link to this definition">¶</a></dt>
+<dd><p>Executes a single step of the simulation.
+Returns the binding that happened, or None if no event could happen.</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.Describable">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">Describable</span></span><a class="headerlink" href="#simpn.simulator.Describable" title="Link to this definition">¶</a></dt>
@@ -158,7 +215,7 @@ It does everything a SortedKeyList does, but ensures that all elements are SimTo
 
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.SimEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimEvent" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simpn.simulator.</span></span><span class="sig-name descname"><span class="pre">SimEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incoming</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outgoing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_accessor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimEvent" title="Link to this definition">¶</a></dt>
 <dd><p>A simulation event SimEvent that can happen when tokens are available on all of its
 incoming SimVar and its guard evaluates to True. When it happens, it consumes a token from each
 of its incoming SimVar and produces a token on each of its outgoing places according to <cite>behavior</cite>.
@@ -169,6 +226,8 @@ The event has <cite>outgoing</cite> <cite>SimVar</cite> [c, d], behavior lambda 
 This event can happen for a = 2&#64;1 and b = 2&#64;1. Thus, it will happen at time 1, generating
 [<a class="reference external" href="mailto:3&#37;&#52;&#48;+1">3<span>&#64;</span>+1</a>, <a class="reference external" href="mailto:1&#37;&#52;&#48;+2">1<span>&#64;</span>+2</a>] according to its behavior. Therefore, after the event has happened, c and d
 will have the tokens 3&#64;2 and 1&#64;3.</p>
+<p>If the state_accessor is set, the guard and behavior functions will also have access to the entire state of the simulator via a state parameter.
+This parameter will be passed as the first parameter to the guard and behavior functions, and can be used to access the markings of all SimVar in the simulator via state.simvar_name, where simvar_name is the _id of the SimVar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -177,6 +236,7 @@ will have the tokens 3&#64;2 and 1&#64;3.</p>
 <li><p><strong>outgoing</strong> – a list of outgoing SimVar of the event</p></li>
 <li><p><strong>guard</strong> – a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.</p></li>
 <li><p><strong>behavior</strong> – a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. The elements must be tokens that carry the resulting values and the delay with which these values become available. When the event happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar with the corresponding delays.</p></li>
+<li><p><strong>state_accessor</strong> – a function that takes no parameters and returns the state of the simulator.</p></li>
 </ul>
 </dd>
 </dl>
@@ -406,7 +466,7 @@ it can happen on any of these values.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="simpn.simulator.SimProblem.add_event">
-<span class="sig-name descname"><span class="pre">add_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_event" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_access</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.SimProblem.add_event" title="Link to this definition">¶</a></dt>
 <dd><p>Creates a new SimEvent with the specified parameters (also see SimEvent). Adds the SimEvent to the problem and returns it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -416,6 +476,7 @@ it can happen on any of these values.</p>
 <li><p><strong>behavior</strong> – a function that takes as many parameters as there are incoming SimVar. The function must return a list with as many elements as there are outgoing SimVar. When the event happens, the function is performed on the incoming SimVar and the result of the function is put on the outgoing SimVar.</p></li>
 <li><p><strong>name</strong> – the identifier of the event.</p></li>
 <li><p><strong>guard</strong> – a function that takes as many parameters as there are incoming SimVar. The function must evaluate to True or False for all possible values of SimVar. The event can only happen for values for which the guard function evaluates to True.</p></li>
+<li><p><strong>state_access</strong> – if True, the behavior and guard functions will be passed a state parameter that contains the entire state of the simulator. This allows the behavior and guard functions to have access to the markings of all SimVar in the simulator, via state.simvar_name, where simvar_name is the _id of the SimVar.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -729,6 +790,15 @@ without much fuss and avoids using tuples everywhere.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenValue.clone" title="simpn.simulator.SimTokenValue.clone"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clone</span></code></a>()</p></td>
 <td><p>Returns a clone of itself.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenValue.named_values" title="simpn.simulator.SimTokenValue.named_values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_values</span></code></a>()</p></td>
+<td><p>Returns a dictionary with all named values of this token value.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenValue.positional_values" title="simpn.simulator.SimTokenValue.positional_values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">positional_values</span></code></a>()</p></td>
+<td><p>Returns the positional values of this token value (excluding <code class="docutils literal notranslate"><span class="pre">id</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpn.simulator.SimTokenValue.with_named_updates" title="simpn.simulator.SimTokenValue.with_named_updates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">with_named_updates</span></code></a>(**dict_values)</p></td>
+<td><p>Returns a new token value with updated named values.</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>Attributes:</strong></p>
@@ -755,6 +825,26 @@ do so on a clone.</p>
 <dt class="sig sig-object py" id="simpn.simulator.SimTokenValue.id">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">object</span></em><a class="headerlink" href="#simpn.simulator.SimTokenValue.id" title="Link to this definition">¶</a></dt>
 <dd><p>Returns the identity of the token.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimTokenValue.named_values">
+<span class="sig-name descname"><span class="pre">named_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#simpn.simulator.SimTokenValue.named_values" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a dictionary with all named values of this token value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimTokenValue.positional_values">
+<span class="sig-name descname"><span class="pre">positional_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">object</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#simpn.simulator.SimTokenValue.positional_values" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the positional values of this token value (excluding <code class="docutils literal notranslate"><span class="pre">id</span></code>).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simpn.simulator.SimTokenValue.with_named_updates">
+<span class="sig-name descname"><span class="pre">with_named_updates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">dict_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#simpn.simulator.SimTokenValue" title="simpn.simulator.SimTokenValue"><span class="pre">SimTokenValue</span></a></span></span><a class="headerlink" href="#simpn.simulator.SimTokenValue.with_named_updates" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a new token value with updated named values.</p>
+<p>Existing named values are copied and overridden by <code class="docutils literal notranslate"><span class="pre">dict_values</span></code>.
+Positional values and <code class="docutils literal notranslate"><span class="pre">id</span></code> are preserved.</p>
 </dd></dl>
 
 </section>

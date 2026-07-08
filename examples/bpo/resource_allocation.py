@@ -128,7 +128,7 @@ def assignment_decision_behavior(state):
   return []
 
 # Now add the decision event to the simulator as a global event
-decision = hospital.add_decision(assignment_decision_behavior, assignment_decision_guard, name="Assignment Decision")
+decision = hospital.add_global_decision(assignment_decision_behavior, assignment_decision_guard, name="Assignment Decision")
 decision.set_invisible() # we make it invisible
 
 
