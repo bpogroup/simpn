@@ -1857,7 +1857,9 @@ class Visualisation:
         self.layout_algorithm = layout_algorithm
         self.extra_modules = extra_modules if extra_modules is not None else []
 
-        self.app = QApplication(sys.argv)
+        self.app = QApplication.instance()
+        if not self.app:
+            self.app = QApplication(sys.argv)
 
         # Set application metadata for proper macOS menu handling
         self.app.setApplicationName("SimPN")
