@@ -515,10 +515,10 @@ class SimTokenValue:
             if (key in ["id", "_id"]):
                 raise TypeError("You cannot change the identity of a token.")
             
-            if hasattr(self, key):
+            if hasattr(self, key) and key in self._names:
                 index = self._named_start + self._names.index(key)
                 self._values[index] = value 
-            else:
+            elif not hasattr(self, key):
                 self._names.append(key)
                 self._values.append(value)
         super().__setattr__(key, value)
