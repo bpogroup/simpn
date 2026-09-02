@@ -331,9 +331,21 @@ class BPMNStartEvent(Prototype):
             elif len(inspect.signature(behavior).parameters) == 0:
                 result = model.add_event([invar], [invar, outgoing[0]], lambda a: [SimToken(name + str(int(a[len(name):]) + 1), delay=interarrival_time_f()), SimToken((a, behavior()[0].value))], name=name + "<start_event>")
             elif len(inspect.signature(behavior).parameters) == 1:
-                result = model.add_event([invar], [invar, outgoing[0]], lambda a: [SimToken(name + str(int(a[len(name):]) + 1), delay=interarrival_time_f()), behavior(a)], name=name + "<start_event>")
+                def worker(a):
+                    curr_id = None
+                    if isinstance(a, SimTokenValue):
+                        curr_id = a._id 
+                    else:
+                        curr_id = a
+                    curr_id = int(curr_id[len(name):])
+
+                    return [SimToken(SimTokenValue(name + f"{curr_id + 1}"), 
+                                     delay=interarrival_time_f()), 
+                            behavior(a)]
+                result = model.add_event([invar], [invar, outgoing[0]], lambda a: worker(a), name=name + "<start_event>")
+
             self.add_event(result)
-        invar.put(name + "0")
+        invar.put(SimTokenValue(name + "0"))
 
         model.add_prototype(self)
 
