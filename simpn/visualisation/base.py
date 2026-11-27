@@ -503,7 +503,7 @@ class SimulationPanel(QWidget):
             surface_width = surface.get_width()
             surface_height = surface.get_height()
             # Get the pygame surface as a string buffer
-            data = pygame.image.tostring(surface, "RGB")
+            data = pygame.image.tobytes(surface, "RGB")
             # Create QImage from the data using actual surface dimensions
             image = QImage(
                 data,

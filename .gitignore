@@ -3,7 +3,6 @@
 .DS_Store
 **/temp
 .pytest_cache
-.github
 
 # dotenv
 .env
