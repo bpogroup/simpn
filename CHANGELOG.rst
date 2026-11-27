@@ -249,3 +249,7 @@ Version 1.10.0 (2026-07-08)
 - [Minor feature] added DataStore prototype.
 - [Major feature] created DecProblem, a SimProblem variant that handles decision events
 - [Bugfix] layout files had a bug where int of a float number was taken
+
+Version 1.2.0 (2026-11-27)
+
+- [Major feature] updated from pygame to pygame-ce for better compatibility with Python 3.14 and future versions
