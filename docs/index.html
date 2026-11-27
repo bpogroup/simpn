@@ -97,18 +97,18 @@ in the system.</p>
 <p>In case of our shop, the state of the system consists of customers that are waiting in line at
 the cash register, resources that are free to help the customer, and resources that are busy helping a customer.
 Consequently, we can model the state of our simulation, by defining two <em>variables</em> as follows.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">customers</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">&quot;customers&quot;</span><span class="p">)</span>
-<span class="n">resources</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">&quot;resources&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">customers</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">"customers"</span><span class="p">)</span>
+<span class="n">resources</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">"resources"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>A simulation variable is different from a regular Python variable in two important ways. First, a simulation variable
 can contain multiple values, while a regular Python variable can only contain one value. Second, values of a simulation
 variable are available from a specific moment in (simulation) time. More about that later.
 So, with that in mind, let’s give our variables a value.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">resources</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;cassier&quot;</span><span class="p">)</span>
-<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c1&quot;</span><span class="p">)</span>
-<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
-<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c3&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">resources</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">"cassier"</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">"c1"</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">"c2"</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">"c3"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>We now gave the <cite>resources</cite> variable one value, the string <cite>cassier</cite>, but we gave the <cite>customers</cite> variable three values.
@@ -181,18 +181,18 @@ in the variable <cite>resources</cite> again after 0.75. Accordingly, processing
 
 <span class="n">shop</span> <span class="o">=</span> <span class="n">SimProblem</span><span class="p">()</span>
 
-<span class="n">resources</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">&quot;resources&quot;</span><span class="p">)</span>
-<span class="n">customers</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">&quot;customers&quot;</span><span class="p">)</span>
+<span class="n">resources</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">"resources"</span><span class="p">)</span>
+<span class="n">customers</span> <span class="o">=</span> <span class="n">shop</span><span class="o">.</span><span class="n">add_var</span><span class="p">(</span><span class="s2">"customers"</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="n">customer</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">SimToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)]</span>
 
 <span class="n">shop</span><span class="o">.</span><span class="n">add_event</span><span class="p">([</span><span class="n">customers</span><span class="p">,</span> <span class="n">resources</span><span class="p">],</span> <span class="p">[</span><span class="n">resources</span><span class="p">],</span> <span class="n">process</span><span class="p">)</span>
 
-<span class="n">resources</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;cassier&quot;</span><span class="p">)</span>
-<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c1&quot;</span><span class="p">)</span>
-<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
-<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;c3&quot;</span><span class="p">)</span>
+<span class="n">resources</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">"cassier"</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">"c1"</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">"c2"</span><span class="p">)</span>
+<span class="n">customers</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">"c3"</span><span class="p">)</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">simpn.reporters</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleReporter</span>
 
@@ -218,9 +218,9 @@ After the model window is closed, you can save the layout of the model to a file
 Use the method <cite>save_layout</cite> to save the model to do so.
 You can load the layout of the model from the file later, by passing the saved layout as a parameter to the constructor.
 If the layout file does not exist, the model will be shown with an automatically generated layout.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="n">Visualisation</span><span class="p">(</span><span class="n">shop</span><span class="p">,</span> <span class="s2">&quot;layout.txt&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="n">Visualisation</span><span class="p">(</span><span class="n">shop</span><span class="p">,</span> <span class="s2">"layout.txt"</span><span class="p">)</span>
 <span class="n">v</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<span class="n">v</span><span class="o">.</span><span class="n">save_layout</span><span class="p">(</span><span class="s2">&quot;layout.txt&quot;</span><span class="p">)</span>
+<span class="n">v</span><span class="o">.</span><span class="n">save_layout</span><span class="p">(</span><span class="s2">"layout.txt"</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>

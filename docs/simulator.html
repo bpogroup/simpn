@@ -155,7 +155,7 @@ Returns the binding that happened, or None if no event could happen.</p>
 <p><strong>Classes:</strong></p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.Describable.Style" title="simpn.simulator.Describable.Style"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Style</span></code></a>(value[, names, module, qualname, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpn.simulator.Describable.Style" title="simpn.simulator.Describable.Style"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Style</span></code></a>(*values)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -170,7 +170,7 @@ Returns the binding that happened, or None if no event could happen.</p>
 </table>
 <dl class="py class">
 <dt class="sig sig-object py" id="simpn.simulator.Describable.Style">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Style</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names=&lt;not</span> <span class="pre">given&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary=None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.Describable.Style" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Style</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpn.simulator.Describable.Style" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -768,7 +768,7 @@ constructor.</p></li>
 <p>With this class, values of tokens can be built in a pythonic manner
 without much fuss and avoids using tuples everywhere.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># create a new value!</span>
-<span class="n">val</span> <span class="o">=</span> <span class="n">SimTokenValue</span><span class="p">(</span><span class="s2">&quot;a1&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">mary</span><span class="o">=</span><span class="s1">&#39;alice&#39;</span><span class="p">,</span> <span class="n">joe</span><span class="o">=</span><span class="p">{</span> <span class="s1">&#39;value&#39;</span> <span class="p">:</span> <span class="mi">5</span><span class="p">})</span>
+<span class="n">val</span> <span class="o">=</span> <span class="n">SimTokenValue</span><span class="p">(</span><span class="s2">"a1"</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">'a'</span><span class="p">,</span> <span class="n">mary</span><span class="o">=</span><span class="s1">'alice'</span><span class="p">,</span> <span class="n">joe</span><span class="o">=</span><span class="p">{</span> <span class="s1">'value'</span> <span class="p">:</span> <span class="mi">5</span><span class="p">})</span>
 <span class="c1"># you can grab the identity of the token</span>
 <span class="nb">id</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">id</span> <span class="c1"># or val[0]</span>
 <span class="c1"># but you can still pretend to have a tuple</span>
@@ -780,8 +780,8 @@ without much fuss and avoids using tuples everywhere.</p>
 <span class="c1"># equivalent value reference</span>
 <span class="n">copy_of_val</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
 <span class="c1"># you can quickly update values as well</span>
-<span class="n">val</span><span class="o">.</span><span class="n">mary</span><span class="o">=</span> <span class="s1">&#39;ham&#39;</span>
-<span class="n">val</span><span class="p">[</span><span class="s1">&#39;joe&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;spam&#39;</span>
+<span class="n">val</span><span class="o">.</span><span class="n">mary</span><span class="o">=</span> <span class="s1">'ham'</span>
+<span class="n">val</span><span class="p">[</span><span class="s1">'joe'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'spam'</span>
 </pre></div>
 </div>
 <p><strong>Methods:</strong></p>
